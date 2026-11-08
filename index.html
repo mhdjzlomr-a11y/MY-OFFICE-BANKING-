@@ -679,6 +679,35 @@
           </form>
         </div>
 
+        <!-- ================= SAVED CONTACTS & WHATSAPP DIRECTORY ================= -->
+        <div class="white-box" style="margin-bottom: 20px; border-left: 4px solid var(--finnova-purple);">
+          <div class="box-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">👥</span>
+                <h3 class="box-title" data-i18n="contactsTitle">Saved Contacts & WhatsApp Directory</h3>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" data-i18n="contactsSub">
+                Save parties, clients, vendors, and staff WhatsApp numbers for instant auto-fill and messaging
+              </p>
+            </div>
+            <button type="button" id="btnOpenAddContactModal" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.8rem;">
+              <i data-lucide="user-plus"></i>
+              <span data-i18n="btnAddContact">+ Add Contact</span>
+            </button>
+          </div>
+
+          <!-- Contact Quick Search Bar -->
+          <div style="margin-bottom: 12px;">
+            <input id="contactSearchInput" type="text" class="form-input" placeholder="Search contact name or phone..." data-i18n-placeholder="searchContactPlaceholder" />
+          </div>
+
+          <!-- Contacts List -->
+          <div id="contactsListContainer" class="navy-tx-list" style="max-height: 320px; overflow-y: auto;">
+            <!-- Populated via app.js -->
+          </div>
+        </div>
+
         <!-- ================= AUTOMATED WHATSAPP GATEWAY SETTINGS ================= -->
         <div class="white-box" style="margin-bottom: 20px; border-left: 4px solid #25d366;">
           <div class="box-header">
@@ -874,8 +903,14 @@
         <!-- Party Name & WhatsApp Mobile Number Side-by-Side -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="form-group">
-            <label id="labelParty" class="form-label" data-i18n="partyLabelExpense">Paid To</label>
-            <input id="txParty" type="text" class="form-input" placeholder="Person or Company Name" data-i18n-placeholder="partyPlaceholder" />
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label id="labelParty" class="form-label" data-i18n="partyLabelExpense">Paid To</label>
+              <button type="button" id="btnQuickAddContactFromModal" style="border: none; background: transparent; color: var(--finnova-purple); font-weight: 700; font-size: 0.72rem; cursor: pointer;">+ New Contact</button>
+            </div>
+            <input id="txParty" list="partyDatalist" type="text" class="form-input" placeholder="Person or Company Name" data-i18n-placeholder="partyPlaceholder" autocomplete="off" />
+            <datalist id="partyDatalist">
+              <!-- Dynamically populated from saved contacts -->
+            </datalist>
           </div>
           <div class="form-group">
             <label class="form-label" data-i18n="phoneLabel">WhatsApp Mobile Number</label>
@@ -883,6 +918,10 @@
               <span style="position: absolute; left: 10px; font-weight: 800; color: #25d366; font-size: 0.9rem;">📲</span>
               <input id="txPhone" type="tel" class="form-input" style="padding-left: 34px;" placeholder="10-digit number" />
             </div>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); cursor: pointer; margin-top: 4px;">
+              <input type="checkbox" id="txSaveToContacts" checked style="accent-color: var(--emerald-green);" />
+              <span data-i18n="saveToContactsLabel">Save this party to Contacts Directory</span>
+            </label>
           </div>
         </div>
 
@@ -986,19 +1025,71 @@
           <textarea id="waDispatchMessagePreview" rows="7" class="form-input" style="font-family: monospace; font-size: 0.78rem; line-height: 1.4; background: var(--bg-surface); border: 1px solid var(--border-light);"></textarea>
         </div>
 
-        <!-- Action Buttons: 1) Automatic Send (Silent/No opening), 2) Open in WhatsApp -->
+        <!-- Hidden direct link fallback to bypass popup blockers -->
+        <a id="waDirectAnchor" href="#" target="_blank" rel="noopener noreferrer" style="display: none;"></a>
+
+        <!-- Action Buttons: 1) Send WhatsApp Message, 2) Background API -->
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-          <button type="button" id="btnExecuteAutoWa" class="action-btn-pill btn-pill-green" style="justify-content: center; font-size: 0.88rem; padding: 11px;">
-            <i data-lucide="zap"></i>
-            <span data-i18n="btnSendAutoWa">⚡ Send Automatically (Without Opening WhatsApp)</span>
+          <button type="button" id="btnExecuteManualWa" class="action-btn-pill btn-pill-green" style="justify-content: center; font-size: 0.95rem; padding: 12px; background: #25d366; color: white;">
+            <i data-lucide="message-circle"></i>
+            <span data-i18n="btnSendWhatsApp">🚀 വാട്സാപ്പിൽ അയക്കുക (Send WhatsApp Message)</span>
           </button>
 
-          <button type="button" id="btnExecuteManualWa" class="action-btn-pill btn-pill-white" style="justify-content: center; font-size: 0.8rem; color: #166534; border-color: rgba(37, 211, 102, 0.4);">
-            <i data-lucide="external-link"></i>
-            <span data-i18n="btnOpenManualWa">📲 Open in WhatsApp Web / App</span>
+          <button type="button" id="btnExecuteAutoWa" class="action-btn-pill btn-pill-white" style="justify-content: center; font-size: 0.78rem; color: var(--text-dark);">
+            <i data-lucide="zap"></i>
+            <span data-i18n="btnSendAutoWa">⚡ ബാക്ക്ഗ്രൗണ്ട് API വഴി അയക്കുക (CallMeBot / Webhook)</span>
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD / EDIT CONTACT ================= -->
+  <div id="contactModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header-row">
+        <h3 id="contactModalTitle" class="modal-heading-text" data-i18n="contactModalTitle">Add New Contact</h3>
+        <button id="btnCloseContactModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="contactForm" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" id="contactId" value="" />
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="contactNameLabel">Person / Company Name</label>
+          <input id="contactName" type="text" class="form-input" placeholder="e.g. Rahul / ABC Traders" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="contactPhoneLabel">WhatsApp Mobile Number (10 digits)</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <span style="position: absolute; left: 10px; font-weight: 800; color: #25d366; font-size: 0.9rem;">📲</span>
+            <input id="contactPhone" type="tel" class="form-input" style="padding-left: 34px;" placeholder="10-digit number" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="contactTypeLabel">Role / Category</label>
+          <select id="contactType" class="form-input">
+            <option value="client" data-i18n="typeClient">Client / Customer</option>
+            <option value="vendor" data-i18n="typeVendor">Vendor / Supplier</option>
+            <option value="staff" data-i18n="typeStaff">Staff Member</option>
+            <option value="other" data-i18n="typeOther">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="notesLabel">Notes (Optional)</label>
+          <input id="contactNotes" type="text" class="form-input" placeholder="Additional remarks..." />
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button type="button" id="btnCancelContact" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;" data-i18n="btnCancel">Cancel</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnSave">Save Contact</button>
+        </div>
+      </form>
     </div>
   </div>
 

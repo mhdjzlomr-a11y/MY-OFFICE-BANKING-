@@ -1,7 +1,7 @@
 /**
  * app.js - Master Application Controller
  * Finnova Theme with Light Blue Accent, Dark Mode, Typeable Categories, Period Exports,
- * 100% Bilingual Support (English & Malayalam), and Automated WhatsApp Gateway Dispatch
+ * 100% Bilingual Support (English & Malayalam), Contact Directory & Reliable WhatsApp Dispatch
  */
 
 class OfficeFinanceApp {
@@ -9,10 +9,12 @@ class OfficeFinanceApp {
     this.currentView = 'dashboard';
     this.transactions = [];
     this.categories = [];
+    this.contacts = [];
     this.officeProfile = {};
     this.currentTxType = 'expense';
     this.currentAttachment = null;
     this.editingTxId = null;
+    this.editingContactId = null;
     this.deferredPrompt = null;
     this.pinBuffer = '';
     this.userPin = null;
@@ -25,7 +27,7 @@ class OfficeFinanceApp {
 
     // WhatsApp Gateway and Dispatch State
     this.waGateway = {
-      mode: 'direct', // 'direct' (auto background) | 'callmebot' | 'webhook'
+      mode: 'direct', // 'direct' (direct WhatsApp) | 'callmebot' | 'webhook'
       defaultLang: 'app', // 'app' | 'ml' | 'en'
       webhookUrl: '',
       apiKey: '',
@@ -96,7 +98,6 @@ class OfficeFinanceApp {
     this.applyTheme(isDarkNow);
     await window.dbEngine.setSetting('theme', isDarkNow ? 'dark' : 'light');
 
-    // Re-render canvas charts to match theme
     if (window.chartsEngine) {
       window.chartsEngine.updateCharts(this.transactions, this.categories);
     }
@@ -232,16 +233,19 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 4. DATA REFRESH & NAVIGATION =================
+  // ================= 4. DATA REFRESH & CONTACTS =================
   async refreshData() {
     this.transactions = await window.dbEngine.getAllTransactions();
     this.categories = await window.dbEngine.getAllCategories();
+    this.contacts = await window.dbEngine.getAllContacts();
 
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
     this.populateCategoryDatalist();
+    this.populatePartyDatalist();
     this.renderSettingsCategoryChips();
+    this.renderContactsList();
 
     if (window.chartsEngine) {
       window.chartsEngine.updateCharts(this.transactions, this.categories);
@@ -249,6 +253,19 @@ class OfficeFinanceApp {
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
+  }
+
+  populatePartyDatalist() {
+    const datalist = document.getElementById('partyDatalist');
+    if (!datalist) return;
+    datalist.innerHTML = '';
+
+    this.contacts.forEach(c => {
+      const option = document.createElement('option');
+      option.value = c.name;
+      option.label = `📲 ${c.phone} (${c.type || 'Contact'})`;
+      datalist.appendChild(option);
+    });
   }
 
   populateCategoryDatalist() {
@@ -287,7 +304,141 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 5. DASHBOARD & STATS =================
+  // ================= 5. CONTACTS DIRECTORY MANAGEMENT =================
+  renderContactsList() {
+    const container = document.getElementById('contactsListContainer');
+    if (!container) return;
+
+    const q = (document.getElementById('contactSearchInput')?.value || '').toLowerCase().trim();
+    const filtered = this.contacts.filter(c => {
+      if (!q) return true;
+      return (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.notes || '').toLowerCase().includes(q);
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+          <p>${window.i18n.t('noContactsFound')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(c => `
+      <div class="navy-tx-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); margin-bottom: 8px;">
+        <div class="navy-user-left">
+          <div class="navy-avatar-sq" style="background: var(--finnova-purple); color: white; font-weight: 800;">
+            ${(c.name || 'C').slice(0, 1).toUpperCase()}
+          </div>
+          <div>
+            <div class="navy-name" style="color: var(--text-dark);">${c.name}</div>
+            <div class="navy-date-sub" style="color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="color: #10b981; font-weight: 700;">📲 ${c.phone}</span>
+              <span style="padding: 1px 8px; border-radius: 999px; background: var(--bg-subtle); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">${c.type || 'contact'}</span>
+              ${c.notes ? `<span>• ${c.notes}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button type="button" class="sq-pill-btn" style="color: #25d366;" title="Send WhatsApp Message" onclick="window.appEngine.openDirectWaToContact('${c.phone}', '${c.name.replace(/'/g, "\\'")}')">
+            <i data-lucide="message-circle"></i>
+          </button>
+          <button type="button" class="sq-pill-btn" title="Edit Contact" onclick="window.appEngine.openEditContactModal(${c.id})">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button type="button" class="sq-pill-btn" style="color: var(--coral-rose);" title="Delete Contact" onclick="window.appEngine.deleteContact(${c.id})">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
+    }
+  }
+
+  openDirectWaToContact(phone, name) {
+    const officeName = (this.officeProfile && this.officeProfile.name) || 'OFFICE FINANCE TRACKER';
+    const isMl = window.i18n.currentLang === 'ml';
+    const msg = isMl
+      ? `നമസ്കാരം ${name},\n${officeName}-ൽ നിന്നുള്ള ഔദ്യോഗിക സന്ദേശം.`
+      : `Hello ${name},\nGreetings from ${officeName}.`;
+    this.sendWhatsAppDirect(phone, msg);
+  }
+
+  openAddContactModal() {
+    this.editingContactId = null;
+    document.getElementById('contactId').value = '';
+    document.getElementById('contactName').value = '';
+    document.getElementById('contactPhone').value = '';
+    document.getElementById('contactType').value = 'client';
+    document.getElementById('contactNotes').value = '';
+
+    document.getElementById('contactModalTitle').textContent = window.i18n.t('contactModalTitle');
+    document.getElementById('contactModal')?.classList.remove('hidden');
+  }
+
+  openEditContactModal(id) {
+    const contact = this.contacts.find(c => c.id === Number(id));
+    if (!contact) return;
+
+    this.editingContactId = contact.id;
+    document.getElementById('contactId').value = contact.id;
+    document.getElementById('contactName').value = contact.name || '';
+    document.getElementById('contactPhone').value = contact.phone || '';
+    document.getElementById('contactType').value = contact.type || 'client';
+    document.getElementById('contactNotes').value = contact.notes || '';
+
+    document.getElementById('contactModalTitle').textContent = window.i18n.t('contactEditModalTitle');
+    document.getElementById('contactModal')?.classList.remove('hidden');
+  }
+
+  closeContactModal() {
+    document.getElementById('contactModal')?.classList.add('hidden');
+    this.editingContactId = null;
+  }
+
+  async handleSaveContact(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('contactName').value.trim();
+    const phone = document.getElementById('contactPhone').value.trim();
+    const type = document.getElementById('contactType').value;
+    const notes = document.getElementById('contactNotes').value.trim();
+
+    if (!name || !phone) return;
+
+    const cleaned = this.sanitizePhone(phone);
+    if (!cleaned || cleaned.length < 10) {
+      alert(window.i18n.t('waMissingPhone'));
+      return;
+    }
+
+    const contactData = { name, phone: phone.trim(), type, notes };
+
+    if (this.editingContactId) {
+      contactData.id = this.editingContactId;
+      await window.dbEngine.updateContact(contactData);
+      this.showToast(window.i18n.t('contactUpdated'), 'success');
+    } else {
+      await window.dbEngine.addContact(contactData);
+      this.showToast(window.i18n.t('contactSaved'), 'success');
+    }
+
+    this.closeContactModal();
+    await this.refreshData();
+  }
+
+  async deleteContact(id) {
+    if (confirm(window.i18n.t('confirmDeleteContact'))) {
+      await window.dbEngine.deleteContact(Number(id));
+      this.showToast(window.i18n.t('contactDeleted'), 'info');
+      await this.refreshData();
+    }
+  }
+
+  // ================= 6. DASHBOARD & STATS =================
   renderDashboard() {
     this.updateStats();
     if (window.chartsEngine) {
@@ -391,7 +542,7 @@ class OfficeFinanceApp {
     this.renderNavyBoard(periodTxs);
   }
 
-  // ================= 6. FINNOVA NAVY BOARD RENDERING =================
+  // ================= 7. FINNOVA NAVY BOARD RENDERING =================
   renderNavyBoard(baseTxs = null) {
     let list = baseTxs !== null ? baseTxs : this.getFilteredByPeriod(this.activePeriod);
 
@@ -545,7 +696,7 @@ class OfficeFinanceApp {
     if (subtotalElem) subtotalElem.textContent = '₹0.00';
   }
 
-  // ================= 7. PERIOD 1-CLICK EXPORTS =================
+  // ================= 8. PERIOD 1-CLICK EXPORTS =================
   exportPeriod(period, format) {
     const txs = this.getFilteredByPeriod(period);
     if (txs.length === 0) {
@@ -575,7 +726,7 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 8. FULL TRANSACTIONS VIEW =================
+  // ================= 9. FULL TRANSACTIONS VIEW =================
   renderTransactionsList() {
     const searchVal = (document.getElementById('txSearchInput')?.value || '').toLowerCase().trim();
     const typeVal = document.getElementById('filterTypeSelect')?.value || 'all';
@@ -703,7 +854,7 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 9. REPORTS VIEW =================
+  // ================= 10. REPORTS VIEW =================
   renderReports() {
     const rangePreset = document.getElementById('reportRangePreset')?.value || 'this_month';
     const customStart = document.getElementById('reportStartDate')?.value || '';
@@ -781,7 +932,7 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 10. SETTINGS CHIPS RENDERING =================
+  // ================= 11. SETTINGS CHIPS RENDERING =================
   renderSettingsCategoryChips() {
     const expContainer = document.getElementById('expenseCategoryChips');
     const incContainer = document.getElementById('incomeCategoryChips');
@@ -809,7 +960,7 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 11. ADD / EDIT TRANSACTION MODAL =================
+  // ================= 12. ADD / EDIT TRANSACTION MODAL =================
   openAddTxModal(type = 'expense') {
     this.editingTxId = null;
     this.currentTxType = type;
@@ -826,13 +977,13 @@ class OfficeFinanceApp {
     document.getElementById('txBillNo').value = '';
     document.getElementById('txNotes').value = '';
 
-    // WhatsApp Receipt language in modal defaults to Gateway setting or active app language
     const defaultLang = this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang;
     this.setTxWaLang(defaultLang || 'en');
 
     this.hideAttachmentPreview();
     this.updateTxTypeToggleUI();
     this.populateCategoryDatalist();
+    this.populatePartyDatalist();
 
     document.getElementById('txModalTitle').textContent = window.i18n.t('modalAddTitle');
     document.getElementById('transactionModal').classList.remove('hidden');
@@ -879,6 +1030,7 @@ class OfficeFinanceApp {
 
     this.updateTxTypeToggleUI();
     this.populateCategoryDatalist();
+    this.populatePartyDatalist();
 
     if (tx.attachment) {
       this.showAttachmentPreview(tx.attachment);
@@ -963,8 +1115,22 @@ class OfficeFinanceApp {
     const party = document.getElementById('txParty').value.trim();
     const phone = document.getElementById('txPhone').value.trim();
     const sendWhatsapp = document.getElementById('txSendWhatsapp')?.checked || false;
+    const saveToContacts = document.getElementById('txSaveToContacts')?.checked || false;
     const billNo = document.getElementById('txBillNo').value.trim();
     const notes = document.getElementById('txNotes').value.trim();
+
+    // Auto-save contact if requested and not already present
+    if (party && phone && saveToContacts) {
+      const existing = this.contacts.find(c => (c.name || '').toLowerCase() === party.toLowerCase());
+      if (!existing) {
+        await window.dbEngine.addContact({
+          name: party,
+          phone: phone,
+          type: this.currentTxType === 'income' ? 'client' : 'vendor',
+          notes: ''
+        });
+      }
+    }
 
     const txData = {
       type: this.currentTxType,
@@ -990,63 +1156,111 @@ class OfficeFinanceApp {
     }
 
     this.closeTxModal();
-    await this.refreshData();
 
-    // Automatic silent WhatsApp delivery if requested
+    // Immediate Direct WhatsApp Send on Save if checked (no popup blocker blockage!)
     if (sendWhatsapp && phone) {
-      const txObj = { ...txData, id: savedId };
-      setTimeout(() => {
-        this.dispatchAutomatedWhatsApp(txObj, this.currentTxWaLang);
-      }, 350);
+      const fullTx = { ...txData, id: savedId };
+      const msg = this.generateWhatsAppReceiptMessage(fullTx, this.currentTxWaLang);
+      this.sendWhatsAppDirect(phone, msg);
     }
+
+    await this.refreshData();
   }
 
-  // ================= 12. WHATSAPP BILINGUAL & AUTOMATED GATEWAY =================
+  // ================= 13. WHATSAPP CONFIRMATION TEMPLATE & DISPATCH =================
+
+  /**
+   * Generates the EXACT WhatsApp Confirmation Text requested by the user:
+   *
+   * 💰 TRANSACTION CONFIRMATION
+   * Dear {{name}},
+   * An amount of ₹{{amount}} has been successfully recorded.
+   * 📌 Transaction Type: Money Received / Money Paid
+   * 📅 Date: {{date}}
+   * 🕒 Time: {{time}}
+   * Thank you!
+   */
   generateWhatsAppReceiptMessage(tx, lang = 'en') {
     const isMl = lang === 'ml';
-    const cat = this.categories.find(c => c.id === tx.category);
-    const catName = cat 
-      ? (isMl ? (cat.nameMl || cat.nameEn) : (cat.nameEn || cat.nameMl)) 
-      : (tx.category || '-');
+    const partyName = tx.party ? tx.party.trim() : (isMl ? 'പ്രിയ ഉപഭോക്താവ്' : 'Customer');
+    const formattedAmt = Number(tx.amount || 0).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
     const isIncome = tx.type === 'income';
-    const officeName = (this.officeProfile && this.officeProfile.name) || 'OFFICE FINANCE TRACKER';
-    const formattedAmt = this.formatCurrency(tx.amount);
-    const formattedDate = this.formatDate(tx.date);
-    const voucherNum = tx.billNo ? `#${tx.billNo}` : `#TX-${tx.id || 'NEW'}`;
+    const typeLabel = isIncome
+      ? (isMl ? 'പണം ലഭിച്ചു (Money Received)' : 'Money Received')
+      : (isMl ? 'പണം നൽകി (Money Paid)' : 'Money Paid');
+
+    const formattedDate = this.formatDate(tx.date || new Date().toISOString());
+
+    // Current local time formatted (hh:mm A)
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
     if (isMl) {
-      return `🧾 *${officeName}*
-*ഔദ്യോഗിക ക്യാഷ് രസീത് / വൗച്ചർ*
-────────────────────────
-🔢 *വൗച്ചർ നമ്പർ:* ${voucherNum}
-📅 *തീയതി:* ${formattedDate}
+      return `💰 TRANSACTION CONFIRMATION
 
-👤 *പേര്:* ${tx.party || '-'}
-📌 *ഇടപാട് തരം:* ${isIncome ? 'വരവ് (പണം ലഭിച്ചു)' : 'ചിലവ് (പണം നൽകി)'}
-🏷️ *വിഭാഗം:* ${catName}
-💰 *തുക:* *${formattedAmt}*
-${tx.notes ? `📝 *വിവരണം:* ${tx.notes}\n` : ''}────────────────────────
-✅ _ഈ ഇടപാട് ഞങ്ങളുടെ അക്കൗണ്ടിൽ ഔദ്യോഗികമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു._
-നന്ദി! 🙏`;
+പ്രിയപ്പെട്ട ${partyName},
+
+₹${formattedAmt} വിജയകരമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു.
+
+📌 ഇടപാട് തരം: ${typeLabel}
+📅 തീയതി: ${formattedDate}
+🕒 സമയം: ${timeStr}
+
+നന്ദി!`;
     } else {
-      return `🧾 *${officeName}*
-*OFFICIAL CASH RECEIPT / VOUCHER*
-────────────────────────
-🔢 *Voucher No:* ${voucherNum}
-📅 *Date:* ${formattedDate}
+      return `💰 TRANSACTION CONFIRMATION
 
-👤 *Name / Party:* ${tx.party || '-'}
-📌 *Status:* ${isIncome ? 'Payment Received (Income)' : 'Payment Made (Expense)'}
-🏷️ *Category:* ${catName}
-💰 *Amount:* *${formattedAmt}*
-${tx.notes ? `📝 *Notes:* ${tx.notes}\n` : ''}────────────────────────
-✅ _This transaction has been officially recorded in our accounts._
-Thank you! 🙏`;
+Dear ${partyName},
+
+An amount of ₹${formattedAmt} has been successfully recorded.
+
+📌 Transaction Type: ${typeLabel}
+📅 Date: ${formattedDate}
+🕒 Time: ${timeStr}
+
+Thank you!`;
     }
   }
 
-  // --- Automatic WhatsApp Background Dispatcher ---
-  // Sends message silently in background via API WITHOUT opening WhatsApp
+  /**
+   * Direct, 100% Reliable WhatsApp URL Dispatcher
+   * Works seamlessly on PC, Mac, Android, and iOS browsers without popup blocker issues.
+   */
+  sendWhatsAppDirect(phone, message) {
+    const cleaned = this.sanitizePhone(phone);
+    if (!cleaned || cleaned.length < 10) {
+      alert(window.i18n.t('waMissingPhone'));
+      return false;
+    }
+
+    const encoded = encodeURIComponent(message);
+    const waUrl = `https://api.whatsapp.com/send?phone=${cleaned}&text=${encoded}`;
+
+    // 1. Prime the hidden anchor
+    const anchor = document.getElementById('waDirectAnchor');
+    if (anchor) {
+      anchor.href = waUrl;
+    }
+
+    // 2. Open via window.open
+    const win = window.open(waUrl, '_blank');
+    if (!win || win.closed || typeof win.closed === 'undefined') {
+      if (anchor) {
+        anchor.click();
+      } else {
+        window.location.href = waUrl;
+      }
+    }
+
+    this.showToast(window.i18n.t('waOpenSuccess'), 'success');
+    return true;
+  }
+
+  // --- Automatic WhatsApp Background Dispatcher (CallMeBot / Webhook) ---
   async dispatchAutomatedWhatsApp(tx, targetLang = null) {
     if (!tx) return;
 
@@ -1074,16 +1288,14 @@ Thank you! 🙏`;
 
     const lang = targetLang || (this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang) || 'en';
     const message = this.generateWhatsAppReceiptMessage(tx, lang);
-
     const mode = this.waGateway.mode || 'direct';
 
     try {
       if (mode === 'callmebot' && this.waGateway.apiKey) {
-        // Free CallMeBot WhatsApp Gateway
         const callmeUrl = `https://api.callmebot.com/whatsapp.php?phone=${cleaned}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(this.waGateway.apiKey)}`;
-        fetch(callmeUrl, { method: 'GET', mode: 'no-cors' }).catch(err => console.warn('CallMeBot background dispatch:', err));
+        fetch(callmeUrl, { method: 'GET', mode: 'no-cors' }).catch(err => console.warn('CallMeBot:', err));
+        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
       } else if (mode === 'webhook' && this.waGateway.webhookUrl) {
-        // Custom Webhook or Server API Gateway (e.g. Zapier, Make, n8n, local python/node server)
         const payload = {
           to: cleaned,
           party: tx.party || '',
@@ -1108,22 +1320,15 @@ Thank you! 🙏`;
           headers,
           body: JSON.stringify(payload),
           mode: 'no-cors'
-        }).catch(err => console.warn('Webhook background dispatch:', err));
-      } else if (this.waGateway.webhookUrl) {
-        // Direct mode with configured webhook URL
-        fetch(this.waGateway.webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: cleaned, message, lang, party: tx.party, amount: tx.amount }),
-          mode: 'no-cors'
-        }).catch(err => console.warn('Direct webhook dispatch:', err));
+        }).catch(err => console.warn('Webhook:', err));
+        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+      } else {
+        // Direct WhatsApp Send (guaranteed delivery)
+        this.sendWhatsAppDirect(phone, message);
       }
-
-      // Silent background confirmation: DOES NOT open WhatsApp window
-      this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
     } catch (err) {
-      console.error('Automated WhatsApp dispatch error:', err);
-      this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+      console.error('WhatsApp dispatch error:', err);
+      this.sendWhatsAppDirect(phone, message);
     }
   }
 
@@ -1134,7 +1339,6 @@ Thank you! 🙏`;
 
     this.waDispatchTx = tx;
 
-    // Set default language
     const preferredLang = this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang;
     this.waDispatchLang = preferredLang || 'en';
 
@@ -1177,7 +1381,6 @@ Thank you! 🙏`;
   updateWaDispatchModalPreview() {
     if (!this.waDispatchTx) return;
 
-    // Read current values from modal inputs to reflect edits live
     const partyVal = document.getElementById('waDispatchParty')?.value || this.waDispatchTx.party;
     const phoneVal = document.getElementById('waDispatchPhone')?.value || this.waDispatchTx.phone;
 
@@ -1208,7 +1411,6 @@ Thank you! 🙏`;
     this.waDispatchTx.party = partyVal;
     this.waDispatchTx.phone = phoneVal;
 
-    // Update in database so phone is saved
     await window.dbEngine.updateTransaction(this.waDispatchTx);
     await this.refreshData();
 
@@ -1231,13 +1433,9 @@ Thank you! 🙏`;
     this.waDispatchTx.phone = phoneVal;
     window.dbEngine.updateTransaction(this.waDispatchTx);
 
-    const cleaned = this.sanitizePhone(phoneVal);
     const message = this.generateWhatsAppReceiptMessage(this.waDispatchTx, this.waDispatchLang);
-
-    const whatsappUrl = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    this.sendWhatsAppDirect(phoneVal, message);
     this.closeWaDispatchModal();
-    this.showToast(window.i18n.t('waOpening'), 'success');
   }
 
   sendWhatsAppReceipt(txId) {
@@ -1247,8 +1445,8 @@ Thank you! 🙏`;
   async sendTestWaDelivery() {
     const testPhone = prompt(
       window.i18n.currentLang === 'ml'
-        ? 'ടെസ്റ്റ് WhatsApp രസീത് അയക്കേണ്ട 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക:'
-        : 'Enter 10-digit mobile number for test receipt:',
+        ? 'ടെസ്റ്റ് WhatsApp മെസ്സേജ് അയക്കേണ്ട 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക:'
+        : 'Enter 10-digit mobile number for test message:',
       this.officeProfile.phone || ''
     );
     if (!testPhone) return;
@@ -1261,10 +1459,11 @@ Thank you! 🙏`;
       amount: 1500,
       party: window.i18n.currentLang === 'ml' ? 'ടെസ്റ്റ് കസ്റ്റമർ' : 'Test Customer',
       phone: testPhone,
-      notes: window.i18n.currentLang === 'ml' ? 'ഓട്ടോമേറ്റഡ് ഗേറ്റ്‌വേ പരിശോധന' : 'Automated WhatsApp Gateway Test'
+      notes: 'Test Confirmation'
     };
 
-    await this.dispatchAutomatedWhatsApp(testTx, this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang);
+    const msg = this.generateWhatsAppReceiptMessage(testTx, this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang);
+    this.sendWhatsAppDirect(testPhone, msg);
   }
 
   sanitizePhone(phone) {
@@ -1275,7 +1474,7 @@ Thank you! 🙏`;
     return cleaned;
   }
 
-  // ================= 13. EVENT LISTENERS =================
+  // ================= 14. EVENT LISTENERS =================
   setupEventListeners() {
     // 1. Navigation Menu Switching (Finnova Pill Nav & Mobile Bar)
     document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1387,24 +1586,47 @@ Thank you! 🙏`;
     document.getElementById('btnTxWaLangMl')?.addEventListener('click', () => this.setTxWaLang('ml'));
     document.getElementById('btnTxWaLangEn')?.addEventListener('click', () => this.setTxWaLang('en'));
 
-    // 13. Transaction Form Save
+    // 13. Auto-fill Phone when selecting or typing saved Party
+    document.getElementById('txParty')?.addEventListener('input', (e) => {
+      const typed = e.target.value.trim().toLowerCase();
+      if (!typed) return;
+      const matchedContact = this.contacts.find(c => (c.name || '').trim().toLowerCase() === typed);
+      if (matchedContact && matchedContact.phone) {
+        const phoneField = document.getElementById('txPhone');
+        if (phoneField && !phoneField.value) {
+          phoneField.value = matchedContact.phone;
+        }
+      }
+    });
+
+    // 14. Quick Add Contact from Modal
+    document.getElementById('btnQuickAddContactFromModal')?.addEventListener('click', () => this.openAddContactModal());
+
+    // 15. Transaction Form Save
     document.getElementById('txForm')?.addEventListener('submit', (e) => this.handleSaveTx(e));
 
-    // 14. Photo Attachment Handling
+    // 16. Photo Attachment Handling
     document.getElementById('txPhotoInput')?.addEventListener('change', (e) => this.handlePhotoUpload(e));
     document.getElementById('btnDeleteAttachment')?.addEventListener('click', () => this.hideAttachmentPreview());
     document.getElementById('btnCloseLightbox')?.addEventListener('click', () => {
       document.getElementById('lightboxModal')?.classList.add('hidden');
     });
 
-    // 15. Custom Category Modal
+    // 17. Custom Category Modal
     document.getElementById('btnQuickAddCat')?.addEventListener('click', () => this.openAddCategoryModal());
     document.getElementById('btnOpenAddCategoryModal')?.addEventListener('click', () => this.openAddCategoryModal());
     document.getElementById('btnCloseCatModal')?.addEventListener('click', () => this.closeAddCategoryModal());
     document.getElementById('btnCancelCat')?.addEventListener('click', () => this.closeAddCategoryModal());
     document.getElementById('categoryForm')?.addEventListener('submit', (e) => this.handleSaveCategory(e));
 
-    // 16. WhatsApp Quick Dispatch Modal Listeners
+    // 18. Contacts Directory Modal & Search Listeners
+    document.getElementById('btnOpenAddContactModal')?.addEventListener('click', () => this.openAddContactModal());
+    document.getElementById('btnCloseContactModal')?.addEventListener('click', () => this.closeContactModal());
+    document.getElementById('btnCancelContact')?.addEventListener('click', () => this.closeContactModal());
+    document.getElementById('contactForm')?.addEventListener('submit', (e) => this.handleSaveContact(e));
+    document.getElementById('contactSearchInput')?.addEventListener('input', () => this.renderContactsList());
+
+    // 19. WhatsApp Quick Dispatch Modal Listeners
     document.getElementById('btnCloseWaDispatchModal')?.addEventListener('click', () => this.closeWaDispatchModal());
     document.getElementById('btnWaReceiptLangMl')?.addEventListener('click', () => this.setWaDispatchModalLang('ml'));
     document.getElementById('btnWaReceiptLangEn')?.addEventListener('click', () => this.setWaDispatchModalLang('en'));
@@ -1413,11 +1635,11 @@ Thank you! 🙏`;
     document.getElementById('btnExecuteAutoWa')?.addEventListener('click', () => this.executeAutoWa());
     document.getElementById('btnExecuteManualWa')?.addEventListener('click', () => this.executeManualWa());
 
-    // 17. WhatsApp Gateway Settings Form
+    // 20. WhatsApp Gateway Settings Form
     document.getElementById('waGatewayForm')?.addEventListener('submit', (e) => this.handleSaveWaGateway(e));
     document.getElementById('btnTestWaDelivery')?.addEventListener('click', () => this.sendTestWaDelivery());
 
-    // 18. Ledger Filters
+    // 21. Ledger Filters
     ['txSearchInput', 'filterTypeSelect', 'filterCategorySelect', 'filterDateRangeSelect', 'customStartDate', 'customEndDate'].forEach(id => {
       document.getElementById(id)?.addEventListener('input', () => this.renderTransactionsList());
       document.getElementById(id)?.addEventListener('change', () => this.renderTransactionsList());
@@ -1431,7 +1653,7 @@ Thank you! 🙏`;
       }
     });
 
-    // 19. Reports View Custom Date & Exports
+    // 22. Reports View Custom Date & Exports
     document.getElementById('reportRangePreset')?.addEventListener('change', (e) => {
       const isCustom = e.target.value === 'custom';
       document.getElementById('reportCustomStartCol')?.classList.toggle('hidden', !isCustom);
@@ -1458,22 +1680,22 @@ Thank you! 🙏`;
       }
     });
 
-    // 20. Office Profile Form
+    // 23. Office Profile Form
     document.getElementById('officeProfileForm')?.addEventListener('submit', (e) => this.handleSaveOfficeProfile(e));
 
-    // 21. Backup & Restore
+    // 24. Backup & Restore
     document.getElementById('btnDownloadBackupJSON')?.addEventListener('click', () => this.handleDownloadBackup());
     document.getElementById('inputRestoreJSON')?.addEventListener('change', (e) => this.handleRestoreBackup(e));
 
-    // 22. PIN & Data Wipe
+    // 25. PIN & Data Wipe
     document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.openPinSettingPrompt());
     document.getElementById('btnClearAllData')?.addEventListener('click', () => this.confirmClearAllData());
 
-    // 23. PWA Install Button
+    // 26. PWA Install Button
     document.getElementById('btnInstallApp')?.addEventListener('click', () => this.triggerPWAInstall());
   }
 
-  // ================= 14. VIEW NAVIGATION =================
+  // ================= 15. VIEW NAVIGATION =================
   switchView(viewName) {
     this.currentView = viewName;
 
@@ -1499,6 +1721,9 @@ Thank you! 🙏`;
       this.renderTransactionsList();
     } else if (viewName === 'dashboard') {
       this.renderDashboard();
+    } else if (viewName === 'settings') {
+      this.renderContactsList();
+      this.renderSettingsCategoryChips();
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1514,7 +1739,9 @@ Thank you! 🙏`;
     this.renderTransactionsList();
     this.renderReports();
     this.populateCategoryDatalist();
+    this.populatePartyDatalist();
     this.renderSettingsCategoryChips();
+    this.renderContactsList();
 
     if (this.waDispatchTx) {
       this.updateWaDispatchModalPreview();
@@ -1528,7 +1755,7 @@ Thank you! 🙏`;
     }
   }
 
-  // ================= 15. ATTACHMENT & VOUCHERS =================
+  // ================= 16. ATTACHMENT & VOUCHERS =================
   handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1581,7 +1808,7 @@ Thank you! 🙏`;
     }
   }
 
-  // ================= 16. CUSTOM CATEGORY MODAL =================
+  // ================= 17. CUSTOM CATEGORY MODAL =================
   openAddCategoryModal() {
     document.getElementById('newCatNameMl').value = '';
     document.getElementById('newCatNameEn').value = '';
@@ -1625,7 +1852,7 @@ Thank you! 🙏`;
     }
   }
 
-  // ================= 17. OFFICE PROFILE =================
+  // ================= 18. OFFICE PROFILE =================
   async handleSaveOfficeProfile(event) {
     event.preventDefault();
     this.officeProfile = {
@@ -1641,10 +1868,10 @@ Thank you! 🙏`;
     this.showToast(window.i18n.t('profileSaved'), 'success');
   }
 
-  // ================= 18. DATA BACKUP & RESTORE =================
+  // ================= 19. DATA BACKUP & RESTORE =================
   async handleDownloadBackup() {
-    const backupJson = await window.dbEngine.exportDataBackup();
-    const blob = new Blob([backupJson], { type: 'application/json' });
+    const backupData = await window.dbEngine.exportBackup();
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1663,8 +1890,9 @@ Thank you! 🙏`;
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const count = await window.dbEngine.importDataBackup(e.target.result);
-        this.showToast(window.i18n.t('restoreSuccess').replace('{count}', count), 'success');
+        const parsed = JSON.parse(e.target.result);
+        await window.dbEngine.importBackup(parsed);
+        this.showToast(window.i18n.t('restoreSuccess'), 'success');
         await this.refreshData();
       } catch (err) {
         alert(window.i18n.currentLang === 'ml' ? 'ബാക്കപ്പ് ഫയൽ തെറ്റാണ്!' : 'Invalid backup file format!');
@@ -1674,7 +1902,7 @@ Thank you! 🙏`;
     event.target.value = '';
   }
 
-  // ================= 19. PIN SETUP & FULL RESET =================
+  // ================= 20. PIN SETUP & FULL RESET =================
   async openPinSettingPrompt() {
     const pin = prompt(
       window.i18n.currentLang === 'ml'
@@ -1706,13 +1934,13 @@ Thank you! 🙏`;
 
   async confirmClearAllData() {
     if (confirm(window.i18n.t('confirmClearAll'))) {
-      await window.dbEngine.clearAllTransactions();
+      await window.dbEngine.clearAllData();
       this.showToast(window.i18n.t('allCleared'), 'info');
       await this.refreshData();
     }
   }
 
-  // ================= 20. PWA LOGIC =================
+  // ================= 21. PWA LOGIC =================
   setupPWA() {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'OfficeFinanceDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const DEFAULT_CATEGORIES = [
   // --- Expense Categories ---
@@ -80,6 +80,14 @@ class FinanceDB {
         // Settings Store
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
+        }
+
+        // Contacts Store (People Name & WhatsApp Number Directory)
+        if (!db.objectStoreNames.contains('contacts')) {
+          const contactStore = db.createObjectStore('contacts', { keyPath: 'id', autoIncrement: true });
+          contactStore.createIndex('name', 'name', { unique: false });
+          contactStore.createIndex('phone', 'phone', { unique: false });
+          contactStore.createIndex('type', 'type', { unique: false });
         }
       };
 
@@ -252,6 +260,91 @@ class FinanceDB {
     });
   }
 
+  // --- Contacts & WhatsApp Directory ---
+
+  async getAllContacts() {
+    await this.init();
+    if (this.db.objectStoreNames.contains('contacts')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('contacts', 'readonly');
+        const store = tx.objectStore('contacts');
+        const req = store.getAll();
+        req.onsuccess = () => {
+          const list = (req.result || []).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      const list = (await this.getSetting('savedContactsList', [])) || [];
+      return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+  }
+
+  async addContact(contact) {
+    await this.init();
+    if (!contact.createdAt) contact.createdAt = new Date().toISOString();
+    if (this.db.objectStoreNames.contains('contacts')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('contacts', 'readwrite');
+        const store = tx.objectStore('contacts');
+        const req = store.add(contact);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      const list = (await this.getSetting('savedContactsList', [])) || [];
+      contact.id = Date.now();
+      list.push(contact);
+      await this.setSetting('savedContactsList', list);
+      return contact.id;
+    }
+  }
+
+  async updateContact(contact) {
+    await this.init();
+    if (this.db.objectStoreNames.contains('contacts')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('contacts', 'readwrite');
+        const store = tx.objectStore('contacts');
+        const req = store.put(contact);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      let list = (await this.getSetting('savedContactsList', [])) || [];
+      list = list.map(c => c.id === contact.id ? contact : c);
+      await this.setSetting('savedContactsList', list);
+      return contact.id;
+    }
+  }
+
+  async deleteContact(id) {
+    await this.init();
+    const numId = Number(id);
+    if (this.db.objectStoreNames.contains('contacts')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('contacts', 'readwrite');
+        const store = tx.objectStore('contacts');
+        const req = store.delete(numId);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      let list = (await this.getSetting('savedContactsList', [])) || [];
+      list = list.filter(c => c.id !== numId);
+      await this.setSetting('savedContactsList', list);
+      return true;
+    }
+  }
+
+  async findContactByName(name) {
+    if (!name) return null;
+    const contacts = await this.getAllContacts();
+    const q = name.trim().toLowerCase();
+    return contacts.find(c => (c.name || '').trim().toLowerCase() === q) || null;
+  }
+
   // --- Settings ---
 
   async getSetting(key, defaultVal = null) {
@@ -281,16 +374,18 @@ class FinanceDB {
   async exportBackup() {
     const transactions = await this.getAllTransactions();
     const categories = await this.getAllCategories();
+    const contacts = await this.getAllContacts();
     const officeProfile = await this.getSetting('officeProfile');
     const language = await this.getSetting('language');
     const theme = await this.getSetting('theme');
 
     return {
-      version: 1,
+      version: 2,
       appName: 'OfficeFinance',
       exportedAt: new Date().toISOString(),
       transactions,
       categories,
+      contacts,
       settings: {
         officeProfile,
         language,
@@ -321,6 +416,15 @@ class FinanceDB {
       const storeT = txT.objectStore('transactions');
       for (const item of data.transactions) {
         storeT.put(item);
+      }
+    }
+
+    // Import Contacts
+    if (Array.isArray(data.contacts)) {
+      for (const contact of data.contacts) {
+        if (contact && contact.name) {
+          await this.addContact(contact);
+        }
       }
     }
 
