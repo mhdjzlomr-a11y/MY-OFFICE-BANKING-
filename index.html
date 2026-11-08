@@ -934,6 +934,44 @@
           </form>
         </div>
 
+        <!-- ================= MULTI-USER ACCESS & ROLE PERMISSIONS ================= -->
+        <div class="white-box" id="userAccessManagementSection" style="margin-bottom: 20px; border-left: 4px solid var(--finnova-purple);">
+          <div class="box-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">🔐</span>
+                <h3 class="box-title" data-i18n="userAccessTitle">മറ്റ് ആളുകൾക്കുള്ള ആക്സസ്സ് (Multi-User Access)</h3>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" data-i18n="userAccessSub">
+                അഡ്മിന് പാസ്സ്‌വേർഡ് ഇല്ലാതെ നേരിട്ട് പ്രവേശിക്കാം. ജീവനക്കാർക്കോ മറ്റുള്ളവർക്കോ PIN നൽകി ആക്സസ്സ് അനുവദിക്കാം.
+              </p>
+            </div>
+            <button type="button" id="btnOpenAddUserModal" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.8rem;">
+              <i data-lucide="user-plus"></i>
+              <span data-i18n="btnAddUser">+ Add User</span>
+            </button>
+          </div>
+
+          <!-- Current Active User Bar -->
+          <div style="background: var(--bg-subtle); border-radius: var(--radius-md); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; border: 1px solid var(--border-light);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="activeUserBadgeAvatar" style="font-size: 1.15rem;">👑</span>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="activeUserLabel">നിലവിൽ ലോഗിൻ ചെയ്തത്:</div>
+                <div id="activeUserBadgeName" style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">Owner (അഡ്മിൻ - Direct Access)</div>
+              </div>
+            </div>
+            <button type="button" id="btnOpenSwitchUserModal" class="action-btn-pill btn-pill-white" style="font-size: 0.74rem; padding: 5px 12px;">
+              <span>🔄 ലോഗിൻ മാറ്റുക (Switch User)</span>
+            </button>
+          </div>
+
+          <!-- Authorized Users List -->
+          <div id="authorizedUsersList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+            <!-- Populated via app.js -->
+          </div>
+        </div>
+
         <!-- Backup & Data Management -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
           <div class="white-box">
@@ -1484,6 +1522,88 @@
           <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnSave">Save Division</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD / EDIT AUTHORIZED USER ================= -->
+  <div id="addUserModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 420px;">
+      <div class="modal-header-row">
+        <h3 id="addUserModalTitle" class="modal-heading-text">ഉപയോക്താവിനെ ചേർക്കുക (Add User)</h3>
+        <button id="btnCloseUserModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="addUserForm" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" id="userFormId" value="" />
+
+        <div class="form-group">
+          <label class="form-label">പേര് (Name)</label>
+          <input id="userFormName" type="text" class="form-input" placeholder="e.g. Rahul / Staff" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">റോൾ (Role & Permission)</label>
+          <select id="userFormRole" class="form-input">
+            <option value="staff">💼 Staff (ഇടപാടുകൾ ചേർക്കാം, ഡിലീറ്റ് ചെയ്യാനാവില്ല)</option>
+            <option value="viewer">👁️ Viewer (കാണാൻ മാത്രം, മാറ്റങ്ങൾ വരുത്താനാവില്ല)</option>
+            <option value="admin">👑 Admin (പൂർണ്ണ നിയന്ത്രണം)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">4-അക്ക PIN (Security PIN)</label>
+          <input id="userFormPin" type="password" maxlength="4" pattern="\d{4}" class="form-input" placeholder="4 digits (e.g. 1234)" required />
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">ഈ ഉപയോക്താവിന് ലോഗിൻ ചെയ്യാൻ ഈ 4-അക്ക PIN നമ്പർ നൽകുക.</p>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button type="button" id="btnCancelUserModal" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;">Cancel</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SWITCH USER (STAFF / VIEWER LOGIN) ================= -->
+  <div id="switchUserModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 400px; text-align: center;">
+      <div class="modal-header-row">
+        <h3 class="modal-heading-text">ഉപയോക്താവിനെ മാറ്റുക (Switch User)</h3>
+        <button id="btnCloseSwitchUserModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin: 6px 0 14px 0;">
+        ലോഗിൻ ചെയ്യേണ്ട വ്യക്തിയെ തിരഞ്ഞെടുക്കുക:
+      </p>
+
+      <!-- User Selection Chips -->
+      <div id="switchUserChipsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px;">
+        <!-- Dynamically populated -->
+      </div>
+
+      <!-- PIN Entry Box for Staff / Viewer -->
+      <div id="switchUserPinBox" class="hidden" style="margin-top: 10px; background: var(--bg-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+        <div id="switchUserPromptText" style="font-size: 0.82rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">
+          4-അക്ക PIN നൽകുക (Enter PIN):
+        </div>
+        <input type="password" id="switchUserPinInput" maxlength="4" pattern="\d{4}" class="form-input" style="text-align: center; font-size: 1.3rem; letter-spacing: 8px; width: 140px; margin: 0 auto; display: block;" placeholder="••••" />
+        <p id="switchUserErrorMsg" class="hidden" style="color: var(--coral-rose); font-size: 0.74rem; font-weight: 700; margin-top: 8px;">❌ തെറ്റായ PIN! വീണ്ടും ശ്രമിക്കുക.</p>
+        <button type="button" id="btnSubmitSwitchUser" class="action-btn-pill btn-pill-green" style="width: 100%; margin-top: 12px; justify-content: center; padding: 10px;">
+          ലോഗിൻ ചെയ്യുക (Login)
+        </button>
+      </div>
+
+      <!-- Instant Admin Login Option (No PIN Needed) -->
+      <div id="switchUserAdminBox" style="margin-top: 14px; border-top: 1px dashed var(--border-light); padding-top: 12px;">
+        <button type="button" id="btnInstantAdminAccess" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.85rem;">
+          👑 അഡ്മിനായി നേരിട്ട് പ്രവേശിക്കുക (Instant Admin)
+        </button>
+        <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">അഡ്മിന് പാസ്സ്‌വേർഡ് ഇല്ലാതെ എപ്പോഴും നേരിട്ട് പ്രവേശിക്കാം.</p>
+      </div>
     </div>
   </div>
 

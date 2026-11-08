@@ -215,24 +215,30 @@ body {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    gap: 8px;
-    padding-top: 8px;
+    gap: 10px;
+    padding-top: 10px;
     border-top: 1px solid var(--border-light);
   }
 
   .lang-pill-switcher {
     padding: 3px !important;
     gap: 3px !important;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-light);
   }
   .lang-pill-btn {
-    padding: 5px 12px !important;
-    font-size: 0.74rem !important;
+    padding: 6px 14px !important;
+    font-size: 0.76rem !important;
+    font-weight: 700;
   }
 
   .theme-switch-btn {
-    padding: 5px 14px !important;
-    font-size: 0.74rem !important;
+    padding: 6px 14px !important;
+    font-size: 0.76rem !important;
     gap: 6px !important;
+    font-weight: 700;
+    border-radius: var(--radius-pill);
   }
 }
 

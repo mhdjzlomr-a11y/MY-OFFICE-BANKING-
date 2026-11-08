@@ -82,7 +82,6 @@ class OfficeFinanceApp {
       window.renderLucideIcons();
     }
   }
-  }
 
   // ================= 1. THEME HANDLING (DARK / LIGHT) =================
   async initTheme() {
@@ -365,18 +364,21 @@ class OfficeFinanceApp {
   }
 
   applyUserRoleUI() {
-    if (!this.currentUser) return;
-
-    // Update Header User Profile badge
-    const headerAvatar = document.getElementById('headerUserAvatar');
-    const headerName = document.getElementById('headerUserName');
-    if (headerAvatar) {
-      headerAvatar.textContent = this.currentUser.role === 'admin' ? '👑' : this.currentUser.role === 'staff' ? '💼' : '👁️';
+    if (!this.currentUser) {
+      this.currentUser = { id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin' };
     }
-    if (headerName) {
-      const rawName = this.currentUser.name || 'Owner';
-      const cleanName = rawName.replace(/\s*\(.*?\)/, '').trim();
-      headerName.textContent = cleanName;
+
+    // Update active user badge in settings
+    const activeBadgeAvatar = document.getElementById('activeUserBadgeAvatar');
+    const activeBadgeName = document.getElementById('activeUserBadgeName');
+    if (activeBadgeAvatar) {
+      activeBadgeAvatar.textContent = this.currentUser.role === 'admin' ? '👑' : (this.currentUser.role === 'staff' ? '💼' : '👁️');
+    }
+    if (activeBadgeName) {
+      const roleText = this.currentUser.role === 'admin'
+        ? (window.i18n.currentLang === 'ml' ? 'അഡ്മിൻ - നേരിട്ടുള്ള പ്രവേശനം' : 'Admin - Direct Access')
+        : (this.currentUser.role === 'staff' ? 'Staff' : 'Viewer');
+      activeBadgeName.textContent = `${this.currentUser.name} (${roleText})`;
     }
 
     // Role-based visibility
@@ -386,30 +388,20 @@ class OfficeFinanceApp {
 
     // Viewer restriction: hide or disable Add Transaction buttons
     const btnCreateTx = document.getElementById('btnOpenAddTxModal');
+    const mobileFabAdd = document.getElementById('mobileFabAdd');
     const btnSidebarQuickAdd = document.getElementById('btnSidebarQuickAddTx');
+    const btnSidebarAddTxDirect = document.getElementById('btnSidebarAddTxDirect');
+
     if (btnCreateTx) btnCreateTx.style.display = isViewer ? 'none' : 'inline-flex';
+    if (mobileFabAdd) mobileFabAdd.style.display = isViewer ? 'none' : 'flex';
     if (btnSidebarQuickAdd) btnSidebarQuickAdd.style.display = isViewer ? 'none' : 'inline-flex';
+    if (btnSidebarAddTxDirect) btnSidebarAddTxDirect.style.display = isViewer ? 'none' : 'inline-flex';
 
     // Settings access restrictions: User management & clear data only for Admin
     const userMgmtSec = document.getElementById('userAccessManagementSection');
     const btnClearAll = document.getElementById('btnClearAllData');
-    if (userMgmtSec) userMgmtSec.style.opacity = isAdmin ? '1' : '0.5';
+    if (userMgmtSec) userMgmtSec.style.opacity = isAdmin ? '1' : '0.6';
     if (btnClearAll) btnClearAll.style.display = isAdmin ? 'inline-flex' : 'none';
-  }
-
-  updatePinDots() {
-    for (let i = 0; i < 4; i++) {
-      const dot = document.getElementById(`pinDot${i}`);
-      if (dot) {
-        if (i < this.pinBuffer.length) {
-          dot.style.background = 'var(--finnova-purple)';
-          dot.style.borderColor = 'var(--finnova-purple)';
-        } else {
-          dot.style.background = 'transparent';
-          dot.style.borderColor = 'var(--text-muted)';
-        }
-      }
-    }
   }
 
   // Authorized Users Management UI in Settings
@@ -420,44 +412,49 @@ class OfficeFinanceApp {
 
     if (!this.authorizedUsers || this.authorizedUsers.length === 0) {
       this.authorizedUsers = [
-        { id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin', pin: '1234', isMaster: true }
+        { id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin', pin: '', isMaster: true }
       ];
     }
 
     this.authorizedUsers.forEach(user => {
       const card = document.createElement('div');
       card.style.cssText = 'background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; box-shadow: var(--shadow-sm);';
-      
-      const roleBadge = user.role === 'admin' 
-        ? `<span style="background: rgba(99,102,241,0.15); color: var(--finnova-purple); padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">👑 Admin</span>`
+
+      const roleBadge = user.role === 'admin'
+        ? `<span style="background: rgba(99,102,241,0.15); color: var(--finnova-purple); padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">👑 Admin (Direct)</span>`
         : user.role === 'staff'
         ? `<span style="background: rgba(16,185,129,0.15); color: #059669; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">💼 Staff</span>`
         : `<span style="background: rgba(59,130,246,0.15); color: #2563eb; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">👁️ Viewer</span>`;
 
       const avatar = user.role === 'admin' ? '👑' : user.role === 'staff' ? '💼' : '👁️';
+      const pinDisplay = user.role === 'admin'
+        ? '<span style="color: #10b981; font-weight: 700;">പാസ്സ്‌വേർഡ് ആവശ്യമില്ല (No PIN)</span>'
+        : `<span style="letter-spacing: 2px; font-weight: 800;">••••</span> (PIN: ${user.pin || '1234'})`;
 
       card.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--finnova-card-bg); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: var(--shadow-sm);">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--finnova-card-bg); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: var(--shadow-sm);">
               ${avatar}
             </div>
             <div>
               <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">${this.escapeHtml(user.name)}</div>
-              <div style="font-size: 0.72rem; color: var(--text-muted);">PIN: <strong style="letter-spacing: 2px;">••••</strong></div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${pinDisplay}</div>
             </div>
           </div>
           ${roleBadge}
         </div>
         <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 6px; border-top: 1px dashed var(--border-light); padding-top: 8px;">
-          <button type="button" class="btn-edit-user action-btn-pill btn-pill-white" style="padding: 4px 10px; font-size: 0.72rem;" data-id="${user.id}">
-            ✏️ PIN മാറ്റുക (Edit PIN)
-          </button>
           ${!user.isMaster ? `
+            <button type="button" class="btn-edit-user action-btn-pill btn-pill-white" style="padding: 4px 10px; font-size: 0.72rem;" data-id="${user.id}">
+              ✏️ PIN മാറ്റുക (Edit PIN)
+            </button>
             <button type="button" class="btn-del-user action-btn-pill btn-pill-white" style="padding: 4px 8px; font-size: 0.72rem; color: var(--coral-rose);" data-id="${user.id}">
               🗑️
             </button>
-          ` : ''}
+          ` : `
+            <span style="font-size: 0.72rem; color: #10b981; font-weight: 700;">✅ പ്രധാന ഉടമസ്ഥൻ (Owner)</span>
+          `}
         </div>
       `;
 
@@ -470,20 +467,21 @@ class OfficeFinanceApp {
 
   openAddUserModal() {
     if (this.currentUser && this.currentUser.role !== 'admin') {
-      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      this.showToast(window.i18n.t('adminOnlySettings') || 'Admin only', 'error');
       return;
     }
     const form = document.getElementById('addUserForm');
     if (form) form.reset();
     const idInput = document.getElementById('userFormId');
     if (idInput) idInput.value = '';
-    const modal = document.getElementById('addUserModal');
-    if (modal) modal.classList.remove('hidden');
+    const title = document.getElementById('addUserModalTitle');
+    if (title) title.textContent = window.i18n.currentLang === 'ml' ? 'പുതിയ ഉപയോക്താവിനെ ചേർക്കുക (Add User)' : 'Add Authorized User';
+    document.getElementById('addUserModal')?.classList.remove('hidden');
   }
 
   openEditUserModal(userId) {
     if (this.currentUser && this.currentUser.role !== 'admin') {
-      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      this.showToast(window.i18n.t('adminOnlySettings') || 'Admin only', 'error');
       return;
     }
     const user = this.authorizedUsers.find(u => u.id === userId);
@@ -492,20 +490,25 @@ class OfficeFinanceApp {
     const nameInput = document.getElementById('userFormName');
     const roleInput = document.getElementById('userFormRole');
     const pinInput = document.getElementById('userFormPin');
+    const title = document.getElementById('addUserModalTitle');
 
     if (idInput) idInput.value = user.id;
     if (nameInput) nameInput.value = user.name;
     if (roleInput) roleInput.value = user.role;
     if (pinInput) pinInput.value = user.pin || '';
+    if (title) title.textContent = window.i18n.currentLang === 'ml' ? 'PIN / വിവരങ്ങൾ മാറ്റുക (Edit User)' : 'Edit User & PIN';
 
-    const modal = document.getElementById('addUserModal');
-    if (modal) modal.classList.remove('hidden');
+    document.getElementById('addUserModal')?.classList.remove('hidden');
+  }
+
+  closeAddUserModal() {
+    document.getElementById('addUserModal')?.classList.add('hidden');
   }
 
   async handleSaveUser(e) {
     e.preventDefault();
     if (this.currentUser && this.currentUser.role !== 'admin') {
-      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      this.showToast(window.i18n.t('adminOnlySettings') || 'Admin only', 'error');
       return;
     }
     const id = document.getElementById('userFormId')?.value.trim();
@@ -514,7 +517,7 @@ class OfficeFinanceApp {
     const pin = document.getElementById('userFormPin')?.value.trim();
 
     if (!name || !pin || !/^\d{4}$/.test(pin)) {
-      alert('ദയവായി സാധുവായ പേരും 4-അക്ക PIN നമ്പറും നൽകുക (Please enter a valid name and 4-digit PIN)');
+      alert(window.i18n.currentLang === 'ml' ? 'ദയവായി സാധുവായ പേരും 4-അക്ക PIN നമ്പറും നൽകുക' : 'Please enter a valid name and 4-digit PIN');
       return;
     }
 
@@ -529,26 +532,122 @@ class OfficeFinanceApp {
     await window.dbEngine.saveAuthorizedUser(userData);
     this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
     this.renderAuthorizedUsersList();
-    this.populateLockScreenUsers();
-    document.getElementById('addUserModal')?.classList.add('hidden');
-    this.showToast(window.i18n.t('userCreatedSuccess'), 'success');
+    this.closeAddUserModal();
+    this.showToast(window.i18n.currentLang === 'ml' ? 'ഉപയോക്താവിനെ വിജയകരമായി സൂക്ഷിച്ചു!' : 'User saved successfully!', 'success');
   }
 
   async handleDeleteUser(userId) {
     if (this.currentUser && this.currentUser.role !== 'admin') {
-      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      this.showToast(window.i18n.t('adminOnlySettings') || 'Admin only', 'error');
       return;
     }
     if (userId === 'user_master') {
-      alert(window.i18n.t('cantDeleteMasterUser'));
+      alert(window.i18n.currentLang === 'ml' ? 'പ്രധാന അഡ്മിനെ നീക്കം ചെയ്യാനാവില്ല' : 'Cannot delete master admin');
       return;
     }
-    if (confirm('ഈ ഉപയോക്താവിനെ നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ? (Are you sure to remove this authorized user?)')) {
+    if (confirm(window.i18n.currentLang === 'ml' ? 'ഈ ഉപയോക്താവിനെ നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ?' : 'Are you sure to remove this user?')) {
       await window.dbEngine.deleteAuthorizedUser(userId);
       this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
       this.renderAuthorizedUsersList();
-      this.populateLockScreenUsers();
-      this.showToast(window.i18n.t('userDeletedSuccess'), 'info');
+      this.showToast(window.i18n.currentLang === 'ml' ? 'ഉപയോക്താവിനെ നീക്കം ചെയ്തു!' : 'User deleted!', 'info');
+    }
+  }
+
+  openSwitchUserModal() {
+    const modal = document.getElementById('switchUserModal');
+    if (!modal) return;
+    this.selectedSwitchUserId = null;
+    const pinBox = document.getElementById('switchUserPinBox');
+    const pinInput = document.getElementById('switchUserPinInput');
+    const errMsg = document.getElementById('switchUserErrorMsg');
+    if (pinBox) pinBox.classList.add('hidden');
+    if (pinInput) pinInput.value = '';
+    if (errMsg) errMsg.classList.add('hidden');
+
+    this.renderSwitchUserChips();
+    modal.classList.remove('hidden');
+  }
+
+  closeSwitchUserModal() {
+    document.getElementById('switchUserModal')?.classList.add('hidden');
+  }
+
+  renderSwitchUserChips() {
+    const container = document.getElementById('switchUserChipsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const users = this.authorizedUsers && this.authorizedUsers.length > 0
+      ? this.authorizedUsers
+      : [{ id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin', isMaster: true }];
+
+    users.forEach(user => {
+      const isSelected = this.selectedSwitchUserId === user.id;
+      const isCurrent = this.currentUser && this.currentUser.id === user.id;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `action-btn-pill ${isSelected ? 'btn-pill-green' : 'btn-pill-white'}`;
+      chip.style.cssText = 'padding: 8px 14px; font-size: 0.8rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;';
+      const avatar = user.role === 'admin' ? '👑' : user.role === 'staff' ? '💼' : '👁️';
+      chip.innerHTML = `<span>${avatar}</span> <span>${this.escapeHtml(user.name)}</span> ${isCurrent ? '<span style="font-size: 0.68rem; opacity: 0.7;">(Active)</span>' : ''}`;
+
+      chip.addEventListener('click', () => {
+        this.selectedSwitchUserId = user.id;
+        this.renderSwitchUserChips();
+
+        if (user.role === 'admin' || user.isMaster) {
+          // Admin needs NO PIN!
+          this.switchUserToAdmin();
+        } else {
+          // Staff or Viewer needs PIN
+          const pinBox = document.getElementById('switchUserPinBox');
+          const pinPrompt = document.getElementById('switchUserPromptText');
+          const pinInput = document.getElementById('switchUserPinInput');
+          const errMsg = document.getElementById('switchUserErrorMsg');
+          if (pinBox) pinBox.classList.remove('hidden');
+          if (pinPrompt) pinPrompt.textContent = `${user.name} (${user.role.toUpperCase()}) - 4-അക്ക PIN നൽകുക:`;
+          if (errMsg) errMsg.classList.add('hidden');
+          if (pinInput) {
+            pinInput.value = '';
+            pinInput.focus();
+          }
+        }
+      });
+
+      container.appendChild(chip);
+    });
+  }
+
+  switchUserToAdmin() {
+    const master = (this.authorizedUsers || []).find(u => u.isMaster || u.role === 'admin') || {
+      id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin'
+    };
+    this.currentUser = master;
+    this.applyUserRoleUI();
+    this.closeSwitchUserModal();
+    this.showToast(window.i18n.currentLang === 'ml' ? 'അഡ്മിനായി വിജയകരമായി പ്രവേശിച്ചു!' : 'Switched to Admin successfully!', 'success');
+  }
+
+  submitSwitchUserWithPin() {
+    if (!this.selectedSwitchUserId) return;
+    const user = (this.authorizedUsers || []).find(u => u.id === this.selectedSwitchUserId);
+    if (!user) return;
+
+    const pinInput = document.getElementById('switchUserPinInput');
+    const errMsg = document.getElementById('switchUserErrorMsg');
+    const enteredPin = (pinInput?.value || '').trim();
+
+    if (enteredPin === String(user.pin || '1234')) {
+      this.currentUser = user;
+      this.applyUserRoleUI();
+      this.closeSwitchUserModal();
+      this.showToast(`${window.i18n.t('welcomeUser') || 'Welcome'}, ${user.name}!`, 'success');
+    } else {
+      if (errMsg) errMsg.classList.remove('hidden');
+      if (pinInput) {
+        pinInput.value = '';
+        pinInput.focus();
+      }
     }
   }
 
@@ -567,6 +666,7 @@ class OfficeFinanceApp {
     this.renderSidebarDivisions();
     this.renderSidebarCategories();
     this.renderAuthorizedUsersList();
+    this.applyUserRoleUI();
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
@@ -2494,17 +2594,17 @@ Thank you!`;
 
     // 21B. Interactive Stat Cards (Click to filter or manage)
     document.getElementById('cardNetBalance')?.addEventListener('click', () => {
-      this.switchView('ledger');
+      this.switchView('transactions');
       const typeSelect = document.getElementById('filterTypeSelect');
       if (typeSelect) { typeSelect.value = 'all'; this.renderTransactionsList(); }
     });
     document.getElementById('cardTotalIncome')?.addEventListener('click', () => {
-      this.switchView('ledger');
+      this.switchView('transactions');
       const typeSelect = document.getElementById('filterTypeSelect');
       if (typeSelect) { typeSelect.value = 'income'; this.renderTransactionsList(); }
     });
     document.getElementById('cardTotalExpense')?.addEventListener('click', () => {
-      this.switchView('ledger');
+      this.switchView('transactions');
       const typeSelect = document.getElementById('filterTypeSelect');
       if (typeSelect) { typeSelect.value = 'expense'; this.renderTransactionsList(); }
     });
@@ -2614,6 +2714,23 @@ Thank you!`;
       this.renderTransactionsList();
     });
     document.getElementById('reportDivisionSelect')?.addEventListener('change', () => this.renderReports());
+
+    // 28. Multi-User Access & Switch User
+    document.getElementById('btnOpenAddUserModal')?.addEventListener('click', () => this.openAddUserModal());
+    document.getElementById('btnCloseUserModal')?.addEventListener('click', () => this.closeAddUserModal());
+    document.getElementById('btnCancelUserModal')?.addEventListener('click', () => this.closeAddUserModal());
+    document.getElementById('addUserForm')?.addEventListener('submit', (e) => this.handleSaveUser(e));
+
+    document.getElementById('btnOpenSwitchUserModal')?.addEventListener('click', () => this.openSwitchUserModal());
+    document.getElementById('btnCloseSwitchUserModal')?.addEventListener('click', () => this.closeSwitchUserModal());
+    document.getElementById('btnInstantAdminAccess')?.addEventListener('click', () => this.switchUserToAdmin());
+    document.getElementById('btnSubmitSwitchUser')?.addEventListener('click', () => this.submitSwitchUserWithPin());
+    document.getElementById('switchUserPinInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.submitSwitchUserWithPin();
+      }
+    });
   }
 
   // ================= 15. VIEW NAVIGATION =================
