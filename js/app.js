@@ -38,6 +38,11 @@ class OfficeFinanceApp {
     this.waDispatchTx = null;    // currently active tx in WhatsApp dispatch modal
     this.waDispatchLang = 'en';  // currently active language in WhatsApp modal
     this.pendingDirectWaData = null;
+
+    // Multi-Division & Left Sidebar Dashboard State
+    this.divisions = [];
+    this.currentDivision = 'office'; // 'office' | 'school' | 'home' | 'all' | custom
+    this.sidebarCatType = 'expense';  // 'expense' | 'income'
   }
 
   async init() {
@@ -123,6 +128,10 @@ class OfficeFinanceApp {
       this.waGateway = { ...this.waGateway, ...savedGateway };
     }
     this.populateWaGatewayForm();
+
+    // Divisions & Active Book
+    this.divisions = await window.dbEngine.getDivisions();
+    this.currentDivision = await window.dbEngine.getSetting('activeDivision', 'office');
   }
 
   applyProfileToHeader() {
@@ -302,12 +311,16 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 4. DATA REFRESH & CONTACTS =================
+  // ================= 4. DATA REFRESH & DIVISIONS =================
   async refreshData() {
     this.transactions = await window.dbEngine.getAllTransactions();
     this.categories = await window.dbEngine.getAllCategories();
     this.contacts = await window.dbEngine.getAllContacts();
+    this.divisions = await window.dbEngine.getDivisions();
 
+    this.updateHeaderDivisionBadge();
+    this.renderSidebarDivisions();
+    this.renderSidebarCategories();
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
@@ -317,11 +330,295 @@ class OfficeFinanceApp {
     this.renderContactsList();
 
     if (window.chartsEngine) {
-      window.chartsEngine.updateCharts(this.transactions, this.categories);
+      window.chartsEngine.updateCharts(this.getTransactionsForActiveDivision(), this.categories);
     }
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
+  }
+
+  getTransactionsForActiveDivision(division = null) {
+    const targetDiv = division || this.currentDivision;
+    if (!targetDiv || targetDiv === 'all') {
+      return this.transactions;
+    }
+    return this.transactions.filter(tx => {
+      if (targetDiv === 'office') {
+        return tx.division === 'office' || !tx.division;
+      }
+      return tx.division === targetDiv;
+    });
+  }
+
+  getDivisionName(divId) {
+    const id = divId || 'office';
+    if (id === 'all') return window.i18n.t('allDivisions') || '🌐 എല്ലാ വിഭാഗങ്ങളും (All)';
+    const d = this.divisions.find(x => x.id === id);
+    if (!d) {
+      if (id === 'office') return window.i18n.currentLang === 'ml' ? '🏢 ഓഫീസ് ഫിനാൻസ്' : '🏢 Office Finance';
+      if (id === 'school') return window.i18n.currentLang === 'ml' ? '🏫 സ്കൂൾ ഫിനാൻസ്' : '🏫 School Finance';
+      if (id === 'home') return window.i18n.currentLang === 'ml' ? '🏠 വീട് / വ്യക്തിഗതം' : '🏠 Home & Personal';
+      return id;
+    }
+    return window.i18n.currentLang === 'ml' ? (d.nameMl || d.nameEn) : (d.nameEn || d.nameMl);
+  }
+
+  getDivisionIcon(divId) {
+    const id = divId || 'office';
+    if (id === 'all') return '🌐';
+    if (id === 'office') return '🏢';
+    if (id === 'school') return '🏫';
+    if (id === 'home') return '🏠';
+    const d = this.divisions.find(x => x.id === id);
+    if (d) {
+      if (d.icon === 'building') return '🏢';
+      if (d.icon === 'graduation-cap') return '🏫';
+      if (d.icon === 'home') return '🏠';
+      if (d.icon === 'shopping-bag') return '🏬';
+      if (d.icon === 'car') return '🚗';
+      if (d.icon === 'briefcase') return '💼';
+      if (d.icon === 'layers') return '📁';
+      if (d.icon === 'heart') return '❤️';
+    }
+    return '📁';
+  }
+
+  getDivisionBadgeHtml(divId) {
+    const id = divId || 'office';
+    const icon = this.getDivisionIcon(id);
+    const name = this.getDivisionName(id);
+    let bg = 'rgba(92, 84, 248, 0.12)';
+    let color = 'var(--finnova-purple)';
+    if (id === 'school') { bg = 'rgba(16, 185, 129, 0.12)'; color = '#10b981'; }
+    else if (id === 'home') { bg = 'rgba(244, 63, 94, 0.12)'; color = 'var(--coral-rose)'; }
+    else if (id === 'all') { bg = 'rgba(14, 165, 233, 0.15)'; color = '#0284c7'; }
+    return `<span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: ${bg}; color: ${color}; font-size: 0.7rem; font-weight: 800;">${icon} ${name}</span>`;
+  }
+
+  updateHeaderDivisionBadge() {
+    const icon = this.getDivisionIcon(this.currentDivision);
+    const name = this.getDivisionName(this.currentDivision);
+
+    const headerBadge = document.getElementById('headerDivisionBadge');
+    if (headerBadge) {
+      headerBadge.textContent = `${icon} ${name}`;
+    }
+
+    const titleBadge = document.getElementById('activeDivisionTitleBadge');
+    if (titleBadge) {
+      titleBadge.textContent = `${icon} ${name}`;
+    }
+
+    const filterDiv = document.getElementById('filterDivisionSelect');
+    if (filterDiv && filterDiv.value !== this.currentDivision) {
+      filterDiv.value = this.currentDivision;
+    }
+
+    const reportDiv = document.getElementById('reportDivisionSelect');
+    if (reportDiv && reportDiv.value !== this.currentDivision) {
+      reportDiv.value = this.currentDivision;
+    }
+  }
+
+  renderSidebarDivisions() {
+    // 1. Update Active Division Summary Card in Sidebar
+    const activeIcon = this.getDivisionIcon(this.currentDivision);
+    const activeName = this.getDivisionName(this.currentDivision);
+
+    const iconElem = document.getElementById('sidebarActiveDivIcon');
+    const nameElem = document.getElementById('sidebarActiveDivName');
+    const balElem = document.getElementById('sidebarActiveDivBalance');
+    const incElem = document.getElementById('sidebarActiveDivIncome');
+    const expElem = document.getElementById('sidebarActiveDivExpense');
+
+    if (iconElem) iconElem.textContent = activeIcon;
+    if (nameElem) nameElem.textContent = activeName;
+
+    const divTxs = this.getTransactionsForActiveDivision();
+    let totalInc = 0;
+    let totalExp = 0;
+    divTxs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') totalInc += amt;
+      else if (t.type === 'expense') totalExp += amt;
+    });
+    const netBal = totalInc - totalExp;
+
+    if (balElem) balElem.textContent = this.formatCurrency(netBal);
+    if (incElem) incElem.textContent = this.formatCurrency(totalInc);
+    if (expElem) expElem.textContent = this.formatCurrency(totalExp);
+
+    // 2. Render Division Selection List in Sidebar
+    const listContainer = document.getElementById('sidebarDivisionList');
+    if (!listContainer) return;
+
+    const allOptions = [
+      ...this.divisions,
+      { id: 'all', nameMl: 'എല്ലാ വിഭാഗങ്ങളും ഒന്നിച്ചു', nameEn: 'All Divisions Combined', icon: 'layers' }
+    ];
+
+    listContainer.innerHTML = allOptions.map(d => {
+      const isSelected = d.id === this.currentDivision;
+      const icon = this.getDivisionIcon(d.id);
+      const name = window.i18n.currentLang === 'ml' ? (d.nameMl || d.nameEn) : (d.nameEn || d.nameMl);
+      const sub = d.id === 'all' 
+        ? (window.i18n.currentLang === 'ml' ? 'മുഴുവൻ അക്കൗണ്ടുകൾ' : 'Consolidated view')
+        : (window.i18n.currentLang === 'ml' ? 'ഫിനാൻസ് വിഭാഗം' : 'Finance Account');
+
+      const count = this.getTransactionsForActiveDivision(d.id).length;
+
+      return `
+        <div class="division-select-card ${isSelected ? 'active' : ''}" onclick="window.appEngine.switchDivision('${d.id}')">
+          <div class="div-card-left">
+            <div class="div-avatar-sq">${icon}</div>
+            <div>
+              <div class="div-card-title">${name}</div>
+              <div class="div-card-sub">${sub}</div>
+            </div>
+          </div>
+          <span class="div-card-badge">${count} ${window.i18n.currentLang === 'ml' ? 'ഇടപാടുകൾ' : 'tx'}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderSidebarCategories() {
+    const countBadge = document.getElementById('sidebarCategoryCountBadge');
+    const chipsContainer = document.getElementById('sidebarCategoryChipsWrap');
+    if (!chipsContainer) return;
+
+    const targetDiv = this.currentDivision;
+    const filteredCats = this.categories.filter(c => {
+      if (c.type !== this.sidebarCatType) return false;
+      if (targetDiv === 'all') return true;
+      if (targetDiv === 'office') return c.division === 'office' || !c.division;
+      return c.division === targetDiv;
+    });
+
+    if (countBadge) countBadge.textContent = filteredCats.length;
+
+    if (filteredCats.length === 0) {
+      chipsContainer.innerHTML = `
+        <div style="font-size: 0.75rem; color: var(--text-muted); padding: 8px;">
+          ${window.i18n.currentLang === 'ml' ? 'കാറ്റഗറികൾ ഒന്നും കണ്ടെത്തിയില്ല. മുകളിൽ പുതിയത് ടൈപ്പ് ചെയ്ത് ചേർക്കാം.' : 'No categories found. Type above to add.'}
+        </div>
+      `;
+      return;
+    }
+
+    chipsContainer.innerHTML = filteredCats.map(cat => {
+      const name = window.i18n.getCategoryName(cat);
+      const color = cat.color || (cat.type === 'income' ? '#10b981' : '#f43f5e');
+      return `
+        <span class="sidebar-cat-chip" title="${name}">
+          <span class="sidebar-cat-dot" style="background: ${color};"></span>
+          <span>${name}</span>
+        </span>
+      `;
+    }).join('');
+  }
+
+  async switchDivision(divId) {
+    this.currentDivision = divId;
+    await window.dbEngine.setSetting('activeDivision', divId);
+
+    // Close sidebar on mobile / small screen
+    if (window.innerWidth < 1024) {
+      this.toggleSidebarDrawer(false);
+    }
+
+    await this.refreshData();
+    const divName = this.getDivisionName(divId);
+    this.showToast(window.i18n.currentLang === 'ml' ? `വിഭാഗം മാറ്റി: ${divName}` : `Switched to: ${divName}`, 'info');
+  }
+
+  toggleSidebarDrawer(force = null) {
+    const drawer = document.getElementById('leftSidebarDrawer');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (!drawer) return;
+
+    const isOpen = drawer.classList.contains('open');
+    const shouldOpen = force !== null ? force : !isOpen;
+
+    if (shouldOpen) {
+      drawer.classList.add('open');
+      if (backdrop) backdrop.classList.add('active');
+    } else {
+      drawer.classList.remove('open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
+    if (window.renderLucideIcons) window.renderLucideIcons();
+  }
+
+  setSidebarCatType(type) {
+    this.sidebarCatType = type;
+    const btnExp = document.getElementById('sidebarCatToggleExpense');
+    const btnInc = document.getElementById('sidebarCatToggleIncome');
+    if (btnExp && btnInc) {
+      if (type === 'income') {
+        btnInc.className = 'cat-type-btn active income';
+        btnExp.className = 'cat-type-btn';
+      } else {
+        btnExp.className = 'cat-type-btn active expense';
+        btnInc.className = 'cat-type-btn';
+      }
+    }
+    this.renderSidebarCategories();
+  }
+
+  async handleSidebarQuickCatAdd(e) {
+    e.preventDefault();
+    const input = document.getElementById('sidebarQuickCatInput');
+    const name = input?.value.trim();
+    if (!name) return;
+
+    const divToUse = this.currentDivision === 'all' ? 'office' : this.currentDivision;
+    const colors = ['#0ea5e9', '#5c54f8', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#ec4899'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    await window.dbEngine.addCategory({
+      id: 'cat_' + Date.now(),
+      nameMl: name,
+      nameEn: name,
+      type: this.sidebarCatType,
+      division: divToUse,
+      color: color,
+      isCustom: true
+    });
+
+    if (input) input.value = '';
+    await this.refreshData();
+    this.showToast(window.i18n.t('categorySaved'), 'success');
+  }
+
+  openAddDivisionModal() {
+    document.getElementById('divNameMl').value = '';
+    document.getElementById('divNameEn').value = '';
+    document.getElementById('divIcon').value = 'building';
+    document.getElementById('divisionModal')?.classList.remove('hidden');
+  }
+
+  closeDivisionModal() {
+    document.getElementById('divisionModal')?.classList.add('hidden');
+  }
+
+  async handleSaveDivision(e) {
+    e.preventDefault();
+    const nameMl = document.getElementById('divNameMl').value.trim();
+    const nameEn = document.getElementById('divNameEn').value.trim();
+    const icon = document.getElementById('divIcon').value;
+
+    if (!nameMl || !nameEn) return;
+
+    const id = 'div_' + Date.now();
+    const newDiv = { id, nameMl, nameEn, icon };
+    await window.dbEngine.saveDivision(newDiv);
+    this.divisions.push(newDiv);
+
+    this.closeDivisionModal();
+    await this.switchDivision(id);
+    this.showToast(window.i18n.t('divisionSaved'), 'success');
   }
 
   populatePartyDatalist() {
@@ -337,7 +634,7 @@ class OfficeFinanceApp {
     });
   }
 
-  populateCategoryDatalist() {
+  populateCategoryDatalist(modalDiv = null) {
     const datalist = document.getElementById('categoryDatalist');
     const quickPills = document.getElementById('quickCategoryPills');
     if (!datalist) return;
@@ -345,7 +642,14 @@ class OfficeFinanceApp {
     datalist.innerHTML = '';
     if (quickPills) quickPills.innerHTML = '';
 
-    const matchingCats = this.categories.filter(c => c.type === this.currentTxType);
+    const activeModalDiv = modalDiv || document.getElementById('txDivision')?.value || (this.currentDivision !== 'all' ? this.currentDivision : 'office');
+
+    const matchingCats = this.categories.filter(c => {
+      if (c.type !== this.currentTxType) return false;
+      if (activeModalDiv === 'all') return true;
+      if (activeModalDiv === 'office') return c.division === 'office' || !c.division;
+      return c.division === activeModalDiv;
+    });
 
     matchingCats.forEach(cat => {
       const name = window.i18n.getCategoryName(cat);
@@ -355,7 +659,7 @@ class OfficeFinanceApp {
     });
 
     if (quickPills) {
-      const topSuggestions = matchingCats.slice(0, 6);
+      const topSuggestions = matchingCats.slice(0, 8);
       topSuggestions.forEach(cat => {
         const name = window.i18n.getCategoryName(cat);
         const pill = document.createElement('button');
@@ -371,6 +675,32 @@ class OfficeFinanceApp {
         quickPills.appendChild(pill);
       });
     }
+  }
+
+  renderModalDivisionPills(activeDiv = null) {
+    const container = document.getElementById('modalDivisionPills');
+    if (!container) return;
+
+    const currentSelected = activeDiv || document.getElementById('txDivision')?.value || (this.currentDivision !== 'all' ? this.currentDivision : 'office');
+
+    container.innerHTML = this.divisions.map(d => {
+      const isSelected = d.id === currentSelected;
+      const icon = this.getDivisionIcon(d.id);
+      const name = window.i18n.currentLang === 'ml' ? (d.nameMl || d.nameEn) : (d.nameEn || d.nameMl);
+
+      return `
+        <button type="button" class="division-btn ${isSelected ? 'active' : ''}" data-div="${d.id}" onclick="window.appEngine.setModalDivision('${d.id}')">
+          <span>${icon} ${name}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  setModalDivision(divId) {
+    const txDivElem = document.getElementById('txDivision');
+    if (txDivElem) txDivElem.value = divId;
+    this.renderModalDivisionPills(divId);
+    this.populateCategoryDatalist(divId);
   }
 
   // ================= 5. CONTACTS DIRECTORY MANAGEMENT =================
@@ -530,8 +860,9 @@ class OfficeFinanceApp {
   getFilteredByPeriod(period) {
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
+    const divTxs = this.getTransactionsForActiveDivision();
 
-    return this.transactions.filter(tx => {
+    return divTxs.filter(tx => {
       if (!tx.date) return false;
       const txDate = tx.date.slice(0, 10);
 
@@ -811,7 +1142,8 @@ class OfficeFinanceApp {
       all: 'ALL TIME FINANCIAL STATEMENT'
     };
 
-    const title = periodTitles[period] || 'FINANCIAL STATEMENT';
+    const divName = this.currentDivision !== 'all' ? ` - ${this.getDivisionName(this.currentDivision)}` : '';
+    const title = (periodTitles[period] || 'FINANCIAL STATEMENT') + divName;
 
     if (format === 'pdf') {
       if (window.reportsEngine) {
@@ -830,6 +1162,7 @@ class OfficeFinanceApp {
     const typeVal = document.getElementById('filterTypeSelect')?.value || 'all';
     const catVal = document.getElementById('filterCategorySelect')?.value || 'all';
     const datePreset = document.getElementById('filterDateRangeSelect')?.value || 'all';
+    const divVal = document.getElementById('filterDivisionSelect')?.value || this.currentDivision || 'all';
 
     const customStart = document.getElementById('customStartDate')?.value || '';
     const customEnd = document.getElementById('customEndDate')?.value || '';
@@ -838,6 +1171,10 @@ class OfficeFinanceApp {
     const todayStr = today.toISOString().slice(0, 10);
 
     const filtered = this.transactions.filter(tx => {
+      if (divVal !== 'all') {
+        const isDivMatch = (divVal === 'office') ? (tx.division === 'office' || !tx.division) : (tx.division === divVal);
+        if (!isDivMatch) return false;
+      }
       if (typeVal !== 'all' && tx.type !== typeVal) return false;
       if (catVal !== 'all' && tx.category !== catVal) return false;
 
@@ -918,8 +1255,11 @@ class OfficeFinanceApp {
             </div>
             <div>
               <div class="navy-name" style="color: var(--text-dark);">${tx.party || catName}</div>
-              <div class="navy-date-sub" style="color: var(--text-muted);">
-                ${this.formatDate(tx.date)} • ${catName} ${tx.billNo ? `• #${tx.billNo}` : ''}
+              <div class="navy-date-sub" style="color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span>${this.formatDate(tx.date)}</span>
+                ${this.getDivisionBadgeHtml(tx.division)}
+                <span>• ${catName}</span>
+                ${tx.billNo ? `<span>• #${tx.billNo}</span>` : ''}
                 ${tx.phone ? `<span style="color: #10b981; font-weight: 700;"> • 📲 ${tx.phone}</span>` : ''}
               </div>
             </div>
@@ -957,12 +1297,17 @@ class OfficeFinanceApp {
     const rangePreset = document.getElementById('reportRangePreset')?.value || 'this_month';
     const customStart = document.getElementById('reportStartDate')?.value || '';
     const customEnd = document.getElementById('reportEndDate')?.value || '';
+    const repDiv = document.getElementById('reportDivisionSelect')?.value || this.currentDivision || 'all';
 
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
     const thisMonthStr = todayStr.slice(0, 7);
 
     return this.transactions.filter(tx => {
+      if (repDiv !== 'all') {
+        const match = (repDiv === 'office') ? (tx.division === 'office' || !tx.division) : (tx.division === repDiv);
+        if (!match) return false;
+      }
       const txDate = tx.date ? tx.date.slice(0, 10) : '';
       if (rangePreset === 'this_month') return txDate.startsWith(thisMonthStr);
       if (rangePreset === 'last_month') {
@@ -1064,10 +1409,16 @@ class OfficeFinanceApp {
   }
 
   // ================= 12. ADD / EDIT TRANSACTION MODAL =================
-  openAddTxModal(type = 'expense') {
+  openAddTxModal(type = 'expense', preselectedDiv = null) {
     this.editingTxId = null;
     this.currentTxType = type;
     this.currentAttachment = null;
+
+    const divToUse = preselectedDiv || (this.currentDivision !== 'all' ? this.currentDivision : 'office');
+    const txDivElem = document.getElementById('txDivision');
+    if (txDivElem) txDivElem.value = divToUse;
+
+    this.renderModalDivisionPills(divToUse);
 
     document.getElementById('txId').value = '';
     document.getElementById('txAmount').value = '';
@@ -1085,7 +1436,7 @@ class OfficeFinanceApp {
 
     this.hideAttachmentPreview();
     this.updateTxTypeToggleUI();
-    this.populateCategoryDatalist();
+    this.populateCategoryDatalist(divToUse);
     this.populatePartyDatalist();
 
     document.getElementById('txModalTitle').textContent = window.i18n.t('modalAddTitle');
@@ -1115,6 +1466,11 @@ class OfficeFinanceApp {
     this.currentTxType = tx.type;
     this.currentAttachment = tx.attachment || null;
 
+    const divToUse = tx.division || 'office';
+    const txDivElem = document.getElementById('txDivision');
+    if (txDivElem) txDivElem.value = divToUse;
+    this.renderModalDivisionPills(divToUse);
+
     document.getElementById('txId').value = tx.id;
     document.getElementById('txAmount').value = tx.amount;
     document.getElementById('txDate').value = tx.date ? tx.date.slice(0, 10) : '';
@@ -1132,7 +1488,7 @@ class OfficeFinanceApp {
     document.getElementById('txCategory').value = cat ? window.i18n.getCategoryName(cat) : (tx.category || '');
 
     this.updateTxTypeToggleUI();
-    this.populateCategoryDatalist();
+    this.populateCategoryDatalist(divToUse);
     this.populatePartyDatalist();
 
     if (tx.attachment) {
@@ -1196,6 +1552,8 @@ class OfficeFinanceApp {
     );
 
     let categoryId;
+    const division = document.getElementById('txDivision')?.value || (this.currentDivision !== 'all' ? this.currentDivision : 'office');
+
     if (matchedCat) {
       categoryId = matchedCat.id;
     } else {
@@ -1209,6 +1567,7 @@ class OfficeFinanceApp {
         nameEn: typedCategory,
         type: this.currentTxType,
         color: pickedColor,
+        division: division,
         isCustom: true
       });
       this.categories = await window.dbEngine.getAllCategories();
@@ -1239,6 +1598,7 @@ class OfficeFinanceApp {
       type: this.currentTxType,
       amount,
       category: categoryId,
+      division,
       date: document.getElementById('txDate').value,
       party,
       phone,
@@ -1958,6 +2318,46 @@ Thank you!`;
     document.getElementById('btnCloseInstallGuideBtn')?.addEventListener('click', () => {
       document.getElementById('installAppGuideModal')?.classList.add('hidden');
     });
+
+    // 27. Left Sidebar Drawer & Divisions Dashboard
+    document.getElementById('btnToggleSidebarDrawer')?.addEventListener('click', () => this.toggleSidebarDrawer());
+    document.getElementById('btnCloseSidebarDrawer')?.addEventListener('click', () => this.toggleSidebarDrawer(false));
+    document.getElementById('sidebarBackdrop')?.addEventListener('click', () => this.toggleSidebarDrawer(false));
+
+    document.getElementById('sidebarCatToggleExpense')?.addEventListener('click', () => this.setSidebarCatType('expense'));
+    document.getElementById('sidebarCatToggleIncome')?.addEventListener('click', () => this.setSidebarCatType('income'));
+    document.getElementById('sidebarQuickCatForm')?.addEventListener('submit', (e) => this.handleSidebarQuickCatAdd(e));
+
+    document.getElementById('btnSidebarQuickAddTx')?.addEventListener('click', () => {
+      this.toggleSidebarDrawer(false);
+      this.openAddTxModal('expense', this.currentDivision !== 'all' ? this.currentDivision : 'office');
+    });
+    document.getElementById('btnSidebarAddTxDirect')?.addEventListener('click', () => {
+      this.toggleSidebarDrawer(false);
+      this.openAddTxModal('expense', this.currentDivision !== 'all' ? this.currentDivision : 'office');
+    });
+    document.getElementById('btnSidebarViewReports')?.addEventListener('click', () => {
+      this.toggleSidebarDrawer(false);
+      this.switchView('reports');
+    });
+
+    // Custom Division Modal
+    document.getElementById('btnOpenAddDivisionModal')?.addEventListener('click', () => this.openAddDivisionModal());
+    document.getElementById('btnCloseDivisionModal')?.addEventListener('click', () => this.closeDivisionModal());
+    document.getElementById('btnCancelDivision')?.addEventListener('click', () => this.closeDivisionModal());
+    document.getElementById('divisionForm')?.addEventListener('submit', (e) => this.handleSaveDivision(e));
+
+    // Ledger & Report Division Filter Dropdowns
+    document.getElementById('filterDivisionSelect')?.addEventListener('change', (e) => {
+      this.currentDivision = e.target.value;
+      window.dbEngine.setSetting('activeDivision', this.currentDivision);
+      this.updateHeaderDivisionBadge();
+      this.renderSidebarDivisions();
+      this.renderSidebarCategories();
+      this.renderDashboard();
+      this.renderTransactionsList();
+    });
+    document.getElementById('reportDivisionSelect')?.addEventListener('change', () => this.renderReports());
   }
 
   // ================= 15. VIEW NAVIGATION =================
@@ -2091,6 +2491,7 @@ Thank you!`;
     const nameEn = document.getElementById('newCatNameEn').value.trim();
     const type = document.getElementById('newCatType').value;
     const color = document.getElementById('newCatColor').value;
+    const division = document.getElementById('newCatDivision')?.value || (this.currentDivision !== 'all' ? this.currentDivision : 'office');
 
     if (!nameMl && !nameEn) return;
 
@@ -2100,6 +2501,7 @@ Thank you!`;
       nameEn: nameEn || nameMl,
       type,
       color,
+      division,
       isCustom: true
     };
 

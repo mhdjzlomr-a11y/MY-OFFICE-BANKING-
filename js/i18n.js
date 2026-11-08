@@ -300,7 +300,29 @@ const translations = {
     waGatewaySaved: 'WhatsApp ഗേറ്റ്‌വേ വിവരങ്ങൾ സേവ് ചെയ്തു!',
     waMissingPhone: 'ദയവായി സാധുവായ ഒരു 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക.',
     invalidAmount: 'സാധുവായ ഒരു തുക നൽകുക.',
-    imageOnlyAlert: 'ഇമേജ് ഫയലുകൾ മാത്രം അപ്‌ലോഡ് ചെയ്യുക.'
+    imageOnlyAlert: 'ഇമേജ് ഫയലുകൾ മാത്രം അപ്‌ലോഡ് ചെയ്യുക.',
+
+    // Multi-Division & Left Sidebar Dashboard
+    menuDivisions: 'വിഭാഗങ്ങൾ',
+    sidebarTitle: 'ഫിനാൻസ് വിഭാഗങ്ങൾ & കാറ്റഗറികൾ',
+    sidebarSub: 'ഓഫീസ്, സ്കൂൾ, വീട് എന്നിവയുടെ കണക്കുകൾ വെവ്വേറെ രേഖപ്പെടുത്താം',
+    allDivisions: '🌐 എല്ലാ വിഭാഗങ്ങളും (All)',
+    divOffice: '🏢 ഓഫീസ് ഫിനാൻസ്',
+    divSchool: '🏫 സ്കൂൾ ഫിനാൻസ്',
+    divHome: '🏠 വീട് / കുടുംബം',
+    btnAddDivision: '+ പുതിയ വിഭാഗം ചേർക്കുക',
+    divisionModalTitle: 'പുതിയ ഫിനാൻസ് വിഭാഗം ചേർക്കുക',
+    divisionNameMl: 'വിഭാഗത്തിന്റെ പേര് (മലയാളത്തിൽ)',
+    divisionNameEn: 'വിഭാഗത്തിന്റെ പേര് (English)',
+    divisionIcon: 'ഐക്കൺ തിരഞ്ഞെടുക്കുക',
+    divisionLabel: 'വിഭാഗം / അക്കൗണ്ട് (Division / Book):',
+    activeDivisionLabel: 'സജീവ വിഭാഗം:',
+    categoriesInDiv: 'ഈ വിഭാഗത്തിലെ കാറ്റഗറികൾ',
+    typeCategoryName: 'പുതിയ കാറ്റഗറി പേര് ടൈപ്പ് ചെയ്യുക...',
+    btnQuickAdd: 'ചേർക്കുക',
+    divisionSaved: 'പുതിയ വിഭാഗം വിജയകരമായി ചേർത്തു!',
+    categorySaved: 'കാറ്റഗറി വിജയകരമായി ചേർത്തു!',
+    divisionFilterAll: 'എല്ലാ വിഭാഗങ്ങളും (Consolidated)'
   },
 
   en: {
@@ -598,7 +620,29 @@ const translations = {
     waGatewaySaved: 'WhatsApp gateway settings saved!',
     waMissingPhone: 'Please enter a valid 10-digit mobile number.',
     invalidAmount: 'Please enter a valid amount.',
-    imageOnlyAlert: 'Please upload image files only.'
+    imageOnlyAlert: 'Please upload image files only.',
+
+    // Multi-Division & Left Sidebar Dashboard
+    menuDivisions: 'Divisions',
+    sidebarTitle: 'Finance Divisions & Categories',
+    sidebarSub: 'Manage Office, School, Home & custom accounts separately',
+    allDivisions: '🌐 All Divisions (Combined)',
+    divOffice: '🏢 Office Finance',
+    divSchool: '🏫 School Finance',
+    divHome: '🏠 Home & Personal',
+    btnAddDivision: '+ Add New Division',
+    divisionModalTitle: 'Add New Finance Division',
+    divisionNameMl: 'Division Name (Malayalam)',
+    divisionNameEn: 'Division Name (English)',
+    divisionIcon: 'Select Icon',
+    divisionLabel: 'Division / Account (Book):',
+    activeDivisionLabel: 'Active Division:',
+    categoriesInDiv: 'Categories in this Division',
+    typeCategoryName: 'Type new category name...',
+    btnQuickAdd: 'Add',
+    divisionSaved: 'New division added successfully!',
+    categorySaved: 'Category added successfully!',
+    divisionFilterAll: 'All Divisions (Consolidated)'
   }
 };
 

@@ -20,19 +20,130 @@
 
 <body>
 
+  <!-- ================= SIDEBAR BACKDROP & LEFT SIDEBAR DASHBOARD ================= -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+  <aside id="leftSidebarDrawer" class="finnova-left-sidebar" aria-label="Finance Divisions & Categories Dashboard">
+    <!-- Header -->
+    <div class="sidebar-header-box">
+      <div class="sidebar-title">
+        <i data-lucide="layers" style="color: var(--finnova-purple);"></i>
+        <span data-i18n="sidebarTitle">Finance Divisions & Categories</span>
+      </div>
+      <button type="button" id="btnCloseSidebarDrawer" class="sidebar-close-btn" title="Close Sidebar">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <!-- Scrollable Body -->
+    <div class="sidebar-scroll-body">
+
+      <!-- Active Division Summary Banner Card -->
+      <div class="active-div-banner-card" id="sidebarActiveDivCard">
+        <div class="active-div-top">
+          <div class="active-div-title-wrap">
+            <div class="active-div-icon" id="sidebarActiveDivIcon">🏢</div>
+            <div>
+              <div class="active-div-name" id="sidebarActiveDivName">ഓഫീസ് ഫിനാൻസ്</div>
+              <div class="active-div-sub" data-i18n="activeDivisionLabel">സജീവ വിഭാഗം (Active Book)</div>
+            </div>
+          </div>
+          <button type="button" id="btnSidebarQuickAddTx" class="sq-pill-btn" style="background: rgba(255, 255, 255, 0.2); border: none; color: white;" title="Add Transaction">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+        <div class="active-div-balance-row">
+          <div>
+            <div style="font-size: 0.68rem; opacity: 0.85;">നെറ്റ് ബാലൻസ് (Net Balance)</div>
+            <div class="active-div-net-amount" id="sidebarActiveDivBalance">₹0.00</div>
+          </div>
+          <div style="text-align: right; font-size: 0.72rem;">
+            <div style="color: #a7f3d0;">📈 <span id="sidebarActiveDivIncome">₹0.00</span></div>
+            <div style="color: #fecdd3;">📉 <span id="sidebarActiveDivExpense">₹0.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 1: Choose Division (Account Switcher) -->
+      <div>
+        <div class="sidebar-section-title">
+          <span data-i18n="divisionLabel">വിഭാഗങ്ങൾ (Accounts / Divisions)</span>
+          <button type="button" id="btnOpenAddDivisionModal" style="border: none; background: transparent; color: var(--finnova-purple); font-weight: 800; font-size: 0.74rem; cursor: pointer;">
+            + പുതിയത് (New)
+          </button>
+        </div>
+        <div id="sidebarDivisionList">
+          <!-- Dynamically populated: Office, School, Home, All, and Custom -->
+        </div>
+      </div>
+
+      <!-- Section 2: Categories Explorer & Fast Adder for Active Division -->
+      <div class="sidebar-cat-box">
+        <div class="sidebar-section-title">
+          <span data-i18n="categoriesInDiv">ഈ വിഭാഗത്തിലെ കാറ്റഗറികൾ</span>
+          <span id="sidebarCategoryCountBadge" class="div-card-badge">0</span>
+        </div>
+
+        <!-- Toggle: Expense vs Income -->
+        <div class="cat-type-toggle">
+          <button type="button" id="sidebarCatToggleExpense" class="cat-type-btn active expense">
+            <i data-lucide="arrow-up-right"></i>
+            <span>ചിലവ് (Expense)</span>
+          </button>
+          <button type="button" id="sidebarCatToggleIncome" class="cat-type-btn income">
+            <i data-lucide="arrow-down-left"></i>
+            <span>വരവ് (Income)</span>
+          </button>
+        </div>
+
+        <!-- Quick Inline Category Creator -->
+        <form id="sidebarQuickCatForm" class="cat-quick-add-form">
+          <input type="text" id="sidebarQuickCatInput" class="cat-quick-input" placeholder="പുതിയ കാറ്റഗറി പേര്..." data-i18n-placeholder="typeCategoryName" required />
+          <button type="submit" class="cat-quick-submit" data-i18n="btnQuickAdd">+ ചേർക്കുക</button>
+        </form>
+
+        <!-- Chips List -->
+        <div id="sidebarCategoryChipsWrap" class="sidebar-cat-chips-wrap">
+          <!-- Dynamically populated from IndexedDB categories for active division -->
+        </div>
+      </div>
+
+      <!-- Section 3: Quick Division Actions -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" id="btnSidebarAddTxDirect" class="action-btn-pill btn-pill-green" style="justify-content: center; padding: 10px; font-size: 0.82rem;">
+          <i data-lucide="plus-circle"></i>
+          <span>+ ഈ വിഭാഗത്തിൽ ഇടപാട് ചേർക്കുക</span>
+        </button>
+        <button type="button" id="btnSidebarViewReports" class="action-btn-pill" style="justify-content: center; padding: 10px; font-size: 0.82rem; background: var(--bg-subtle); color: var(--text-dark); border: 1px solid var(--border-light);">
+          <i data-lucide="bar-chart-2"></i>
+          <span>റിപ്പോർട്ട് പരിശോധിക്കുക (View Reports)</span>
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
   <!-- ================= APP WRAPPER (FINNOVA SHELL) ================= -->
   <div class="finnova-shell">
 
     <!-- ================= 1. FINNOVA TOP HEADER BAR ================= -->
     <header class="finnova-top-header">
-      <!-- Left: Logo & Title -->
-      <div class="finnova-logo">
-        <div class="finnova-ribbon-icon">
-          <i data-lucide="wallet"></i>
-        </div>
-        <div>
-          <h1 class="finnova-brand-text" id="headerOfficeName">OFFICE FINANCE TRACKER</h1>
-          <p class="finnova-brand-sub" data-i18n="appSubtitle">Smart Finances, Better Business</p>
+      <!-- Left: Sidebar Toggle, Logo & Title -->
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" id="btnToggleSidebarDrawer" class="sidebar-hamburger-btn" title="വിഭാഗങ്ങൾ & കാറ്റഗറികൾ (Divisions & Categories)">
+          <i data-lucide="menu"></i>
+          <span class="sidebar-toggle-text" data-i18n="menuDivisions">വിഭാഗങ്ങൾ</span>
+          <span id="headerDivisionBadge" class="header-div-badge">🏢 ഓഫീസ്</span>
+        </button>
+
+        <div class="finnova-logo">
+          <div class="finnova-ribbon-icon">
+            <i data-lucide="wallet"></i>
+          </div>
+          <div>
+            <h1 class="finnova-brand-text" id="headerOfficeName">OFFICE FINANCE TRACKER</h1>
+            <p class="finnova-brand-sub" data-i18n="appSubtitle">Smart Finances, Better Business</p>
+          </div>
         </div>
       </div>
 
@@ -91,7 +202,10 @@
         <!-- Title Row with Heading & Period Tabs -->
         <div class="finnova-title-row">
           <div class="page-heading-block">
-            <h2 class="page-title" data-i18n="pageTitle">Invoices & Finances</h2>
+            <h2 class="page-title" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span data-i18n="pageTitle">Invoices & Finances</span>
+              <span id="activeDivisionTitleBadge" class="active-division-title-badge">🏢 ഓഫീസ് ഫിനാൻസ്</span>
+            </h2>
             <p class="page-sub" data-i18n="pageSub">Manage and track all your office income and expenses in one place.</p>
           </div>
 
@@ -366,9 +480,16 @@
       <section id="view-transactions" class="tab-view hidden">
         <div class="white-box">
           <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-            <input id="txSearchInput" type="text" class="form-input" style="flex: 2; min-width: 220px;" placeholder="Search party, category, bill, notes..." data-i18n-placeholder="searchLedgerPlaceholder" />
+            <input id="txSearchInput" type="text" class="form-input" style="flex: 2; min-width: 200px;" placeholder="Search party, category, bill, notes..." data-i18n-placeholder="searchLedgerPlaceholder" />
 
-            <select id="filterTypeSelect" class="form-input" style="flex: 1; min-width: 130px;">
+            <select id="filterDivisionSelect" class="form-input" style="flex: 1; min-width: 140px;">
+              <option value="all" data-i18n="divisionFilterAll">🌐 എല്ലാ വിഭാഗങ്ങളും (All)</option>
+              <option value="office">🏢 ഓഫീസ് (Office)</option>
+              <option value="school">🏫 സ്കൂൾ (School)</option>
+              <option value="home">🏠 വീട് (Home)</option>
+            </select>
+
+            <select id="filterTypeSelect" class="form-input" style="flex: 1; min-width: 120px;">
               <option value="all" data-i18n="filterAllTypes">All Types</option>
               <option value="income" data-i18n="filterIncomeOnly">Income Only</option>
               <option value="expense" data-i18n="filterExpenseOnly">Expense Only</option>
@@ -534,6 +655,16 @@
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div class="form-group">
+              <label class="form-label" data-i18n="divisionLabel">Division / Account</label>
+              <select id="reportDivisionSelect" class="form-input">
+                <option value="all" data-i18n="divisionFilterAll">🌐 All Divisions</option>
+                <option value="office">🏢 Office Finance</option>
+                <option value="school">🏫 School Finance</option>
+                <option value="home">🏠 Home & Personal</option>
+              </select>
+            </div>
+
             <div class="form-group">
               <label class="form-label" data-i18n="periodSelection">Period Selection</label>
               <select id="reportRangePreset" class="form-input">
@@ -924,6 +1055,15 @@
       <form id="txForm" style="display: flex; flex-direction: column; gap: 14px;">
         <input type="hidden" id="txId" value="" />
 
+        <!-- Segmented Division / Book Selector (Office, School, Home, Custom) -->
+        <div class="form-group">
+          <label class="form-label" data-i18n="divisionLabel">വിഭാഗം / അക്കൗണ്ട് (Division / Book)</label>
+          <div class="division-segmented-control" id="modalDivisionPills">
+            <!-- Dynamically populated via app.js -->
+          </div>
+          <input type="hidden" id="txDivision" value="office" />
+        </div>
+
         <!-- Segmented Type Selector (Expense vs Income) -->
         <div class="type-segmented-control">
           <button type="button" id="toggleTypeExpense" class="segment-btn active expense">
@@ -1271,6 +1411,15 @@
 
       <form id="categoryForm" style="display: flex; flex-direction: column; gap: 12px;">
         <div class="form-group">
+          <label class="form-label" data-i18n="divisionLabel">Division / Account</label>
+          <select id="newCatDivision" class="form-input">
+            <option value="office">🏢 Office Finance</option>
+            <option value="school">🏫 School Finance</option>
+            <option value="home">🏠 Home & Personal</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label class="form-label" data-i18n="categoryTypeLabel">Category Type</label>
           <select id="newCatType" class="form-input">
             <option value="expense" data-i18n="typeExpense">Expense</option>
@@ -1299,6 +1448,46 @@
         <div style="display: flex; gap: 8px; margin-top: 8px;">
           <button type="button" id="btnCancelCat" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;" data-i18n="btnCancel">Cancel</button>
           <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnAdd">Add Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD CUSTOM DIVISION ================= -->
+  <div id="divisionModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header-row">
+        <h3 id="divisionModalTitle" class="modal-heading-text" data-i18n="divisionModalTitle">Add New Finance Division</h3>
+        <button id="btnCloseDivisionModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="divisionForm" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label" data-i18n="divisionNameMl">വിഭാഗത്തിന്റെ പേര് (മലയാളത്തിൽ)</label>
+          <input id="divNameMl" type="text" class="form-input" placeholder="ഉദാ: ഷോപ്പ് ഫിനാൻസ്, പ്രൊജക്റ്റ്..." required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="divisionNameEn">Division Name (English)</label>
+          <input id="divNameEn" type="text" class="form-input" placeholder="e.g. Shop, Project, Vehicle..." required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="divisionIcon">ഐക്കൺ</label>
+          <select id="divIcon" class="form-input">
+            <option value="building">🏢 ഓഫീസ് / ബിൽഡിംഗ് (Building)</option>
+            <option value="graduation-cap">🏫 സ്കൂൾ / കോളേജ് (School)</option>
+            <option value="home">🏠 വീട് / കുടുംബം (Home)</option>
+            <option value="shopping-bag">🏬 കട / ഷോപ്പ് (Shop)</option>
+            <option value="car">🚗 വാഹനം / ട്രാവൽസ് (Vehicle)</option>
+            <option value="briefcase">💼 ബിസിനസ് / തൊഴിൽ (Business)</option>
+            <option value="layers">📁 പ്രൊജക്റ്റ് / പദ്ധതി (Project)</option>
+            <option value="heart">❤️ വ്യക്തിഗതം (Personal)</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button type="button" id="btnCancelDivision" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;" data-i18n="btnCancel">Cancel</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnSave">Save Division</button>
         </div>
       </form>
     </div>
