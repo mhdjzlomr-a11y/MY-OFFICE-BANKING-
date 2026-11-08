@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Outer glow border -->
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="#38bdf8" stroke-width="3" stroke-opacity="0.25" />
+
+  <!-- Ledger Card Layer -->
+  <g filter="url(#shadow)">
+    <!-- Main Finance Card -->
+    <rect x="80" y="110" width="352" height="292" rx="36" fill="#1e293b" stroke="#334155" stroke-width="4" />
+    
+    <!-- Header banner in card -->
+    <path d="M 80 146 A 36 36 0 0 1 116 110 L 396 110 A 36 36 0 0 1 432 146 L 432 180 L 80 180 Z" fill="url(#cardGrad)" />
+    
+    <!-- White ledger sheets subtle pattern -->
+    <circle cx="120" cy="145" r="10" fill="#ffffff" opacity="0.8" />
+    <circle cx="150" cy="145" r="10" fill="#ffffff" opacity="0.6" />
+    <circle cx="180" cy="145" r="10" fill="#ffffff" opacity="0.4" />
+
+    <!-- Ledger Rows -->
+    <rect x="116" y="210" width="160" height="14" rx="7" fill="#64748b" opacity="0.5" />
+    <rect x="310" y="210" width="86" height="14" rx="7" fill="#10b981" />
+
+    <rect x="116" y="244" width="130" height="14" rx="7" fill="#64748b" opacity="0.5" />
+    <rect x="310" y="244" width="86" height="14" rx="7" fill="#f43f5e" />
+
+    <rect x="116" y="278" width="150" height="14" rx="7" fill="#64748b" opacity="0.5" />
+    <rect x="310" y="278" width="86" height="14" rx="7" fill="#10b981" />
+
+    <line x1="116" y1="316" x2="396" y2="316" stroke="#475569" stroke-width="2" stroke-dasharray="6,6" />
+
+    <!-- Total Row -->
+    <rect x="116" y="340" width="100" height="20" rx="8" fill="#94a3b8" />
+    <rect x="280" y="338" width="116" height="24" rx="8" fill="url(#goldGrad)" />
+  </g>
+
+  <!-- Big Indian Rupee Symbol Circle Badge -->
+  <g filter="url(#shadow)">
+    <circle cx="390" cy="370" r="72" fill="url(#goldGrad)" stroke="#ffffff" stroke-width="6" />
+    <!-- Rupee glyph -->
+    <path d="M 366 338 L 414 338 M 366 354 L 406 354 M 366 338 L 366 370 C 386 370 398 366 398 354 C 398 342 386 338 366 338 M 382 370 L 414 402" 
+          stroke="#0f172a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+
+  <!-- Upward Trend Arrow in Top Right -->
+  <g filter="url(#shadow)">
+    <circle cx="380" cy="110" r="40" fill="#10b981" stroke="#ffffff" stroke-width="4" />
+    <path d="M 364 124 L 396 92 M 378 92 L 396 92 L 396 110" 
+          stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+</svg>
