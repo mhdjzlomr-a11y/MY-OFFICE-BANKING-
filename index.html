@@ -287,8 +287,11 @@
 
               <!-- Description & Party Details -->
               <div style="background: rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px;">
-                <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 700;">ആർക്ക് നൽകി / ലഭിച്ചത്:</div>
-                <div id="navySelectedParty" style="font-size: 0.95rem; font-weight: 800; margin-top: 2px;">-</div>
+                <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 700;" data-i18n="partyDetailsLabel">ആർക്ക് നൽകി / ലഭിച്ചത്:</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
+                  <span id="navySelectedParty" style="font-size: 0.95rem; font-weight: 800;">-</span>
+                  <span id="navySelectedPhone" style="font-size: 0.8rem; font-weight: 700; color: #a7f3d0; background: rgba(16, 185, 129, 0.25); padding: 2px 8px; border-radius: 999px;">-</span>
+                </div>
                 <div id="navySelectedNotes" style="font-size: 0.78rem; opacity: 0.9; margin-top: 4px;">-</div>
               </div>
             </div>
@@ -296,13 +299,16 @@
             <!-- Bottom Action Row -->
             <div class="purple-details-bottom">
               <div>
-                <div style="font-size: 0.7rem; opacity: 0.8;">മൊത്തം തുക (Total Balance)</div>
+                <div style="font-size: 0.7rem; opacity: 0.8;" data-i18n="totalBalanceLabel">മൊത്തം തുക (Total Balance)</div>
                 <div id="navySelectedBottomSubtotal" style="font-size: 1.15rem; font-weight: 800;">₹0.00</div>
               </div>
 
-              <div style="display: flex; gap: 8px; align-items: center;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button id="btnNavySendWhatsapp" class="btn-whatsapp" title="WhatsApp വഴി രസീത് അയക്കുക">
+                  <i data-lucide="message-circle"></i> <span>WhatsApp</span>
+                </button>
                 <button id="btnNavyPrintVoucher" class="btn-payout-now">
-                  <i data-lucide="printer"></i> വൗച്ചർ PDF
+                  <i data-lucide="printer"></i> <span data-i18n="btnPrintVoucher">വൗച്ചർ PDF</span>
                 </button>
                 <button id="btnNavyEditTx" class="sq-pill-btn" style="background: rgba(255,255,255,0.2); border: none; color: white;" title="Edit">
                   <i data-lucide="edit-2"></i>
@@ -798,10 +804,26 @@
           <input id="txDate" type="date" class="form-input" required />
         </div>
 
-        <div class="form-group">
-          <label id="labelParty" class="form-label">ആർക്ക് നൽകി / ആരിൽ നിന്ന് ലഭിച്ചു (Party)</label>
-          <input id="txParty" type="text" class="form-input" placeholder="വ്യക്തി അല്ലെങ്കിൽ സ്ഥാപനത്തിന്റെ പേര്" />
+        <!-- Party Name & WhatsApp Mobile Number Side-by-Side -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label id="labelParty" class="form-label">ആർക്ക് നൽകി / ലഭിച്ചത് (Party Name)</label>
+            <input id="txParty" type="text" class="form-input" placeholder="വ്യക്തി അല്ലെങ്കിൽ സ്ഥാപനം" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">WhatsApp നമ്പർ (Mobile No)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <span style="position: absolute; left: 10px; font-weight: 800; color: #25d366; font-size: 0.9rem;">📲</span>
+              <input id="txPhone" type="tel" class="form-input" style="padding-left: 34px;" placeholder="10-digit number" />
+            </div>
+          </div>
         </div>
+
+        <!-- WhatsApp Instant Receipt Checkbox -->
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 700; color: #15803d; cursor: pointer; background: rgba(37, 211, 102, 0.12); padding: 8px 12px; border-radius: var(--radius-md); border: 1px dashed rgba(37, 211, 102, 0.45);">
+          <input type="checkbox" id="txSendWhatsapp" style="width: 16px; height: 16px; accent-color: #25d366; cursor: pointer;" />
+          <span>സേവ് ചെയ്യുമ്പോൾ WhatsApp രസീത് അയക്കുക (Send WhatsApp Receipt)</span>
+        </label>
 
         <div class="form-group">
           <label class="form-label">ബിൽ / ഇൻവോയ്സ് നമ്പർ (Bill / Invoice #)</label>

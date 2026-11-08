@@ -374,6 +374,7 @@ class OfficeFinanceApp {
               <div class="navy-name">${tx.party || catName}</div>
               <div class="navy-date-sub">
                 ${this.formatDate(tx.date)} • ${tx.billNo ? `#${tx.billNo}` : catName}
+                ${tx.phone ? ` • 📲 ${tx.phone}` : ''}
               </div>
             </div>
           </div>
@@ -406,6 +407,7 @@ class OfficeFinanceApp {
     const catElem = document.getElementById('navySelectedCategory');
     const dateElem = document.getElementById('navySelectedDate');
     const partyElem = document.getElementById('navySelectedParty');
+    const phoneElem = document.getElementById('navySelectedPhone');
     const notesElem = document.getElementById('navySelectedNotes');
     const subtotalElem = document.getElementById('navySelectedBottomSubtotal');
     const badgeElem = document.getElementById('navySelectedTypeBadge');
@@ -415,6 +417,17 @@ class OfficeFinanceApp {
     if (catElem) catElem.textContent = catName;
     if (dateElem) dateElem.textContent = this.formatDate(tx.date);
     if (partyElem) partyElem.textContent = tx.party || (isIncome ? 'ലഭിച്ച വരുമാനം' : 'ഓഫീസ് ചിലവ്');
+    if (phoneElem) {
+      if (tx.phone) {
+        phoneElem.textContent = `📲 ${tx.phone}`;
+        phoneElem.style.background = 'rgba(16, 185, 129, 0.3)';
+        phoneElem.style.color = '#a7f3d0';
+      } else {
+        phoneElem.textContent = window.i18n.currentLang === 'ml' ? '+ നമ്പർ നൽകുക' : '+ Add Phone';
+        phoneElem.style.background = 'rgba(255, 255, 255, 0.15)';
+        phoneElem.style.color = '#ffffff';
+      }
+    }
     if (notesElem) notesElem.textContent = tx.notes ? `വിവരണം: ${tx.notes}` : 'കുറിപ്പുകൾ ലഭ്യമല്ല';
     if (subtotalElem) subtotalElem.textContent = this.formatCurrency(tx.amount);
 
@@ -424,10 +437,14 @@ class OfficeFinanceApp {
     }
 
     // Connect right card action buttons
+    const btnWhatsapp = document.getElementById('btnNavySendWhatsapp');
     const btnPrint = document.getElementById('btnNavyPrintVoucher');
     const btnEdit = document.getElementById('btnNavyEditTx');
     const btnDelete = document.getElementById('btnNavyDeleteTx');
 
+    if (btnWhatsapp) {
+      btnWhatsapp.onclick = () => this.sendWhatsAppReceipt(tx.id);
+    }
     if (btnPrint) {
       btnPrint.onclick = () => this.downloadSingleVoucher(tx.id);
     }
@@ -582,6 +599,7 @@ class OfficeFinanceApp {
               <div class="navy-name" style="color: var(--text-dark);">${tx.party || catName}</div>
               <div class="navy-date-sub" style="color: var(--text-muted);">
                 ${this.formatDate(tx.date)} • ${catName} ${tx.billNo ? `• #${tx.billNo}` : ''}
+                ${tx.phone ? `<span style="color: #10b981; font-weight: 700;"> • 📲 ${tx.phone}</span>` : ''}
               </div>
             </div>
           </div>
@@ -590,6 +608,9 @@ class OfficeFinanceApp {
               ${isIncome ? '+' : '-'} ${this.formatCurrency(tx.amount)}
             </div>
             <div style="display: flex; gap: 4px;">
+              <button onclick="window.appEngine.sendWhatsAppReceipt(${tx.id})" class="sq-pill-btn" style="color: #25d366;" title="Send WhatsApp Receipt">
+                <i data-lucide="message-circle"></i>
+              </button>
               <button onclick="window.appEngine.downloadSingleVoucher(${tx.id})" class="sq-pill-btn" title="Voucher PDF">
                 <i data-lucide="file-text"></i>
               </button>
@@ -774,6 +795,9 @@ class OfficeFinanceApp {
     document.getElementById('txCategory').value = '';
     document.getElementById('txDate').value = new Date().toISOString().slice(0, 10);
     document.getElementById('txParty').value = '';
+    document.getElementById('txPhone').value = '';
+    const chkAdd = document.getElementById('txSendWhatsapp');
+    if (chkAdd) chkAdd.checked = false;
     document.getElementById('txBillNo').value = '';
     document.getElementById('txNotes').value = '';
 
@@ -801,6 +825,9 @@ class OfficeFinanceApp {
     document.getElementById('txAmount').value = tx.amount;
     document.getElementById('txDate').value = tx.date ? tx.date.slice(0, 10) : '';
     document.getElementById('txParty').value = tx.party || '';
+    document.getElementById('txPhone').value = tx.phone || '';
+    const chkEdit = document.getElementById('txSendWhatsapp');
+    if (chkEdit) chkEdit.checked = false;
     document.getElementById('txBillNo').value = tx.billNo || '';
     document.getElementById('txNotes').value = tx.notes || '';
 
@@ -893,6 +920,8 @@ class OfficeFinanceApp {
 
     const date = document.getElementById('txDate').value;
     const party = document.getElementById('txParty').value.trim();
+    const phone = document.getElementById('txPhone').value.trim();
+    const sendWhatsapp = document.getElementById('txSendWhatsapp')?.checked || false;
     const billNo = document.getElementById('txBillNo').value.trim();
     const notes = document.getElementById('txNotes').value.trim();
 
@@ -902,22 +931,30 @@ class OfficeFinanceApp {
       category: categoryId,
       date,
       party,
+      phone,
       billNo,
       notes,
       attachment: this.currentAttachment
     };
 
+    let savedId = this.editingTxId;
     if (this.editingTxId) {
       txData.id = this.editingTxId;
       await window.dbEngine.updateTransaction(txData);
-      this.showToast('ഇടപാട് അപ്ഡേറ്റ് ചെയ്തു!', 'success');
+      this.showToast(window.i18n.t('updatedSuccess'), 'success');
     } else {
-      await window.dbEngine.addTransaction(txData);
-      this.showToast('ഇടപാട് വിജയകരമായി സേവ് ചെയ്തു!', 'success');
+      savedId = await window.dbEngine.addTransaction(txData);
+      this.showToast(window.i18n.t('savedSuccess'), 'success');
     }
 
     this.closeTxModal();
     await this.refreshData();
+
+    if (sendWhatsapp && phone) {
+      setTimeout(() => {
+        this.sendWhatsAppReceipt(savedId);
+      }, 350);
+    }
   }
 
   // ================= 12. EVENT LISTENERS =================
@@ -1191,6 +1228,84 @@ class OfficeFinanceApp {
     if (window.reportsEngine) {
       window.reportsEngine.downloadVoucherPDF(tx, this.categories, this.officeProfile);
     }
+  }
+
+  // --- WhatsApp Official Cash Receipt Dispatcher ---
+  sendWhatsAppReceipt(txId) {
+    const tx = this.transactions.find(t => t.id === Number(txId));
+    if (!tx) return;
+
+    let phone = tx.phone ? tx.phone.trim() : '';
+    if (!phone) {
+      phone = prompt(
+        window.i18n.currentLang === 'ml' 
+          ? 'രസീത് അയക്കേണ്ട വ്യക്തിയുടെ WhatsApp നമ്പർ നൽകുക (10 അക്ക മൊബൈൽ നമ്പർ):'
+          : 'Enter recipient WhatsApp mobile number (10 digits):',
+        ''
+      );
+      if (!phone) return;
+      // Save phone to transaction record
+      tx.phone = phone.trim();
+      window.dbEngine.updateTransaction(tx).then(() => this.refreshData());
+    }
+
+    const cleaned = this.sanitizePhone(phone);
+    if (!cleaned || cleaned.length < 10) {
+      alert(window.i18n.currentLang === 'ml' ? 'ദയവായി സാധുവായ ഒരു മൊബൈൽ നമ്പർ നൽകുക.' : 'Please enter a valid mobile number.');
+      return;
+    }
+
+    const cat = this.categories.find(c => c.id === tx.category);
+    const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+    const isIncome = tx.type === 'income';
+    const officeName = (this.officeProfile && this.officeProfile.name) || 'OFFICE FINANCE TRACKER';
+    const formattedAmt = this.formatCurrency(tx.amount);
+    const formattedDate = this.formatDate(tx.date);
+
+    let message = '';
+    if (window.i18n.currentLang === 'ml') {
+      message = 
+`🧾 *${officeName}*
+*ഔദ്യോഗിക ക്യാഷ് രസീത് / വൗച്ചർ*
+────────────────────────
+🔢 *വൗച്ചർ നമ്പർ:* #${tx.billNo || 'TX-' + tx.id}
+📅 *തീയതി:* ${formattedDate}
+
+👤 *പേര്:* ${tx.party || '-'}
+📌 *ഇടപാട് തരം:* ${isIncome ? 'വരവ് (പണം ലഭിച്ചു)' : 'ചിലവ് (പണം നൽകി)'}
+🏷️ *വിഭാഗം:* ${catName}
+💰 *തുക:* *${formattedAmt}*
+${tx.notes ? `📝 *വിവരണം:* ${tx.notes}\n` : ''}────────────────────────
+✅ _ഈ ഇടപാട് ഞങ്ങളുടെ സ്ഥാപനത്തിൽ ഔദ്യോഗികമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു._
+നന്ദി! 🙏`;
+    } else {
+      message = 
+`🧾 *${officeName}*
+*OFFICIAL CASH RECEIPT / VOUCHER*
+────────────────────────
+🔢 *Voucher No:* #${tx.billNo || 'TX-' + tx.id}
+📅 *Date:* ${formattedDate}
+
+👤 *Name / Party:* ${tx.party || '-'}
+📌 *Status:* ${isIncome ? 'Payment Received (Income)' : 'Payment Paid (Expense)'}
+🏷️ *Category:* ${catName}
+💰 *Amount:* *${formattedAmt}*
+${tx.notes ? `📝 *Notes:* ${tx.notes}\n` : ''}────────────────────────
+✅ _This transaction has been officially recorded in our accounts._
+Thank you! 🙏`;
+    }
+
+    const whatsappUrl = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    this.showToast(window.i18n.currentLang === 'ml' ? 'WhatsApp ഓപ്പൺ ചെയ്യുന്നു...' : 'Opening WhatsApp...', 'success');
+  }
+
+  sanitizePhone(phone) {
+    let cleaned = String(phone || '').replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) cleaned = cleaned.slice(1);
+    if (cleaned.startsWith('0')) cleaned = cleaned.replace(/^0+/, '');
+    if (cleaned.length === 10) cleaned = '91' + cleaned;
+    return cleaned;
   }
 
   async confirmDeleteTx(txId) {
