@@ -305,3 +305,4 @@ class FinanceCharts {
 }
 
 window.financeCharts = new FinanceCharts();
+window.chartsEngine = window.financeCharts;

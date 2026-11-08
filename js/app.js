@@ -1,6 +1,6 @@
 /**
- * app.js - Master Application Controller (Eduka Theme)
- * Handles UI state, routing, modals, transactions, categories, exports, and PWA logic
+ * app.js - Master Application Controller (Finnova Theme with Light Blue, Dark Mode & Period Downloads)
+ * Handles UI state, routing, modals, transactions, typeable categories, exports, and PWA logic
  */
 
 class OfficeFinanceApp {
@@ -15,37 +15,81 @@ class OfficeFinanceApp {
     this.deferredPrompt = null;
     this.pinBuffer = '';
     this.userPin = null;
-    this.dashRecentFilter = 'all';
+
+    // Period state: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all'
+    this.activePeriod = 'daily';
+    this.dashSubFilter = 'all'; // 'all' | 'expense' | 'income'
+    this.navyFilter = 'all';    // 'all' | 'expense' | 'income'
+    this.selectedNavyTxId = null;
   }
 
   async init() {
     // 1. Initialize Database
     await window.dbEngine.init();
 
-    // 2. Initialize Translations
+    // 2. Initialize Theme (Dark / Light)
+    await this.initTheme();
+
+    // 3. Initialize Translations
     await window.i18n.init();
 
-    // 3. Load Settings, Profile, and PIN
+    // 4. Load Settings, Profile, and PIN
     await this.loadSettings();
 
-    // 4. Load Data & populate UI
+    // 5. Load Data & populate UI
     await this.refreshData();
 
-    // 5. Setup DOM Event Listeners
+    // 6. Setup DOM Event Listeners
     this.setupEventListeners();
 
-    // 6. Setup PWA & Service Worker
+    // 7. Setup PWA & Service Worker
     this.setupPWA();
 
-    // 7. Check URL parameters (e.g. ?action=expense)
+    // 8. Check URL parameters
     this.checkUrlActions();
 
-    // 8. Render Icons
+    // 9. Render Icons
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
   }
 
+  // ================= 1. THEME HANDLING (DARK / LIGHT) =================
+  async initTheme() {
+    const savedTheme = await window.dbEngine.getSetting('theme', null);
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = savedTheme !== null ? (savedTheme === 'dark') : prefersDark;
+    this.applyTheme(isDark);
+  }
+
+  applyTheme(isDark) {
+    const root = document.documentElement;
+    const icon = document.getElementById('darkToggleIcon');
+    const label = document.getElementById('darkToggleLabel');
+
+    if (isDark) {
+      root.classList.add('dark');
+      if (icon) icon.textContent = '☀️';
+      if (label) label.textContent = 'Light';
+    } else {
+      root.classList.remove('dark');
+      if (icon) icon.textContent = '🌙';
+      if (label) label.textContent = 'Dark';
+    }
+  }
+
+  async toggleTheme() {
+    const isDarkNow = document.documentElement.classList.toggle('dark');
+    this.applyTheme(isDarkNow);
+    await window.dbEngine.setSetting('theme', isDarkNow ? 'dark' : 'light');
+
+    // Re-render canvas charts to match theme
+    if (window.chartsEngine) {
+      window.chartsEngine.updateCharts(this.transactions, this.categories);
+    }
+  }
+
+  // ================= 2. SETTINGS & PROFILE =================
   async loadSettings() {
     this.officeProfile = await window.dbEngine.getSetting('officeProfile', {});
     this.applyProfileToHeader();
@@ -60,20 +104,24 @@ class OfficeFinanceApp {
 
   applyProfileToHeader() {
     const nameElem = document.getElementById('headerOfficeName');
-    if (nameElem && this.officeProfile.name) {
-      nameElem.textContent = this.officeProfile.name;
+    if (nameElem) {
+      nameElem.textContent = this.officeProfile.name || 'OFFICE FINANCE TRACKER';
+    }
+    const purpleOffice = document.getElementById('navySelectedOfficeName');
+    if (purpleOffice) {
+      purpleOffice.textContent = this.officeProfile.name || 'OFFICE FINANCE TRACKER';
     }
   }
 
-  // --- PIN Security Logic ---
+  // ================= 3. PIN SECURITY =================
   updatePinStatusUI() {
     const pinText = document.getElementById('pinStatusText');
     const pinBtn = document.getElementById('btnTogglePinSetting');
     if (this.userPin) {
-      if (pinText) pinText.textContent = 'PIN സുരക്ഷ സജീവമാണ്';
+      if (pinText) pinText.textContent = 'PIN സുരക്ഷ സജീവമാണ് (Active)';
       if (pinBtn) pinBtn.textContent = 'PIN മാറ്റുക';
     } else {
-      if (pinText) pinText.textContent = 'PIN സുരക്ഷ ഓഫാണ്';
+      if (pinText) pinText.textContent = 'PIN സുരക്ഷ ഓഫാണ് (Disabled)';
       if (pinBtn) pinBtn.textContent = 'PIN സെറ്റ് ചെയ്യുക';
     }
   }
@@ -99,26 +147,19 @@ class OfficeFinanceApp {
 
     if (val === 'clear') {
       this.pinBuffer = '';
-      this.updatePinDots();
-      return;
-    }
-
-    if (val === 'back') {
+    } else if (val === 'back') {
       this.pinBuffer = this.pinBuffer.slice(0, -1);
-      this.updatePinDots();
-      return;
+    } else if (this.pinBuffer.length < 4) {
+      this.pinBuffer += val;
     }
 
-    if (this.pinBuffer.length < 4) {
-      this.pinBuffer += val;
-      this.updatePinDots();
-    }
+    this.updatePinDots();
 
     if (this.pinBuffer.length === 4) {
       setTimeout(() => {
         if (this.pinBuffer === this.userPin) {
           this.hidePinLock();
-          this.showToast('App Unlocked!', 'success');
+          this.showToast('അൺലോക്ക് ചെയ്തു!', 'success');
         } else {
           if (errMsg) errMsg.classList.remove('hidden');
           this.pinBuffer = '';
@@ -133,227 +174,363 @@ class OfficeFinanceApp {
       const dot = document.getElementById(`pinDot${i}`);
       if (dot) {
         if (i < this.pinBuffer.length) {
-          dot.style.background = '#00c569';
-          dot.style.borderColor = '#00c569';
+          dot.style.background = 'var(--finnova-purple)';
+          dot.style.borderColor = 'var(--finnova-purple)';
         } else {
           dot.style.background = 'transparent';
-          dot.style.borderColor = '#8a94a6';
+          dot.style.borderColor = 'var(--text-muted)';
         }
       }
     }
   }
 
-  async togglePinSetting() {
-    if (this.userPin) {
-      const entered = prompt('സുരക്ഷാ PIN നൽകുക:');
-      if (entered === this.userPin) {
-        this.userPin = null;
-        await window.dbEngine.setSetting('appPin', null);
-        this.updatePinStatusUI();
-        this.showToast('PIN ഒഴിവാക്കി', 'info');
-      } else if (entered !== null) {
-        alert('നൽകിയ PIN തെറ്റാണ്!');
-      }
-    } else {
-      const pin1 = prompt('പുതിയ 4-അക്ക PIN നൽകുക:');
-      if (!pin1 || pin1.length !== 4 || isNaN(pin1)) {
-        if (pin1 !== null) alert('4 അക്കങ്ങൾ മാത്രമുള്ള PIN നൽകുക.');
-        return;
-      }
-      const pin2 = prompt('PIN ഒന്നുകൂടി നൽകുക (Confirm):');
-      if (pin1 === pin2) {
-        this.userPin = pin1;
-        await window.dbEngine.setSetting('appPin', pin1);
-        this.updatePinStatusUI();
-        this.showToast('PIN വിജയകരമായി സെറ്റ് ചെയ്തു!', 'success');
-      } else {
-        alert('PIN പൊരുത്തപ്പെടുന്നില്ല.');
-      }
-    }
-  }
-
-  // --- Data Loading & Refresh ---
+  // ================= 4. DATA REFRESH & STATE =================
   async refreshData() {
-    this.categories = await window.dbEngine.getAllCategories();
     this.transactions = await window.dbEngine.getAllTransactions();
-    this.populateCategoryDropdowns();
-    this.renderCurrentView();
-  }
+    this.categories = await window.dbEngine.getAllCategories();
 
-  renderCurrentView() {
-    if (this.currentView === 'dashboard') {
-      this.renderDashboard();
-    } else if (this.currentView === 'transactions') {
-      this.renderTransactionsLedger();
-    } else if (this.currentView === 'reports') {
-      this.renderReports();
-    } else if (this.currentView === 'settings') {
-      this.renderSettings();
+    this.renderDashboard();
+    this.renderTransactionsList();
+    this.renderReports();
+    this.renderSettingsCategoryChips();
+    this.populateCategoryDatalist();
+
+    // Visual Charts
+    if (window.chartsEngine) {
+      window.chartsEngine.updateCharts(this.transactions, this.categories);
     }
-    if (window.renderLucideIcons) window.renderLucideIcons();
+
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
+    }
   }
 
-  switchView(viewName) {
-    this.currentView = viewName;
-
-    document.querySelectorAll('.tab-view').forEach(sec => sec.classList.add('hidden'));
-
-    const targetSection = document.getElementById(`view-${viewName}`);
-    if (targetSection) targetSection.classList.remove('hidden');
-
-    document.querySelectorAll('.nav-item').forEach(btn => {
-      if (btn.getAttribute('data-target') === viewName) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-
-    this.renderCurrentView();
-  }
-
-  // --- View 1: Dashboard Rendering ---
-  renderDashboard() {
-    let totalIncome = 0;
-    let totalExpense = 0;
-    let todayIncome = 0;
-    let todayExpense = 0;
-    let monthIncome = 0;
-    let monthExpense = 0;
-
-    const todayStr = new Date().toISOString().slice(0, 10);
+  // Helper: Filter transactions by period
+  getFilteredByPeriod(period, list = this.transactions) {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
     const thisMonthStr = todayStr.slice(0, 7);
+    const thisYearStr = String(today.getFullYear());
 
-    this.transactions.forEach(tx => {
-      const amt = parseFloat(tx.amount) || 0;
+    // 7 days ago
+    const sevenDaysAgoDate = new Date();
+    sevenDaysAgoDate.setDate(today.getDate() - 7);
+    const sevenDaysAgoStr = sevenDaysAgoDate.toISOString().slice(0, 10);
+
+    return list.filter(tx => {
       const txDate = tx.date ? tx.date.slice(0, 10) : '';
-      const txMonth = txDate.slice(0, 7);
+      if (period === 'daily') {
+        return txDate === todayStr;
+      } else if (period === 'weekly') {
+        return txDate >= sevenDaysAgoStr && txDate <= todayStr;
+      } else if (period === 'monthly') {
+        return txDate.startsWith(thisMonthStr);
+      } else if (period === 'yearly') {
+        return txDate.startsWith(thisYearStr);
+      }
+      return true; // 'all'
+    });
+  }
 
-      if (tx.type === 'income') {
-        totalIncome += amt;
-        if (txDate === todayStr) todayIncome += amt;
-        if (txMonth === thisMonthStr) monthIncome += amt;
-      } else if (tx.type === 'expense') {
-        totalExpense += amt;
-        if (txDate === todayStr) todayExpense += amt;
-        if (txMonth === thisMonthStr) monthExpense += amt;
+  // ================= 5. DASHBOARD RENDERING =================
+  renderDashboard() {
+    // 1. Period Filtered Transactions
+    const periodTxs = this.getFilteredByPeriod(this.activePeriod);
+
+    // 2. Calculate Period Stats
+    let periodIncome = 0;
+    let periodExpense = 0;
+    let periodIncCount = 0;
+    let periodExpCount = 0;
+
+    periodTxs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') {
+        periodIncome += amt;
+        periodIncCount++;
+      } else if (t.type === 'expense') {
+        periodExpense += amt;
+        periodExpCount++;
       }
     });
 
-    const netBalance = totalIncome - totalExpense;
-    const monthNet = monthIncome - monthExpense;
+    const periodNet = periodIncome - periodExpense;
 
-    // Stat cards
-    const statNet = document.getElementById('statNetBalance');
-    const statInc = document.getElementById('statTotalIncome');
-    const statExp = document.getElementById('statTotalExpense');
-    const statMNet = document.getElementById('statMonthNet');
-    const statTInc = document.getElementById('statTodayIncome');
-    const statTExp = document.getElementById('statTodayExpense');
-    const statTxCount = document.getElementById('statTotalTxCount');
+    // 3. Update Stat Cards
+    const netElem = document.getElementById('statNetBalance');
+    const incElem = document.getElementById('statTotalIncome');
+    const expElem = document.getElementById('statTotalExpense');
+    const txCountElem = document.getElementById('statTotalTxCount');
+    const incCountElem = document.getElementById('statIncomeCount');
+    const expCountElem = document.getElementById('statExpenseCount');
 
-    if (statNet) statNet.textContent = this.formatCurrency(netBalance);
-    if (statInc) statInc.textContent = this.formatCurrency(totalIncome);
-    if (statExp) statExp.textContent = this.formatCurrency(totalExpense);
-    if (statMNet) statMNet.textContent = this.formatCurrency(monthNet);
-    if (statTInc) statTInc.textContent = this.formatCurrency(todayIncome);
-    if (statTExp) statTExp.textContent = this.formatCurrency(todayExpense);
-    if (statTxCount) statTxCount.textContent = `${this.transactions.length} Records`;
+    if (netElem) netElem.textContent = this.formatCurrency(periodNet);
+    if (incElem) incElem.textContent = this.formatCurrency(periodIncome);
+    if (expElem) expElem.textContent = this.formatCurrency(periodExpense);
+    if (txCountElem) txCountElem.textContent = `${this.transactions.length} Total`;
+    if (incCountElem) incCountElem.textContent = periodIncCount;
+    if (expCountElem) expCountElem.textContent = periodExpCount;
 
-    // Update Eduka Charts
-    if (window.financeCharts) {
-      window.financeCharts.updateCharts(this.transactions, this.categories);
+    // Period Net Trend Pill
+    const periodNetText = document.getElementById('statPeriodNetText');
+    const periodPill = document.getElementById('statPeriodNetPill');
+    const activePeriodLabel = document.getElementById('statActivePeriodLabel');
+
+    const periodNamesMl = {
+      daily: 'ഇന്നത്തെ കണക്ക്',
+      weekly: 'ഈ ആഴ്ചയിലെ കണക്ക്',
+      monthly: 'ഈ മാസത്തെ കണക്ക്',
+      yearly: 'ഈ വർഷത്തെ കണക്ക്',
+      all: 'ആകെ കണക്ക്'
+    };
+
+    if (activePeriodLabel) {
+      activePeriodLabel.textContent = periodNamesMl[this.activePeriod] || 'കണക്ക്';
     }
 
-    // Render Filtered Recent List
-    this.renderDashboardRecentList();
+    if (periodNetText) {
+      if (periodNet >= 0) {
+        periodNetText.textContent = `+${this.formatCurrency(periodNet)}`;
+        if (periodPill) {
+          periodPill.className = 'trend-pill up';
+        }
+      } else {
+        periodNetText.textContent = this.formatCurrency(periodNet);
+        if (periodPill) {
+          periodPill.className = 'trend-pill down';
+        }
+      }
+    }
+
+    // 4. Update 1-Click Export Button Labels for the selected period
+    const pdfPeriodLabel = document.getElementById('dashPdfPeriodLabel');
+    const excelPeriodLabel = document.getElementById('dashExcelPeriodLabel');
+    const capitalizedPeriod = this.activePeriod.charAt(0).toUpperCase() + this.activePeriod.slice(1);
+
+    if (pdfPeriodLabel) pdfPeriodLabel.textContent = `${capitalizedPeriod} PDF`;
+    if (excelPeriodLabel) excelPeriodLabel.textContent = `${capitalizedPeriod} Excel`;
+
+    // 5. Render Finnova Navy Split Board
+    this.renderNavyBoard(periodTxs);
   }
 
-  renderDashboardRecentList() {
-    const recentContainer = document.getElementById('recentTxList');
-    if (!recentContainer) return;
+  // ================= 6. FINNOVA NAVY BOARD RENDERING =================
+  renderNavyBoard(baseTxs = null) {
+    let list = baseTxs !== null ? baseTxs : this.getFilteredByPeriod(this.activePeriod);
 
-    if (this.transactions.length === 0) {
-      recentContainer.innerHTML = `
-        <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-          <p style="font-size: 0.88rem;">ഇടപാടുകൾ ഒന്നും ചേർത്തിട്ടില്ല. "+ വരവ്" അല്ലെങ്കിൽ "+ ചിലവ്" ചേർക്കുക!</p>
+    // Apply quick search if present
+    const searchVal = (document.getElementById('dashQuickSearch')?.value || '').toLowerCase().trim();
+    if (searchVal) {
+      list = list.filter(t => {
+        const cat = this.categories.find(c => c.id === t.category);
+        const catName = (cat ? (cat.nameMl + ' ' + cat.nameEn) : (t.category || '')).toLowerCase();
+        const party = (t.party || '').toLowerCase();
+        const bill = (t.billNo || '').toLowerCase();
+        const notes = (t.notes || '').toLowerCase();
+        const amt = String(t.amount || '');
+        return catName.includes(searchVal) || party.includes(searchVal) || bill.includes(searchVal) || notes.includes(searchVal) || amt.includes(searchVal);
+      });
+    }
+
+    // Apply navy subfilter
+    if (this.navyFilter !== 'all') {
+      list = list.filter(t => t.type === this.navyFilter);
+    }
+
+    const navyContainer = document.getElementById('navyTxList');
+    if (!navyContainer) return;
+
+    if (list.length === 0) {
+      navyContainer.innerHTML = `
+        <div style="padding: 30px; text-align: center; color: #94a3b8; font-size: 0.85rem;">
+          <p>ഈ കാറ്റഗറിയിൽ ഇടപാടുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല</p>
         </div>
       `;
+      this.clearNavyDetailsCard();
       return;
     }
 
-    const thisMonthStr = new Date().toISOString().slice(0, 7);
-    let list = this.transactions;
-
-    if (this.dashRecentFilter === 'expense') {
-      list = list.filter(t => t.type === 'expense');
-    } else if (this.dashRecentFilter === 'income') {
-      list = list.filter(t => t.type === 'income');
-    } else if (this.dashRecentFilter === 'month') {
-      list = list.filter(t => t.date && t.date.startsWith(thisMonthStr));
+    // If no transaction is selected or current selection is not in list, select the first item
+    if (!this.selectedNavyTxId || !list.some(t => t.id === this.selectedNavyTxId)) {
+      this.selectedNavyTxId = list[0].id;
     }
 
-    const displayList = list.slice(0, 5);
+    // Render left list
+    navyContainer.innerHTML = list.map(tx => {
+      const cat = this.categories.find(c => c.id === tx.category);
+      const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+      const catColor = (cat && cat.color) ? cat.color : '#0ea5e9';
+      const isIncome = tx.type === 'income';
+      const isSelected = tx.id === this.selectedNavyTxId;
 
-    if (displayList.length === 0) {
-      recentContainer.innerHTML = `
-        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
-          ഇടപാടുകൾ ഒന്നും കണ്ടെത്തിയില്ല
+      return `
+        <div class="navy-tx-card ${isSelected ? 'active' : ''}" onclick="window.appEngine.selectNavyTx(${tx.id})">
+          <div class="navy-user-left">
+            <div class="navy-avatar-sq" style="background-color: ${catColor};">
+              ${catName.slice(0, 1)}
+            </div>
+            <div>
+              <div class="navy-name">${tx.party || catName}</div>
+              <div class="navy-date-sub">
+                ${this.formatDate(tx.date)} • ${tx.billNo ? `#${tx.billNo}` : catName}
+              </div>
+            </div>
+          </div>
+          <div class="navy-right-amt ${isIncome ? 'income' : 'expense'}">
+            ${isIncome ? '+' : '-'} ${this.formatCurrency(tx.amount)}
+          </div>
         </div>
       `;
+    }).join('');
+
+    // Render right purple details card
+    const selectedTx = this.transactions.find(t => t.id === this.selectedNavyTxId);
+    if (selectedTx) {
+      this.updateNavyDetailsCard(selectedTx);
+    }
+  }
+
+  selectNavyTx(id) {
+    this.selectedNavyTxId = Number(id);
+    this.renderNavyBoard();
+  }
+
+  updateNavyDetailsCard(tx) {
+    const cat = this.categories.find(c => c.id === tx.category);
+    const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+    const isIncome = tx.type === 'income';
+
+    const invElem = document.getElementById('navySelectedInvNo');
+    const amtElem = document.getElementById('navySelectedAmount');
+    const catElem = document.getElementById('navySelectedCategory');
+    const dateElem = document.getElementById('navySelectedDate');
+    const partyElem = document.getElementById('navySelectedParty');
+    const notesElem = document.getElementById('navySelectedNotes');
+    const subtotalElem = document.getElementById('navySelectedBottomSubtotal');
+    const badgeElem = document.getElementById('navySelectedTypeBadge');
+
+    if (invElem) invElem.textContent = `# ${tx.billNo || 'TX-' + tx.id}`;
+    if (amtElem) amtElem.textContent = this.formatCurrency(tx.amount);
+    if (catElem) catElem.textContent = catName;
+    if (dateElem) dateElem.textContent = this.formatDate(tx.date);
+    if (partyElem) partyElem.textContent = tx.party || (isIncome ? 'ലഭിച്ച വരുമാനം' : 'ഓഫീസ് ചിലവ്');
+    if (notesElem) notesElem.textContent = tx.notes ? `വിവരണം: ${tx.notes}` : 'കുറിപ്പുകൾ ലഭ്യമല്ല';
+    if (subtotalElem) subtotalElem.textContent = this.formatCurrency(tx.amount);
+
+    if (badgeElem) {
+      badgeElem.textContent = isIncome ? 'വരവ് (INCOME)' : 'ചിലവ് (EXPENSE)';
+      badgeElem.style.background = isIncome ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+    }
+
+    // Connect right card action buttons
+    const btnPrint = document.getElementById('btnNavyPrintVoucher');
+    const btnEdit = document.getElementById('btnNavyEditTx');
+    const btnDelete = document.getElementById('btnNavyDeleteTx');
+
+    if (btnPrint) {
+      btnPrint.onclick = () => this.downloadSingleVoucher(tx.id);
+    }
+    if (btnEdit) {
+      btnEdit.onclick = () => this.openEditTxModal(tx.id);
+    }
+    if (btnDelete) {
+      btnDelete.onclick = () => this.confirmDeleteTx(tx.id);
+    }
+  }
+
+  clearNavyDetailsCard() {
+    const invElem = document.getElementById('navySelectedInvNo');
+    const amtElem = document.getElementById('navySelectedAmount');
+    const catElem = document.getElementById('navySelectedCategory');
+    const dateElem = document.getElementById('navySelectedDate');
+    const partyElem = document.getElementById('navySelectedParty');
+    const notesElem = document.getElementById('navySelectedNotes');
+    const subtotalElem = document.getElementById('navySelectedBottomSubtotal');
+
+    if (invElem) invElem.textContent = '# -';
+    if (amtElem) amtElem.textContent = '₹0.00';
+    if (catElem) catElem.textContent = '-';
+    if (dateElem) dateElem.textContent = '-';
+    if (partyElem) partyElem.textContent = '-';
+    if (notesElem) notesElem.textContent = 'ഇടപാടുകൾ തിരഞ്ഞെടുക്കുക';
+    if (subtotalElem) subtotalElem.textContent = '₹0.00';
+  }
+
+  // ================= 7. PERIOD 1-CLICK EXPORTS (DAILY, WEEKLY, MONTHLY, YEARLY) =================
+  exportPeriod(period, format) {
+    const txs = this.getFilteredByPeriod(period);
+    if (txs.length === 0) {
+      this.showToast('ഈ പീരിയഡിൽ ഇടപാടുകൾ ലഭ്യമല്ല!', 'info');
       return;
     }
 
-    recentContainer.innerHTML = displayList.map(tx => this.renderTransactionItemHTML(tx)).join('');
+    const periodTitles = {
+      daily: 'DAILY STATEMENT (ഇന്നത്തെ കണക്ക്)',
+      weekly: 'WEEKLY STATEMENT (ഈ ആഴ്ചയിലെ കണക്ക്)',
+      monthly: 'MONTHLY STATEMENT (ഈ മാസത്തെ കണക്ക്)',
+      yearly: 'ANNUAL FINANCIAL STATEMENT (ഈ വർഷത്തെ കണക്ക്)',
+      all: 'ALL TIME FINANCIAL STATEMENT'
+    };
+
+    const title = periodTitles[period] || 'FINANCIAL STATEMENT';
+
+    if (format === 'pdf') {
+      if (window.reportsEngine) {
+        window.reportsEngine.downloadStatementPDF(txs, this.categories, this.officeProfile, title);
+      }
+    } else if (format === 'csv') {
+      if (window.reportsEngine) {
+        window.reportsEngine.exportToCSV(txs, this.categories, this.officeProfile, period);
+      }
+    }
   }
 
-  // --- View 2: Transactions Ledger Rendering ---
-  renderTransactionsLedger() {
+  // ================= 8. FULL TRANSACTIONS VIEW =================
+  renderTransactionsList() {
     const searchVal = (document.getElementById('txSearchInput')?.value || '').toLowerCase().trim();
-    const typeFilter = document.getElementById('filterTypeSelect')?.value || 'all';
-    const catFilter = document.getElementById('filterCategorySelect')?.value || 'all';
-    const dateRangeFilter = document.getElementById('filterDateRangeSelect')?.value || 'all';
+    const typeVal = document.getElementById('filterTypeSelect')?.value || 'all';
+    const catVal = document.getElementById('filterCategorySelect')?.value || 'all';
+    const datePreset = document.getElementById('filterDateRangeSelect')?.value || 'all';
 
     const customStart = document.getElementById('customStartDate')?.value || '';
     const customEnd = document.getElementById('customEndDate')?.value || '';
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const thisMonthStr = todayStr.slice(0, 7);
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
 
     const filtered = this.transactions.filter(tx => {
-      if (typeFilter !== 'all' && tx.type !== typeFilter) return false;
-      if (catFilter !== 'all' && tx.category !== catFilter) return false;
+      if (typeVal !== 'all' && tx.type !== typeVal) return false;
+      if (catVal !== 'all' && tx.category !== catVal) return false;
 
       const txDate = tx.date ? tx.date.slice(0, 10) : '';
-      if (dateRangeFilter === 'today' && txDate !== todayStr) return false;
-      if (dateRangeFilter === 'yesterday' && txDate !== yesterdayStr) return false;
-      if (dateRangeFilter === 'this_week' && txDate < oneWeekAgo) return false;
-      if (dateRangeFilter === 'this_month' && !txDate.startsWith(thisMonthStr)) return false;
-      if (dateRangeFilter === 'custom') {
+      if (datePreset === 'today' && txDate !== todayStr) return false;
+      if (datePreset === 'yesterday') {
+        const yest = new Date(today);
+        yest.setDate(today.getDate() - 1);
+        if (txDate !== yest.toISOString().slice(0, 10)) return false;
+      }
+      if (datePreset === 'this_week') {
+        const d = new Date(today);
+        d.setDate(today.getDate() - 7);
+        if (txDate < d.toISOString().slice(0, 10)) return false;
+      }
+      if (datePreset === 'this_month') {
+        if (!txDate.startsWith(todayStr.slice(0, 7))) return false;
+      }
+      if (datePreset === 'custom') {
         if (customStart && txDate < customStart) return false;
         if (customEnd && txDate > customEnd) return false;
       }
 
       if (searchVal) {
         const cat = this.categories.find(c => c.id === tx.category);
-        const catName = cat ? `${cat.nameMl} ${cat.nameEn}`.toLowerCase() : '';
+        const catName = (cat ? (cat.nameMl + ' ' + cat.nameEn) : (tx.category || '')).toLowerCase();
         const party = (tx.party || '').toLowerCase();
         const bill = (tx.billNo || '').toLowerCase();
         const notes = (tx.notes || '').toLowerCase();
-        const amount = String(tx.amount);
+        const amt = String(tx.amount || '');
 
-        const match = party.includes(searchVal) ||
-          bill.includes(searchVal) ||
-          notes.includes(searchVal) ||
-          catName.includes(searchVal) ||
-          amount.includes(searchVal);
-
+        const match = party.includes(searchVal) || bill.includes(searchVal) || notes.includes(searchVal) || catName.includes(searchVal) || amt.includes(searchVal);
         if (!match) return false;
       }
 
@@ -363,8 +540,9 @@ class OfficeFinanceApp {
     let fIncome = 0;
     let fExpense = 0;
     filtered.forEach(t => {
-      if (t.type === 'income') fIncome += parseFloat(t.amount) || 0;
-      else if (t.type === 'expense') fExpense += parseFloat(t.amount) || 0;
+      const a = parseFloat(t.amount) || 0;
+      if (t.type === 'income') fIncome += a;
+      else if (t.type === 'expense') fExpense += a;
     });
 
     const countElem = document.getElementById('filteredCountText');
@@ -387,74 +565,51 @@ class OfficeFinanceApp {
       return;
     }
 
-    ledgerContainer.innerHTML = filtered.map(tx => this.renderTransactionItemHTML(tx)).join('');
-  }
+    ledgerContainer.innerHTML = filtered.map(tx => {
+      const cat = this.categories.find(c => c.id === tx.category);
+      const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+      const catColor = (cat && cat.color) ? cat.color : '#0ea5e9';
+      const isIncome = tx.type === 'income';
 
-  renderTransactionItemHTML(tx) {
-    const cat = this.categories.find(c => c.id === tx.category);
-    const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
-    const catColor = cat && cat.color ? cat.color : '#00c569';
-    const isIncome = tx.type === 'income';
-
-    const formattedDate = this.formatDate(tx.date);
-    const sign = isIncome ? '+' : '-';
-    const amountClass = isIncome ? 'income' : 'expense';
-    const pillClass = isIncome ? 'pill-income' : 'pill-expense';
-    const pillLabel = isIncome ? 'Income' : 'Expense';
-
-    const hasAttachment = Boolean(tx.attachment);
-
-    return `
-      <div class="tx-table-row">
-        <!-- Left: Cute Avatar & Info -->
-        <div class="tx-left-col">
-          <div class="tx-avatar-box" style="background-color: ${catColor};">
-            ${catName.slice(0, 1)}
-          </div>
-
-          <div class="tx-info-block">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="tx-party-name">${tx.party || catName}</span>
-              <span class="tx-status-pill ${pillClass}">${pillLabel}</span>
-              ${tx.billNo ? `<span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #64748b;">#${tx.billNo}</span>` : ''}
-              ${hasAttachment ? `
-                <button onclick="window.appEngine.openAttachmentLightbox(${tx.id})" style="border: none; background: transparent; color: #00c569; cursor: pointer; padding: 2px;" title="View Bill">
-                  <i data-lucide="paperclip"></i>
-                </button>
-              ` : ''}
+      return `
+        <div class="navy-tx-card" style="background: var(--bg-surface); border-color: var(--border-light);">
+          <div class="navy-user-left">
+            <div class="navy-avatar-sq" style="background-color: ${catColor};">
+              ${catName.slice(0, 1)}
             </div>
-
-            <div class="tx-sub-info">
-              <span>${formattedDate}</span>
-              <span>• ${catName}</span>
-              ${tx.notes ? `<span>• ${tx.notes}</span>` : ''}
+            <div>
+              <div class="navy-name" style="color: var(--text-dark);">${tx.party || catName}</div>
+              <div class="navy-date-sub" style="color: var(--text-muted);">
+                ${this.formatDate(tx.date)} • ${catName} ${tx.billNo ? `• #${tx.billNo}` : ''}
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="navy-right-amt ${isIncome ? 'income' : 'expense'}">
+              ${isIncome ? '+' : '-'} ${this.formatCurrency(tx.amount)}
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button onclick="window.appEngine.downloadSingleVoucher(${tx.id})" class="sq-pill-btn" title="Voucher PDF">
+                <i data-lucide="file-text"></i>
+              </button>
+              <button onclick="window.appEngine.openEditTxModal(${tx.id})" class="sq-pill-btn" title="Edit">
+                <i data-lucide="edit-2"></i>
+              </button>
+              <button onclick="window.appEngine.confirmDeleteTx(${tx.id})" class="sq-pill-btn" style="color: var(--coral-rose);" title="Delete">
+                <i data-lucide="trash-2"></i>
+              </button>
             </div>
           </div>
         </div>
+      `;
+    }).join('');
 
-        <!-- Right: Amount & Action Dropdown -->
-        <div class="tx-right-col">
-          <div class="tx-amt-num ${amountClass}">
-            ${sign} ${this.formatCurrency(tx.amount)}
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <button onclick="window.appEngine.downloadSingleVoucher(${tx.id})" class="icon-action-menu" title="Voucher PDF">
-              <i data-lucide="file-text"></i>
-            </button>
-            <button onclick="window.appEngine.openEditTxModal(${tx.id})" class="icon-action-menu" title="Edit">
-              <i data-lucide="edit-2"></i>
-            </button>
-            <button onclick="window.appEngine.confirmDeleteTx(${tx.id})" class="icon-action-menu" style="color: #ff5722;" title="Delete">
-              <i data-lucide="trash-2"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
+    }
   }
 
-  // --- View 3: Reports & Analytics Rendering ---
+  // ================= 9. REPORTS VIEW =================
   renderReports() {
     const rangePreset = document.getElementById('reportRangePreset')?.value || 'this_month';
     const customStart = document.getElementById('reportStartDate')?.value || '';
@@ -466,19 +621,16 @@ class OfficeFinanceApp {
 
     const filtered = this.transactions.filter(tx => {
       const txDate = tx.date ? tx.date.slice(0, 10) : '';
-
-      if (rangePreset === 'this_month') {
-        return txDate.startsWith(thisMonthStr);
-      } else if (rangePreset === 'last_month') {
+      if (rangePreset === 'this_month') return txDate.startsWith(thisMonthStr);
+      if (rangePreset === 'last_month') {
         const lastM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
         const lastMStr = `${lastM.getFullYear()}-${String(lastM.getMonth() + 1).padStart(2, '0')}`;
         return txDate.startsWith(lastMStr);
-      } else if (rangePreset === 'this_year') {
-        return txDate.startsWith(String(today.getFullYear()));
-      } else if (rangePreset === 'custom') {
+      }
+      if (rangePreset === 'this_year') return txDate.startsWith(String(today.getFullYear()));
+      if (rangePreset === 'custom') {
         if (customStart && txDate < customStart) return false;
         if (customEnd && txDate > customEnd) return false;
-        return true;
       }
       return true;
     });
@@ -502,83 +654,70 @@ class OfficeFinanceApp {
 
     const netBal = totalIncome - totalExpense;
 
-    document.getElementById('reportTotalIncome').textContent = this.formatCurrency(totalIncome);
-    document.getElementById('reportTotalExpense').textContent = this.formatCurrency(totalExpense);
-    document.getElementById('reportNetBalance').textContent = this.formatCurrency(netBal);
+    const rInc = document.getElementById('reportTotalIncome');
+    const rExp = document.getElementById('reportTotalExpense');
+    const rNet = document.getElementById('reportNetBalance');
 
+    if (rInc) rInc.textContent = this.formatCurrency(totalIncome);
+    if (rExp) rExp.textContent = this.formatCurrency(totalExpense);
+    if (rNet) rNet.textContent = this.formatCurrency(netBal);
+
+    // Breakdown table
     const tableBody = document.getElementById('reportCategoryTableBody');
-    if (!tableBody) return;
+    if (tableBody) {
+      const entries = Object.entries(catExpenses).sort((a, b) => b[1].total - a[1].total);
+      if (entries.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 24px; color: var(--text-muted);">
+              ഈ പീരിയഡിൽ ചിലവുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല
+            </td>
+          </tr>
+        `;
+      } else {
+        tableBody.innerHTML = entries.map(([cid, data]) => {
+          const cat = this.categories.find(c => c.id === cid);
+          const cName = cat ? window.i18n.getCategoryName(cat) : cid;
+          const cColor = cat && cat.color ? cat.color : '#64748b';
+          const pct = totalExpense > 0 ? ((data.total / totalExpense) * 100).toFixed(1) : 0;
 
-    const sortedCatIds = Object.keys(catExpenses).sort((a, b) => catExpenses[b].total - catExpenses[a].total);
-
-    if (sortedCatIds.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="4" style="padding: 24px; text-align: center; color: var(--text-muted);">ചിലവുകൾ ഒന്നും കണ്ടെത്തിയില്ല</td></tr>`;
-      return;
+          return `
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 10px 8px; font-weight: 700;">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${cColor}; margin-right: 8px;"></span>
+                ${cName}
+              </td>
+              <td style="padding: 10px 8px; color: var(--text-muted);">${data.count} ഇടപാടുകൾ</td>
+              <td style="padding: 10px 8px; text-align: right; font-weight: 800;">${this.formatCurrency(data.total)}</td>
+              <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: var(--light-blue-600);">${pct}%</td>
+            </tr>
+          `;
+        }).join('');
+      }
     }
-
-    tableBody.innerHTML = sortedCatIds.map(cid => {
-      const cat = this.categories.find(c => c.id === cid);
-      const catName = cat ? window.i18n.getCategoryName(cat) : cid;
-      const data = catExpenses[cid];
-      const pct = totalExpense > 0 ? ((data.total / totalExpense) * 100).toFixed(1) : '0';
-
-      return `
-        <tr style="border-bottom: 1px solid var(--border-light);">
-          <td style="padding: 10px 8px; font-weight: 700;">${catName}</td>
-          <td style="padding: 10px 8px; color: var(--text-muted);">${data.count}</td>
-          <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: #ff5e36;">${this.formatCurrency(data.total)}</td>
-          <td style="padding: 10px 8px; text-align: right; color: var(--text-muted); font-weight: 700;">${pct}%</td>
-        </tr>
-      `;
-    }).join('');
   }
 
-  // --- View 4: Settings & Category Chips Rendering ---
-  renderSettings() {
-    if (this.officeProfile) {
-      const nameInp = document.getElementById('settingOfficeName');
-      const tagInp = document.getElementById('settingOfficeTagline');
-      const addrInp = document.getElementById('settingOfficeAddress');
-      const phoneInp = document.getElementById('settingOfficePhone');
-      const currInp = document.getElementById('settingOfficeCurrency');
-
-      if (nameInp) nameInp.value = this.officeProfile.name || 'OFFICE FINANCE TRACKER';
-      if (tagInp) tagInp.value = this.officeProfile.tagline || '';
-      if (addrInp) addrInp.value = this.officeProfile.address || '';
-      if (phoneInp) phoneInp.value = this.officeProfile.phone || '';
-      if (currInp) currInp.value = this.officeProfile.currency || '₹';
-    }
-
-    const expContainer = document.getElementById('expenseCategoryChips');
-    const incContainer = document.getElementById('incomeCategoryChips');
-
-    const expCats = this.categories.filter(c => c.type === 'expense');
-    const incCats = this.categories.filter(c => c.type === 'income');
-
-    const renderChip = (cat) => `
-      <div class="category-chip">
-        <span class="color-dot" style="background-color: ${cat.color || '#00c569'};"></span>
-        <span>${window.i18n.getCategoryName(cat)}</span>
-        ${cat.isCustom ? `
-          <button onclick="window.appEngine.deleteCustomCategory('${cat.id}')" class="chip-del" title="Delete">
-            &times;
-          </button>
-        ` : ''}
-      </div>
-    `;
-
-    if (expContainer) expContainer.innerHTML = expCats.map(renderChip).join('');
-    if (incContainer) incContainer.innerHTML = incCats.map(renderChip).join('');
-  }
-
-  populateCategoryDropdowns() {
-    const txSelect = document.getElementById('txCategory');
+  // ================= 10. TYPEABLE CATEGORY HANDLING =================
+  populateCategoryDatalist() {
+    const datalist = document.getElementById('categoryDatalist');
+    const pillsWrap = document.getElementById('quickCategoryPills');
     const filterCatSelect = document.getElementById('filterCategorySelect');
 
-    if (txSelect) {
-      const filtered = this.categories.filter(c => c.type === this.currentTxType);
-      txSelect.innerHTML = filtered.map(c => `
-        <option value="${c.id}">${window.i18n.getCategoryName(c)}</option>
+    const filtered = this.categories.filter(c => c.type === this.currentTxType);
+
+    if (datalist) {
+      datalist.innerHTML = filtered.map(c => `
+        <option value="${c.nameMl}">${c.nameEn || ''}</option>
+        ${c.nameEn ? `<option value="${c.nameEn}">${c.nameMl}</option>` : ''}
+      `).join('');
+    }
+
+    if (pillsWrap) {
+      pillsWrap.innerHTML = filtered.slice(0, 8).map(c => `
+        <button type="button" class="quick-cat-pill" onclick="window.appEngine.pickCategoryPill('${c.nameMl}')">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c.color || '#0ea5e9'};margin-right:4px;"></span>
+          ${c.nameMl}
+        </button>
       `).join('');
     }
 
@@ -592,7 +731,38 @@ class OfficeFinanceApp {
     }
   }
 
-  // --- Transaction Modal & Form Handling ---
+  pickCategoryPill(name) {
+    const input = document.getElementById('txCategory');
+    if (input) {
+      input.value = name;
+      input.focus();
+    }
+  }
+
+  renderSettingsCategoryChips() {
+    const expContainer = document.getElementById('expenseCategoryChips');
+    const incContainer = document.getElementById('incomeCategoryChips');
+
+    const expCats = this.categories.filter(c => c.type === 'expense');
+    const incCats = this.categories.filter(c => c.type === 'income');
+
+    const renderChip = (c) => `
+      <div class="category-chip">
+        <span class="color-dot" style="background-color: ${c.color || '#94a3b8'};"></span>
+        <span>${window.i18n.getCategoryName(c)}</span>
+        ${c.isCustom ? `
+          <button type="button" class="chip-del" onclick="window.appEngine.deleteCustomCategory('${c.id}')" title="Delete">
+            &times;
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    if (expContainer) expContainer.innerHTML = expCats.map(renderChip).join('');
+    if (incContainer) incContainer.innerHTML = incCats.map(renderChip).join('');
+  }
+
+  // ================= 11. MODAL & TRANSACTION SAVE =================
   openAddTxModal(type = 'expense') {
     this.editingTxId = null;
     this.currentTxType = type;
@@ -600,6 +770,7 @@ class OfficeFinanceApp {
 
     document.getElementById('txId').value = '';
     document.getElementById('txAmount').value = '';
+    document.getElementById('txCategory').value = '';
     document.getElementById('txDate').value = new Date().toISOString().slice(0, 10);
     document.getElementById('txParty').value = '';
     document.getElementById('txBillNo').value = '';
@@ -607,7 +778,7 @@ class OfficeFinanceApp {
 
     this.hideAttachmentPreview();
     this.updateTxTypeToggleUI();
-    this.populateCategoryDropdowns();
+    this.populateCategoryDatalist();
 
     document.getElementById('txModalTitle').textContent = 'പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക';
     document.getElementById('transactionModal').classList.remove('hidden');
@@ -632,11 +803,12 @@ class OfficeFinanceApp {
     document.getElementById('txBillNo').value = tx.billNo || '';
     document.getElementById('txNotes').value = tx.notes || '';
 
-    this.updateTxTypeToggleUI();
-    this.populateCategoryDropdowns();
+    // Find category display name
+    const cat = this.categories.find(c => c.id === tx.category);
+    document.getElementById('txCategory').value = cat ? cat.nameMl : (tx.category || '');
 
-    const catSelect = document.getElementById('txCategory');
-    if (catSelect) catSelect.value = tx.category;
+    this.updateTxTypeToggleUI();
+    this.populateCategoryDatalist();
 
     if (tx.attachment) {
       this.showAttachmentPreview(tx.attachment);
@@ -657,7 +829,7 @@ class OfficeFinanceApp {
   setTxType(type) {
     this.currentTxType = type;
     this.updateTxTypeToggleUI();
-    this.populateCategoryDropdowns();
+    this.populateCategoryDatalist();
   }
 
   updateTxTypeToggleUI() {
@@ -666,12 +838,12 @@ class OfficeFinanceApp {
     const partyLabel = document.getElementById('labelParty');
 
     if (this.currentTxType === 'income') {
-      btnInc.className = 'segment-btn active income';
-      btnExp.className = 'segment-btn expense';
+      if (btnInc) btnInc.className = 'segment-btn active income';
+      if (btnExp) btnExp.className = 'segment-btn expense';
       if (partyLabel) partyLabel.textContent = 'ആരിൽ നിന്ന് ലഭിച്ചു (Received From)';
     } else {
-      btnExp.className = 'segment-btn active expense';
-      btnInc.className = 'segment-btn income';
+      if (btnExp) btnExp.className = 'segment-btn active expense';
+      if (btnInc) btnInc.className = 'segment-btn income';
       if (partyLabel) partyLabel.textContent = 'ആർക്ക് നൽകി (Paid To)';
     }
   }
@@ -685,7 +857,39 @@ class OfficeFinanceApp {
       return;
     }
 
-    const category = document.getElementById('txCategory').value;
+    let typedCategory = document.getElementById('txCategory').value.trim();
+    if (!typedCategory) {
+      typedCategory = this.currentTxType === 'income' ? 'മറ്റ് വരുമാനങ്ങൾ' : 'മറ്റ് ചിലവുകൾ';
+    }
+
+    // Match or Auto-Create Category on the fly
+    let matchedCat = this.categories.find(c =>
+      c.id.toLowerCase() === typedCategory.toLowerCase() ||
+      (c.nameMl && c.nameMl.toLowerCase() === typedCategory.toLowerCase()) ||
+      (c.nameEn && c.nameEn.toLowerCase() === typedCategory.toLowerCase())
+    );
+
+    let categoryId;
+    if (matchedCat) {
+      categoryId = matchedCat.id;
+    } else {
+      // Auto-register newly typed category!
+      const newCatId = 'cat_' + Date.now();
+      const vibrantColors = ['#0ea5e9', '#5c54f8', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#0284c7'];
+      const pickedColor = vibrantColors[Math.floor(Math.random() * vibrantColors.length)];
+
+      await window.dbEngine.addCategory({
+        id: newCatId,
+        nameMl: typedCategory,
+        nameEn: typedCategory,
+        type: this.currentTxType,
+        color: pickedColor,
+        isCustom: true
+      });
+      this.categories = await window.dbEngine.getAllCategories();
+      categoryId = newCatId;
+    }
+
     const date = document.getElementById('txDate').value;
     const party = document.getElementById('txParty').value.trim();
     const billNo = document.getElementById('txBillNo').value.trim();
@@ -694,7 +898,7 @@ class OfficeFinanceApp {
     const txData = {
       type: this.currentTxType,
       amount,
-      category,
+      category: categoryId,
       date,
       party,
       billNo,
@@ -715,408 +919,452 @@ class OfficeFinanceApp {
     await this.refreshData();
   }
 
-  async confirmDeleteTx(id) {
-    if (confirm('ഈ ഇടപാട് തീർച്ചയായും ഒഴിവാക്കണമോ?')) {
-      await window.dbEngine.deleteTransaction(id);
-      this.showToast('ഇടപാട് നീക്കം ചെയ്തു', 'info');
-      await this.refreshData();
+  // ================= 12. EVENT LISTENERS =================
+  setupEventListeners() {
+    // 1. Navigation Menu Switching (Finnova Pill Nav & Mobile Bar)
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = btn.dataset.target;
+        if (target) {
+          this.switchView(target);
+        }
+      });
+    });
+
+    // 2. Dark Theme Toggle
+    document.getElementById('btnDarkToggle')?.addEventListener('click', () => {
+      this.toggleTheme();
+    });
+
+    // 3. Language Toggle
+    document.getElementById('btnLangToggle')?.addEventListener('click', () => {
+      window.i18n.toggleLanguage();
+      this.refreshData();
+    });
+
+    // 4. Quick PIN Lock
+    document.getElementById('btnQuickLock')?.addEventListener('click', () => {
+      if (!this.userPin) {
+        this.openPinSettingPrompt();
+      } else {
+        this.showPinLock();
+      }
+    });
+
+    // 5. PIN Keys
+    document.querySelectorAll('.pin-key').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.handlePinInput(btn.dataset.val);
+      });
+    });
+
+    // 6. Period Filter Tabs on Dashboard
+    document.querySelectorAll('.period-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.activePeriod = btn.dataset.period || 'daily';
+        this.renderDashboard();
+      });
+    });
+
+    // 7. Navy Board Sub-tabs
+    document.querySelectorAll('.navy-tab-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.navy-tab-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.navyFilter = btn.dataset.navyfilter || 'all';
+        this.renderNavyBoard();
+      });
+    });
+
+    // 8. Filter Chips on Active Filter Row
+    document.querySelectorAll('.filter-chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.subfilter || 'all';
+        this.navyFilter = filter;
+        this.renderNavyBoard();
+      });
+    });
+
+    // Quick Search on Dashboard
+    document.getElementById('dashQuickSearch')?.addEventListener('input', () => {
+      this.renderNavyBoard();
+    });
+
+    // 9. Dashboard 1-Click Period Export Buttons
+    document.getElementById('dashBtnPDF')?.addEventListener('click', () => {
+      this.exportPeriod(this.activePeriod, 'pdf');
+    });
+
+    document.getElementById('dashBtnExcel')?.addEventListener('click', () => {
+      this.exportPeriod(this.activePeriod, 'csv');
+    });
+
+    document.getElementById('dashBtnPrint')?.addEventListener('click', () => {
+      const txs = this.getFilteredByPeriod(this.activePeriod);
+      if (window.reportsEngine) {
+        window.reportsEngine.openPrintableStatement(txs, this.categories, this.officeProfile, `Statement (${this.activePeriod})`);
+      }
+    });
+
+    // 10. Open Transaction Modal
+    document.getElementById('btnOpenAddTxModal')?.addEventListener('click', () => {
+      this.openAddTxModal('expense');
+    });
+    document.getElementById('mobileFabAdd')?.addEventListener('click', () => {
+      this.openAddTxModal('expense');
+    });
+
+    document.getElementById('btnCloseTxModal')?.addEventListener('click', () => this.closeTxModal());
+    document.getElementById('btnCancelTx')?.addEventListener('click', () => this.closeTxModal());
+
+    // 11. Transaction Type Toggle in Modal
+    document.getElementById('toggleTypeExpense')?.addEventListener('click', () => this.setTxType('expense'));
+    document.getElementById('toggleTypeIncome')?.addEventListener('click', () => this.setTxType('income'));
+
+    // 12. Transaction Form Save
+    document.getElementById('txForm')?.addEventListener('submit', (e) => this.handleSaveTx(e));
+
+    // 13. Photo Attachment Handling
+    document.getElementById('txPhotoInput')?.addEventListener('change', (e) => this.handlePhotoUpload(e));
+    document.getElementById('btnDeleteAttachment')?.addEventListener('click', () => this.hideAttachmentPreview());
+    document.getElementById('btnCloseLightbox')?.addEventListener('click', () => {
+      document.getElementById('lightboxModal')?.classList.add('hidden');
+    });
+
+    // 14. Custom Category Modal
+    document.getElementById('btnQuickAddCat')?.addEventListener('click', () => this.openAddCategoryModal());
+    document.getElementById('btnOpenAddCategoryModal')?.addEventListener('click', () => this.openAddCategoryModal());
+    document.getElementById('btnCloseCatModal')?.addEventListener('click', () => this.closeAddCategoryModal());
+    document.getElementById('btnCancelCat')?.addEventListener('click', () => this.closeAddCategoryModal());
+    document.getElementById('categoryForm')?.addEventListener('submit', (e) => this.handleSaveCategory(e));
+
+    // 15. Ledger Filters
+    ['txSearchInput', 'filterTypeSelect', 'filterCategorySelect', 'filterDateRangeSelect', 'customStartDate', 'customEndDate'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => this.renderTransactionsList());
+      document.getElementById(id)?.addEventListener('change', () => this.renderTransactionsList());
+    });
+
+    document.getElementById('filterDateRangeSelect')?.addEventListener('change', (e) => {
+      const customRow = document.getElementById('customDateRangeRow');
+      if (customRow) {
+        if (e.target.value === 'custom') customRow.classList.remove('hidden');
+        else customRow.classList.add('hidden');
+      }
+    });
+
+    // 16. Reports View Custom Date & Exports
+    document.getElementById('reportRangePreset')?.addEventListener('change', (e) => {
+      const isCustom = e.target.value === 'custom';
+      document.getElementById('reportCustomStartCol')?.classList.toggle('hidden', !isCustom);
+      document.getElementById('reportCustomEndCol')?.classList.toggle('hidden', !isCustom);
+      this.renderReports();
+    });
+
+    document.getElementById('btnExportPDF')?.addEventListener('click', () => {
+      const preset = document.getElementById('reportRangePreset')?.value || 'this_month';
+      if (window.reportsEngine) {
+        window.reportsEngine.downloadStatementPDF(this.transactions, this.categories, this.officeProfile, `Report (${preset})`);
+      }
+    });
+
+    document.getElementById('btnExportCSV')?.addEventListener('click', () => {
+      if (window.reportsEngine) {
+        window.reportsEngine.exportToCSV(this.transactions, this.categories, this.officeProfile, 'full');
+      }
+    });
+
+    document.getElementById('btnPrintReport')?.addEventListener('click', () => {
+      if (window.reportsEngine) {
+        window.reportsEngine.openPrintableStatement(this.transactions, this.categories, this.officeProfile, 'Official Report');
+      }
+    });
+
+    // 17. Office Profile Form
+    document.getElementById('officeProfileForm')?.addEventListener('submit', (e) => this.handleSaveOfficeProfile(e));
+
+    // 18. Backup & Restore
+    document.getElementById('btnDownloadBackupJSON')?.addEventListener('click', () => this.handleDownloadBackup());
+    document.getElementById('inputRestoreJSON')?.addEventListener('change', (e) => this.handleRestoreBackup(e));
+
+    // 19. PIN & Data Wipe
+    document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.openPinSettingPrompt());
+    document.getElementById('btnClearAllData')?.addEventListener('click', () => this.confirmClearAllData());
+
+    // 20. PWA Install Button
+    document.getElementById('btnInstallApp')?.addEventListener('click', () => this.triggerPWAInstall());
+  }
+
+  // ================= 13. VIEW NAVIGATION =================
+  switchView(viewName) {
+    this.currentView = viewName;
+
+    // Toggle tab views
+    document.querySelectorAll('.tab-view').forEach(tab => {
+      tab.classList.add('hidden');
+    });
+    const targetSection = document.getElementById(`view-${viewName}`);
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+    }
+
+    // Update active nav button classes
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      if (btn.dataset.target === viewName) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    if (viewName === 'reports') {
+      this.renderReports();
+    } else if (viewName === 'transactions') {
+      this.renderTransactionsList();
+    } else if (viewName === 'dashboard') {
+      this.renderDashboard();
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
     }
   }
 
-  // --- Photo Attachment Compression & Preview ---
-  handlePhotoUpload(file) {
+  // ================= 14. ATTACHMENT & VOUCHERS =================
+  handlePhotoUpload(event) {
+    const file = event.target.files[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('ഇമേജ് ഫയലുകൾ മാത്രം അപ്‌ലോഡ് ചെയ്യുക.');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-        this.currentAttachment = compressedDataUrl;
-        this.showAttachmentPreview(compressedDataUrl);
-      };
-      img.src = e.target.result;
+      this.currentAttachment = e.target.result;
+      this.showAttachmentPreview(this.currentAttachment);
     };
     reader.readAsDataURL(file);
   }
 
-  showAttachmentPreview(src) {
-    const box = document.getElementById('attachmentPreviewBox');
-    const img = document.getElementById('attachmentImgPreview');
-    if (box && img) {
-      img.src = src;
-      box.classList.remove('hidden');
+  showAttachmentPreview(dataUrl) {
+    const previewBox = document.getElementById('attachmentPreviewBox');
+    const previewImg = document.getElementById('attachmentImgPreview');
+    if (previewBox && previewImg) {
+      previewImg.src = dataUrl;
+      previewBox.classList.remove('hidden');
     }
   }
 
   hideAttachmentPreview() {
-    const box = document.getElementById('attachmentPreviewBox');
-    const img = document.getElementById('attachmentImgPreview');
-    const input = document.getElementById('txPhotoInput');
-    if (box) box.classList.add('hidden');
-    if (img) img.src = '';
-    if (input) input.value = '';
     this.currentAttachment = null;
+    const previewBox = document.getElementById('attachmentPreviewBox');
+    const previewImg = document.getElementById('attachmentImgPreview');
+    const fileInput = document.getElementById('txPhotoInput');
+    if (previewBox) previewBox.classList.add('hidden');
+    if (previewImg) previewImg.src = '';
+    if (fileInput) fileInput.value = '';
   }
 
-  openAttachmentLightbox(id) {
-    const tx = this.transactions.find(t => t.id === Number(id));
-    if (!tx || !tx.attachment) return;
-
-    const lightbox = document.getElementById('lightboxModal');
-    const img = document.getElementById('lightboxImg');
-    if (lightbox && img) {
-      img.src = tx.attachment;
-      lightbox.classList.remove('hidden');
+  downloadSingleVoucher(txId) {
+    const tx = this.transactions.find(t => t.id === Number(txId));
+    if (!tx) return;
+    if (window.reportsEngine) {
+      window.reportsEngine.downloadVoucherPDF(tx, this.categories, this.officeProfile);
     }
   }
 
-  closeLightbox() {
-    const lightbox = document.getElementById('lightboxModal');
-    if (lightbox) lightbox.classList.add('hidden');
+  async confirmDeleteTx(txId) {
+    if (confirm('ഈ ഇടപാട് ഡിലീറ്റ് ചെയ്യണമെന്ന് ഉറപ്പാണോ?')) {
+      await window.dbEngine.deleteTransaction(Number(txId));
+      this.showToast('ഇടപാട് മായ്ച്ചു!', 'info');
+      await this.refreshData();
+    }
   }
 
-  // --- Custom Category Management ---
+  // ================= 15. CUSTOM CATEGORY MODAL =================
   openAddCategoryModal() {
     document.getElementById('newCatNameMl').value = '';
     document.getElementById('newCatNameEn').value = '';
-    document.getElementById('categoryModal').classList.remove('hidden');
+    document.getElementById('categoryModal')?.classList.remove('hidden');
   }
 
   closeAddCategoryModal() {
-    document.getElementById('categoryModal').classList.add('hidden');
+    document.getElementById('categoryModal')?.classList.add('hidden');
   }
 
-  async handleSaveCategory(event) {
-    event.preventDefault();
-
+  async handleSaveCategory(e) {
+    e.preventDefault();
     const type = document.getElementById('newCatType').value;
     const nameMl = document.getElementById('newCatNameMl').value.trim();
-    const nameEn = document.getElementById('newCatNameEn').value.trim() || nameMl;
+    const nameEn = document.getElementById('newCatNameEn').value.trim();
     const color = document.getElementById('newCatColor').value;
 
     if (!nameMl) return;
 
-    const cat = {
+    const newId = 'cat_' + Date.now();
+    await window.dbEngine.addCategory({
+      id: newId,
       nameMl,
       nameEn,
       type,
       color,
-      icon: 'tag'
-    };
+      isCustom: true
+    });
 
-    await window.dbEngine.addCategory(cat);
     this.showToast('പുതിയ കാറ്റഗറി ചേർത്തു!', 'success');
     this.closeAddCategoryModal();
     await this.refreshData();
   }
 
   async deleteCustomCategory(id) {
-    if (confirm('ഈ കാറ്റഗറി നീക്കം ചെയ്യണമോ?')) {
+    if (confirm('ഈ കാറ്റഗറി ഒഴിവാക്കണോ?')) {
       await window.dbEngine.deleteCategory(id);
       this.showToast('കാറ്റഗറി ഒഴിവാക്കി', 'info');
       await this.refreshData();
     }
   }
 
-  // --- Reports & Exports ---
-  downloadPDFStatement() {
-    const rangePreset = document.getElementById('reportRangePreset')?.value || 'this_month';
-    const customStart = document.getElementById('reportStartDate')?.value || '';
-    const customEnd = document.getElementById('reportEndDate')?.value || '';
-
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
-    const thisMonthStr = todayStr.slice(0, 7);
-
-    let rangeTitle = 'All Time';
-    const filtered = this.transactions.filter(tx => {
-      const txDate = tx.date ? tx.date.slice(0, 10) : '';
-
-      if (rangePreset === 'this_month') {
-        rangeTitle = `Month: ${thisMonthStr}`;
-        return txDate.startsWith(thisMonthStr);
-      } else if (rangePreset === 'last_month') {
-        const lastM = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastMStr = `${lastM.getFullYear()}-${String(lastM.getMonth() + 1).padStart(2, '0')}`;
-        rangeTitle = `Month: ${lastMStr}`;
-        return txDate.startsWith(lastMStr);
-      } else if (rangePreset === 'this_year') {
-        rangeTitle = `Year: ${today.getFullYear()}`;
-        return txDate.startsWith(String(today.getFullYear()));
-      } else if (rangePreset === 'custom') {
-        rangeTitle = `${customStart} to ${customEnd}`;
-        if (customStart && txDate < customStart) return false;
-        if (customEnd && txDate > customEnd) return false;
-        return true;
-      }
-      return true;
-    });
-
-    window.reportsEngine.downloadStatementPDF(filtered, this.categories, this.officeProfile, rangeTitle);
-  }
-
-  downloadSingleVoucher(id) {
-    const tx = this.transactions.find(t => t.id === Number(id));
-    if (!tx) return;
-    const cat = this.categories.find(c => c.id === tx.category);
-    window.reportsEngine.downloadVoucherPDF(tx, cat, this.officeProfile);
-  }
-
-  downloadExcel() {
-    window.reportsEngine.exportToCSV(this.transactions, this.categories, this.officeProfile);
-    this.showToast('എക്സൽ ഡൗൺലോഡ് ചെയ്യുന്നു...', 'success');
-  }
-
-  async downloadBackupJSON() {
-    const data = await window.dbEngine.exportBackup();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `OfficeFinance_Backup_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    this.showToast('ബാക്കപ്പ് ഫയൽ ഡൗൺലോഡ് ചെയ്തു!', 'success');
-  }
-
-  async handleRestoreJSON(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const json = JSON.parse(e.target.result);
-        await window.dbEngine.importBackup(json);
-        this.showToast('ബാക്കപ്പ് റീസ്റ്റോർ ചെയ്തു!', 'success');
-        await this.loadSettings();
-        await this.refreshData();
-      } catch (err) {
-        alert('ബാക്കപ്പ് ഫയൽ തെറ്റാണ്: ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  async clearAllData() {
-    if (confirm('ശ്രദ്ധിക്കുക: എല്ലാ കണക്കുകളും സ്ഥിരമായി മായ്ക്കപ്പെടും! തുടരണമോ?')) {
-      await window.dbEngine.clearAllData();
-      this.showToast('എല്ലാ ഇടപാടുകളും നീക്കം ചെയ്തു!', 'info');
-      await this.refreshData();
-    }
-  }
-
-  async handleSaveProfile(event) {
-    event.preventDefault();
-
-    this.officeProfile = {
-      name: document.getElementById('settingOfficeName').value.trim() || 'OFFICE FINANCE TRACKER',
+  // ================= 16. OFFICE PROFILE & BACKUP =================
+  async handleSaveOfficeProfile(e) {
+    e.preventDefault();
+    const profile = {
+      name: document.getElementById('settingOfficeName').value.trim(),
       tagline: document.getElementById('settingOfficeTagline').value.trim(),
       address: document.getElementById('settingOfficeAddress').value.trim(),
       phone: document.getElementById('settingOfficePhone').value.trim(),
       currency: document.getElementById('settingOfficeCurrency').value.trim() || '₹'
     };
 
-    await window.dbEngine.setSetting('officeProfile', this.officeProfile);
+    await window.dbEngine.setSetting('officeProfile', profile);
+    this.officeProfile = profile;
     this.applyProfileToHeader();
     this.showToast('ഓഫീസ് പ്രൊഫൈൽ സേവ് ചെയ്തു!', 'success');
   }
 
-  setupPWA() {
-    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
-      });
+  async handleDownloadBackup() {
+    const jsonStr = await window.dbEngine.exportBackupJSON();
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Office_Finance_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    this.showToast('ബാക്കപ്പ് ഡൗൺലോഡ് പൂർത്തിയായി!', 'success');
+  }
+
+  handleRestoreBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const count = await window.dbEngine.restoreBackupJSON(e.target.result);
+        this.showToast(`${count} ഇടപാടുകൾ റീസ്റ്റോർ ചെയ്തു!`, 'success');
+        await this.refreshData();
+      } catch (err) {
+        alert('ബാക്കപ്പ് ഫയൽ തെറ്റാണ്!');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  openPinSettingPrompt() {
+    const current = this.userPin;
+    const promptMsg = current ? 'പുതിയ 4-അക്ക PIN നൽകുക (ഒഴിവാക്കാൻ ഒന്നും നൽകരുത്):' : '4-അക്ക സുരക്ഷാ PIN നൽകുക:';
+    const newPin = prompt(promptMsg);
+
+    if (newPin === null) return;
+    if (newPin === '') {
+      this.userPin = null;
+      window.dbEngine.setSetting('appPin', null);
+      this.updatePinStatusUI();
+      this.showToast('PIN സുരക്ഷ ഒഴിവാക്കി', 'info');
+      return;
     }
 
-    const installBtn = document.getElementById('btnInstallApp');
+    if (/^\d{4}$/.test(newPin)) {
+      this.userPin = newPin;
+      window.dbEngine.setSetting('appPin', newPin);
+      this.updatePinStatusUI();
+      this.showToast('PIN വിജയകരമായി സേവ് ചെയ്തു!', 'success');
+    } else {
+      alert('ദയവായി 4 അക്കങ്ങൾ മാത്രം നൽകുക (e.g. 1234)');
+    }
+  }
+
+  async confirmClearAllData() {
+    if (confirm('ശ്രദ്ധിക്കുക: എല്ലാ വരവ് ചിലവ് ഇടപാടുകളും പൂർണ്ണമായും മായ്ക്കപ്പെടും. തുടരണോ?')) {
+      if (confirm('ഡാറ്റ തിരിച്ചെടുക്കാൻ സാധിക്കില്ല. നിങ്ങൾ ഉറപ്പാണോ?')) {
+        await window.dbEngine.clearAllData();
+        this.showToast('എല്ലാ ഇടപാടുകളും മായ്ച്ചു.', 'info');
+        await this.refreshData();
+      }
+    }
+  }
+
+  // ================= 17. PWA & TOAST =================
+  setupPWA() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferredPrompt = e;
+      const installBtn = document.getElementById('btnInstallApp');
       if (installBtn) installBtn.classList.remove('hidden');
     });
+  }
 
-    if (installBtn) {
-      installBtn.addEventListener('click', async () => {
-        if (this.deferredPrompt) {
-          this.deferredPrompt.prompt();
-          await this.deferredPrompt.userChoice;
-          this.deferredPrompt = null;
-          installBtn.classList.add('hidden');
-        }
-      });
+  async triggerPWAInstall() {
+    if (!this.deferredPrompt) return;
+    this.deferredPrompt.prompt();
+    const { outcome } = await this.deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      const installBtn = document.getElementById('btnInstallApp');
+      if (installBtn) installBtn.classList.add('hidden');
     }
+    this.deferredPrompt = null;
   }
 
   checkUrlActions() {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    if (action === 'expense') this.openAddTxModal('expense');
-    else if (action === 'income') this.openAddTxModal('income');
+    if (action === 'expense') {
+      this.openAddTxModal('expense');
+    } else if (action === 'income') {
+      this.openAddTxModal('income');
+    }
   }
 
-  setupEventListeners() {
-    // Navigation
-    document.querySelectorAll('.nav-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.getAttribute('data-target');
-        if (target) this.switchView(target);
-      });
-    });
+  showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
 
-    // Language Toggle
-    const toggleLang = () => {
-      const nextLang = window.i18n.currentLang === 'ml' ? 'en' : 'ml';
-      window.i18n.setLanguage(nextLang);
-      const text = nextLang === 'ml' ? 'English' : 'മലയാളം';
-      const label = document.getElementById('langLabelText');
-      if (label) label.textContent = text;
-    };
-    document.getElementById('btnLangToggle')?.addEventListener('click', toggleLang);
-    document.getElementById('btnSidebarLang')?.addEventListener('click', toggleLang);
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.style.background = type === 'success' ? 'var(--emerald-green)' : (type === 'error' ? 'var(--coral-rose)' : 'var(--finnova-purple)');
+    toast.textContent = message;
 
-    // Lock button
-    document.getElementById('btnQuickLock')?.addEventListener('click', () => {
-      if (this.userPin) this.showPinLock();
-      else this.togglePinSetting();
-    });
-
-    // Sub-tabs on Dashboard
-    document.querySelectorAll('.sub-tab-item').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.sub-tab-item').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        this.dashRecentFilter = tab.getAttribute('data-filter') || 'all';
-        this.renderDashboardRecentList();
-      });
-    });
-
-    // Global Search Bar in Top Nav
-    document.getElementById('globalQuickSearch')?.addEventListener('input', (e) => {
-      const val = e.target.value.trim();
-      if (val) {
-        this.switchView('transactions');
-        const txSearch = document.getElementById('txSearchInput');
-        if (txSearch) {
-          txSearch.value = val;
-          this.renderTransactionsLedger();
-        }
-      }
-    });
-
-    // PIN Keypad
-    document.querySelectorAll('.pin-key').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const val = btn.getAttribute('data-val');
-        this.handlePinInput(val);
-      });
-    });
-
-    // Action buttons
-    document.getElementById('mobileFabAdd')?.addEventListener('click', () => this.openAddTxModal('expense'));
-    document.getElementById('dashBtnExpense')?.addEventListener('click', () => this.openAddTxModal('expense'));
-    document.getElementById('dashBtnIncome')?.addEventListener('click', () => this.openAddTxModal('income'));
-
-    document.getElementById('dashBtnPDF')?.addEventListener('click', () => this.downloadPDFStatement());
-    document.getElementById('dashBtnExcel')?.addEventListener('click', () => this.downloadExcel());
-    document.getElementById('btnViewAllFromDash')?.addEventListener('click', () => this.switchView('transactions'));
-
-    // Modal
-    document.getElementById('btnCloseTxModal')?.addEventListener('click', () => this.closeTxModal());
-    document.getElementById('btnCancelTx')?.addEventListener('click', () => this.closeTxModal());
-
-    document.getElementById('toggleTypeExpense')?.addEventListener('click', () => this.setTxType('expense'));
-    document.getElementById('toggleTypeIncome')?.addEventListener('click', () => this.setTxType('income'));
-
-    document.getElementById('btnQuickAddCat')?.addEventListener('click', () => this.openAddCategoryModal());
-    document.getElementById('btnOpenAddCategoryModal')?.addEventListener('click', () => this.openAddCategoryModal());
-    document.getElementById('btnCloseCatModal')?.addEventListener('click', () => this.closeAddCategoryModal());
-    document.getElementById('btnCancelCat')?.addEventListener('click', () => this.closeAddCategoryModal());
-
-    document.getElementById('txForm')?.addEventListener('submit', (e) => this.handleSaveTx(e));
-    document.getElementById('categoryForm')?.addEventListener('submit', (e) => this.handleSaveCategory(e));
-    document.getElementById('officeProfileForm')?.addEventListener('submit', (e) => this.handleSaveProfile(e));
-
-    document.getElementById('txPhotoInput')?.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        this.handlePhotoUpload(e.target.files[0]);
-      }
-    });
-    document.getElementById('btnDeleteAttachment')?.addEventListener('click', () => this.hideAttachmentPreview());
-
-    document.getElementById('btnCloseLightbox')?.addEventListener('click', () => this.closeLightbox());
-
-    // Ledger Filters
-    document.getElementById('txSearchInput')?.addEventListener('input', () => this.renderTransactionsLedger());
-    document.getElementById('filterTypeSelect')?.addEventListener('change', () => this.renderTransactionsLedger());
-    document.getElementById('filterCategorySelect')?.addEventListener('change', () => this.renderTransactionsLedger());
-    document.getElementById('filterDateRangeSelect')?.addEventListener('change', (e) => {
-      const customRow = document.getElementById('customDateRangeRow');
-      if (e.target.value === 'custom') customRow?.classList.remove('hidden');
-      else customRow?.classList.add('hidden');
-      this.renderTransactionsLedger();
-    });
-    document.getElementById('customStartDate')?.addEventListener('change', () => this.renderTransactionsLedger());
-    document.getElementById('customEndDate')?.addEventListener('change', () => this.renderTransactionsLedger());
-
-    // Reports
-    document.getElementById('reportRangePreset')?.addEventListener('change', (e) => {
-      const startCol = document.getElementById('reportCustomStartCol');
-      const endCol = document.getElementById('reportCustomEndCol');
-      if (e.target.value === 'custom') {
-        startCol?.classList.remove('hidden');
-        endCol?.classList.remove('hidden');
-      } else {
-        startCol?.classList.add('hidden');
-        endCol?.classList.add('hidden');
-      }
-      this.renderReports();
-    });
-    document.getElementById('reportStartDate')?.addEventListener('change', () => this.renderReports());
-    document.getElementById('reportEndDate')?.addEventListener('change', () => this.renderReports());
-
-    document.getElementById('btnExportPDF')?.addEventListener('click', () => this.downloadPDFStatement());
-    document.getElementById('btnExportCSV')?.addEventListener('click', () => this.downloadExcel());
-    document.getElementById('btnPrintReport')?.addEventListener('click', () => window.print());
-
-    document.getElementById('btnDownloadBackupJSON')?.addEventListener('click', () => this.downloadBackupJSON());
-    document.getElementById('inputRestoreJSON')?.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        this.handleRestoreJSON(e.target.files[0]);
-      }
-    });
-    document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.togglePinSetting());
-    document.getElementById('btnClearAllData')?.addEventListener('click', () => this.clearAllData());
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 2800);
   }
 
-  // --- Utility Functions ---
   formatCurrency(num) {
-    const sym = (this.officeProfile && this.officeProfile.currency) ? this.officeProfile.currency : '₹';
-    return sym + Number(num || 0).toLocaleString('en-IN', {
+    const curr = (this.officeProfile && this.officeProfile.currency) || '₹';
+    return curr + Number(num || 0).toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
@@ -1131,28 +1379,9 @@ class OfficeFinanceApp {
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
   }
-
-  showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    const bg = type === 'success' ? '#00c569' : type === 'error' ? '#ff5722' : '#1e293b';
-
-    toast.className = 'toast-msg';
-    toast.style.backgroundColor = bg;
-    toast.textContent = message;
-
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
-      toast.style.transition = 'all 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
-    }, 2600);
-  }
 }
 
+// Global App Initialization
 window.addEventListener('DOMContentLoaded', () => {
   window.appEngine = new OfficeFinanceApp();
   window.appEngine.init();

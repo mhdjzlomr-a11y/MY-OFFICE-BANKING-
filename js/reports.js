@@ -139,7 +139,8 @@ class ReportsEngine {
           });
         }
 
-        doc.save(`Office_Finance_Statement_${new Date().toISOString().slice(0, 10)}.pdf`);
+        const sanitizedPeriod = (rangeTitle || 'Statement').replace(/[\s\/\(\)]+/g, '_');
+        doc.save(`Office_Finance_${sanitizedPeriod}_${new Date().toISOString().slice(0, 10)}.pdf`);
         return;
       } catch (e) {
         console.warn('jsPDF error, falling back to styled print window:', e);
@@ -352,7 +353,7 @@ class ReportsEngine {
   }
 
   // --- 4. Excel (CSV with UTF-8 BOM) Export ---
-  exportToCSV(transactions, categories, profile) {
+  exportToCSV(transactions, categories, profile, periodLabel = '') {
     const catMap = {};
     (categories || []).forEach(c => { catMap[c.id] = c; });
 
@@ -378,7 +379,8 @@ class ReportsEngine {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Office_Finance_${new Date().toISOString().slice(0, 10)}.csv`);
+    const sanitizedLabel = periodLabel ? `_${periodLabel.replace(/[\s\/\(\)]+/g, '_')}` : '';
+    link.setAttribute('download', `Office_Finance${sanitizedLabel}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

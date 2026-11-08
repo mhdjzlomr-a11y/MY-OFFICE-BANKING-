@@ -1,6 +1,6 @@
 /* ==========================================================================
-   OFFICE FINANCE TRACKER - MODERN EDUKA THEME
-   Inspired by clean, vibrant dashboard design with colored stat cards
+   OFFICE FINANCE TRACKER - FINNOVA THEME WITH LIGHT BLUE & FULL DARK MODE
+   Inspired by Finnova Design: Dark Pill Nav, Dual-Tone Cards, Navy Ledger Board
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap');
@@ -8,40 +8,75 @@
 :root {
   --font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* Theme Colors from the Reference Image */
-  --bg-app: #f4f6fa;
+  /* Finnova Palette (Light Theme Default) */
+  --bg-app: #f2f4f8;
   --bg-surface: #ffffff;
-  --bg-subtle: #f8fafd;
-  --border-light: #eaedf3;
-  --border-subtle: #f0f3f8;
-  
-  --text-dark: #1e293b;
-  --text-muted: #8a94a6;
-  --text-light: #a0aec0;
-  
-  /* Vibrant Card Gradients */
-  --card-green: linear-gradient(135deg, #00c968 0%, #00b05b 100%);
-  --card-blue: linear-gradient(135deg, #0091ff 0%, #0077e6 100%);
-  --card-purple: linear-gradient(135deg, #8d4bf6 0%, #752fe3 100%);
-  --card-orange: linear-gradient(135deg, #ff5e36 0%, #ee4114 100%);
-  
-  --card-green-shadow: 0 10px 22px rgba(0, 201, 104, 0.28);
-  --card-blue-shadow: 0 10px 22px rgba(0, 145, 255, 0.28);
-  --card-purple-shadow: 0 10px 22px rgba(141, 75, 246, 0.28);
-  --card-orange-shadow: 0 10px 22px rgba(255, 94, 54, 0.28);
+  --bg-card: #ffffff;
+  --bg-subtle: #f8fafc;
+  --border-light: #e8ecf4;
+  --border-subtle: #f1f4f9;
 
-  /* Primary Brand Green */
-  --brand-green: #00c569;
-  --brand-green-hover: #00ad5c;
-  --brand-green-light: #e6faf0;
-  
-  --radius-xl: 22px;
-  --radius-lg: 16px;
-  --radius-md: 12px;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+
+  /* Finnova Signature Accent Colors */
+  --finnova-purple: #5c54f8;
+  --finnova-purple-hover: #4a41f5;
+  --finnova-purple-light: #edeaff;
+  --finnova-navy-dark: #121524;
+  --finnova-navy-card: #1a1e33;
+  --finnova-navy-border: #262c49;
+
+  /* User Requested Light Blue Color */
+  --light-blue-50: #f0f9ff;
+  --light-blue-100: #e0f2fe;
+  --light-blue-500: #0ea5e9;
+  --light-blue-600: #0284c7;
+  --light-blue-light: #e0f4ff;
+
+  /* Income & Expense */
+  --emerald-green: #10b981;
+  --emerald-light: #ecfdf5;
+  --coral-rose: #f43f5e;
+  --coral-light: #fff1f2;
+
+  --radius-xxl: 28px;
+  --radius-xl: 20px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --radius-pill: 9999px;
-  
-  --shadow-card: 0 4px 16px rgba(148, 163, 184, 0.08);
-  --shadow-hover: 0 8px 24px rgba(148, 163, 184, 0.14);
+
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.1);
+}
+
+/* ================= DARK THEME OVERRIDES ================= */
+html.dark {
+  --bg-app: #090b14;
+  --bg-surface: #101424;
+  --bg-card: #151a2e;
+  --bg-subtle: #192038;
+  --border-light: #202744;
+  --border-subtle: #1c233c;
+
+  --text-dark: #f8fafc;
+  --text-muted: #8c9bb5;
+  --text-light: #64748b;
+
+  --finnova-navy-dark: #0c0e1a;
+  --finnova-navy-card: #15192c;
+  --finnova-navy-border: #232a48;
+
+  --light-blue-50: rgba(14, 165, 233, 0.15);
+  --light-blue-light: rgba(14, 165, 233, 0.2);
+
+  --emerald-light: rgba(16, 185, 129, 0.15);
+  --coral-light: rgba(244, 63, 94, 0.15);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* Base Reset */
@@ -59,676 +94,685 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Outer Shell Window (Like Eduka Dashboard Card) */
-.app-window-wrapper {
-  max-width: 1360px;
+/* App Outer Container */
+.finnova-shell {
+  max-width: 1400px;
   width: 100%;
-  margin: 12px auto;
-  background: var(--bg-surface);
-  border-radius: 28px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--border-light);
+  margin: 14px auto;
+  padding: 0 16px 84px 16px;
   display: flex;
-  min-height: calc(100vh - 24px);
-  overflow: hidden;
-}
-@media (max-width: 768px) {
-  .app-window-wrapper {
-    margin: 0;
-    border-radius: 0;
-    border: none;
-    min-height: 100vh;
-  }
-}
-
-/* Left Sidebar */
-.eduka-sidebar {
-  width: 220px;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-light);
-  display: none;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 26px 16px;
-  flex-shrink: 0;
+  gap: 18px;
 }
 @media (min-width: 768px) {
-  .eduka-sidebar {
-    display: flex;
+  .finnova-shell {
+    padding-bottom: 24px;
   }
 }
 
-.brand-header {
+/* ================= 1. FINNOVA TOP HEADER BAR ================= */
+.finnova-top-header {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xxl);
+  padding: 12px 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 8px 26px 8px;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  gap: 14px;
+  flex-wrap: wrap;
 }
-.brand-logo-badge {
-  width: 38px;
-  height: 38px;
+
+/* Logo Left */
+.finnova-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.finnova-ribbon-icon {
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #00c569, #0091ff);
+  background: linear-gradient(135deg, var(--finnova-purple), #818cf8);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  font-weight: 900;
-  font-size: 1.1rem;
+  box-shadow: 0 4px 14px rgba(92, 84, 248, 0.35);
 }
-.brand-title {
+.finnova-brand-text {
   font-size: 1.18rem;
   font-weight: 800;
-  color: #0f172a;
   letter-spacing: -0.02em;
-}
-
-.sidebar-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.menu-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-  width: 100%;
-}
-.menu-btn:hover {
   color: var(--text-dark);
-  background: var(--bg-subtle);
+  line-height: 1.1;
 }
-.menu-btn.active {
-  color: var(--brand-green);
-  background: var(--brand-green-light);
-  font-weight: 700;
-}
-
-.sidebar-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-light);
+.finnova-brand-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
-/* Main Workspace */
-.eduka-workspace {
-  flex: 1;
-  background: var(--bg-app);
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding-bottom: 74px; /* Space for mobile bar */
+/* Center Dark Pill Nav (Finnova Style) */
+.finnova-center-pill-nav {
+  display: none;
+  background: var(--finnova-navy-dark);
+  padding: 5px;
+  border-radius: var(--radius-pill);
+  gap: 4px;
+  align-items: center;
+  box-shadow: 0 4px 14px rgba(18, 21, 36, 0.25);
 }
-@media (min-width: 768px) {
-  .eduka-workspace {
-    padding-bottom: 0;
+@media (min-width: 900px) {
+  .finnova-center-pill-nav {
+    display: flex;
   }
 }
+.finnova-nav-btn {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.finnova-nav-btn:hover {
+  color: #ffffff;
+}
+.finnova-nav-btn.active {
+  background: var(--finnova-purple);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(92, 84, 248, 0.5);
+}
 
-/* Top App Bar */
-.top-nav-bar {
+/* Right Action Buttons (Square Rounded Pills) */
+.finnova-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sq-pill-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sq-pill-btn:hover {
+  background: var(--bg-surface);
+  border-color: var(--finnova-purple);
+  color: var(--finnova-purple);
+}
+.theme-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.theme-switch-btn:hover {
+  border-color: var(--finnova-purple);
+  background: var(--finnova-purple-light);
+}
+
+/* ================= 2. TITLE BAR & PERIOD FILTER TABS ================= */
+.finnova-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-light);
-  gap: 12px;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 4px 4px;
 }
-.user-greeting {
+.page-heading-block {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.15rem;
+  flex-direction: column;
+  gap: 2px;
+}
+.page-title {
+  font-size: 1.65rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--text-dark);
 }
-.greeting-wave {
-  font-size: 1.3rem;
-}
-
-.top-nav-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.search-pill-wrap {
-  position: relative;
-  display: none;
-}
-@media (min-width: 640px) {
-  .search-pill-wrap {
-    display: flex;
-    align-items: center;
-  }
-}
-.search-pill {
-  width: 220px;
-  padding: 8px 14px 8px 34px;
-  border-radius: var(--radius-pill);
-  background: var(--bg-app);
-  border: 1px solid var(--border-light);
-  font-size: 0.8rem;
-  outline: none;
-  color: var(--text-dark);
-}
-.search-pill:focus {
-  border-color: var(--brand-green);
-  background: #ffffff;
-}
-.search-icon-inside {
-  position: absolute;
-  left: 12px;
+.page-sub {
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 
-.top-action-btn {
+/* Period Tabs (Daily, Weekly, Monthly, Yearly) */
+.period-tabs-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.period-tab-btn {
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.period-tab-btn:hover {
+  color: var(--text-dark);
+}
+.period-tab-btn.active {
+  background: var(--light-blue-600);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+/* Create Entry Button */
+.btn-create-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  background: var(--finnova-purple);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(92, 84, 248, 0.35);
+  transition: all 0.15s ease;
+}
+.btn-create-entry:hover {
+  background: var(--finnova-purple-hover);
+  transform: translateY(-1px);
+}
+
+/* ================= 3. THE 4 STAT CARDS (WITH LIGHT BLUE ACCENT) ================= */
+.finnova-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 14px;
+}
+@media (min-width: 640px) {
+  .finnova-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .finnova-stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.finnova-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  min-height: 150px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.finnova-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Special Light Blue Card Accent (User Requested) */
+.finnova-stat-card.accent-light-blue {
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--light-blue-50) 100%);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.card-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.card-label-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.card-indicator-bubble {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bubble-light-blue {
+  background: var(--light-blue-light);
+  color: var(--light-blue-600);
+}
+.bubble-purple {
+  background: var(--finnova-purple-light);
+  color: var(--finnova-purple);
+}
+.bubble-rose {
+  background: var(--coral-light);
+  color: var(--coral-rose);
+}
+.bubble-green {
+  background: var(--emerald-light);
+  color: var(--emerald-green);
+}
+
+.card-amount-val {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.card-amount-val.light-blue {
+  color: var(--light-blue-600);
+}
+.card-amount-val.emerald {
+  color: var(--emerald-green);
+}
+.card-amount-val.rose {
+  color: var(--coral-rose);
+}
+
+.card-footer-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+}
+.trend-pill.up {
+  background: var(--emerald-light);
+  color: var(--emerald-green);
+}
+.trend-pill.down {
+  background: var(--coral-light);
+  color: var(--coral-rose);
+}
+
+/* Mini Bar / Sparkline simulation inside cards */
+.mini-graphic-holder {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 30px;
+  margin-top: 6px;
+}
+.mini-bar {
+  flex: 1;
+  background: var(--finnova-purple-light);
+  border-radius: 3px;
+  transition: height 0.3s ease;
+}
+.mini-bar.active {
+  background: var(--finnova-purple);
+}
+.mini-bar.blue {
+  background: var(--light-blue-500);
+}
+
+/* ================= 4. ACTIVE FILTER ROW & EXPORTS BANNER ================= */
+.finnova-filter-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-pills-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-chip-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
   border-radius: var(--radius-pill);
-  background: var(--bg-app);
+  background: var(--bg-subtle);
   border: 1px solid var(--border-light);
-  color: var(--text-dark);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  color: var(--text-dark);
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.top-action-btn:hover {
-  background: #ffffff;
-  border-color: var(--brand-green);
-}
-.avatar-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ffc837, #ff6b4a);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.85rem;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.filter-chip-btn:hover {
+  background: var(--light-blue-50);
+  border-color: var(--light-blue-500);
 }
 
-/* Page Content View Area */
-.view-content-area {
-  padding: 20px 24px;
-  overflow-y: auto;
-  flex: 1;
-}
-@media (max-width: 640px) {
-  .view-content-area {
-    padding: 14px;
-  }
-}
-
-/* ================= THE 4 VIBRANT STAT CARDS ================= */
-.vibrant-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  margin-bottom: 22px;
-}
-@media (min-width: 1024px) {
-  .vibrant-stat-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
-}
-
-.vibrant-card {
-  border-radius: var(--radius-xl);
-  padding: 20px 20px 16px 20px;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 135px;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.vibrant-card:hover {
-  transform: translateY(-3px);
-}
-
-.card-theme-green {
-  background: var(--card-green);
-  box-shadow: var(--card-green-shadow);
-}
-.card-theme-blue {
-  background: var(--card-blue);
-  box-shadow: var(--card-blue-shadow);
-}
-.card-theme-purple {
-  background: var(--card-purple);
-  box-shadow: var(--card-purple-shadow);
-}
-.card-theme-orange {
-  background: var(--card-orange);
-  box-shadow: var(--card-orange-shadow);
-}
-
-.v-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.v-card-title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  opacity: 0.9;
-}
-.v-card-icon-bubble {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  backdrop-filter: blur(4px);
-}
-.v-card-num {
-  font-size: 1.65rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 6px 0 10px 0;
-  line-height: 1.1;
-}
-
-.v-card-bottom-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  opacity: 0.95;
-}
-
-/* Action Banner Buttons */
-.action-banner {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 22px;
-}
-@media (min-width: 640px) {
-  .action-banner {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-.action-btn-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-radius: var(--radius-lg);
-  font-size: 0.86rem;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.1s ease, box-shadow 0.15s ease;
-}
-.action-btn-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-}
-.action-btn-pill:active {
-  transform: scale(0.98);
-}
-.btn-pill-green {
-  background: #00c569;
-  color: #ffffff;
-}
-.btn-pill-rose {
-  background: #ff5722;
-  color: #ffffff;
-}
-.btn-pill-white {
-  background: #ffffff;
-  border: 1px solid var(--border-light);
-  color: var(--text-dark);
-}
-
-/* Eduka Split Grid (2 Columns: Left Ledger, Right Charts) */
-.eduka-split-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
-  margin-bottom: 22px;
-}
-@media (min-width: 1024px) {
-  .eduka-split-grid {
-    grid-template-columns: 1.4fr 1fr;
-  }
-}
-
-/* White Section Card */
-.white-box {
-  background: #ffffff;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
-  padding: 20px;
-  box-shadow: var(--shadow-card);
-}
-
-.box-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.box-title {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--text-dark);
-}
-.box-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--brand-green);
-  background: var(--brand-green-light);
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-}
-
-/* Filter Sub-Tabs (All, Ongoing, Upcoming, etc. from reference image) */
-.sub-tabs-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: 10px;
-  margin-bottom: 14px;
-  overflow-x: auto;
-}
-.sub-tab-item {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding-bottom: 4px;
-  border-bottom: 2px solid transparent;
-  white-space: nowrap;
-}
-.sub-tab-item.active {
-  color: var(--brand-green);
-  border-bottom-color: var(--brand-green);
-  font-weight: 700;
-}
-
-/* Transaction Row (Matches Courses Row from image) */
-.tx-table-list {
-  display: flex;
-  flex-direction: column;
-}
-.tx-table-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 6px;
-  border-bottom: 1px solid var(--border-subtle);
-  transition: background 0.15s ease;
-}
-.tx-table-row:last-child {
-  border-bottom: none;
-}
-.tx-table-row:hover {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-md);
-}
-
-.tx-left-col {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-.tx-avatar-box {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-.tx-info-block {
-  min-width: 0;
-}
-.tx-party-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-dark);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tx-sub-info {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+.export-btns-right {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 2px;
 }
-
-.tx-status-pill {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: var(--radius-pill);
-}
-.pill-income {
-  background: var(--brand-green-light);
-  color: var(--brand-green);
-}
-.pill-expense {
-  background: #ffebe6;
-  color: #ff5722;
-}
-
-.tx-right-col {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-.tx-amt-num {
-  font-size: 0.96rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-.tx-amt-num.income {
-  color: var(--brand-green);
-}
-.tx-amt-num.expense {
-  color: #ff5722;
-}
-
-.icon-action-menu {
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-}
-.icon-action-menu:hover {
-  background: var(--border-light);
-  color: var(--text-dark);
-}
-
-/* Charts Containers */
-.charts-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.chart-card-box {
-  background: #ffffff;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
-  padding: 20px;
-  box-shadow: var(--shadow-card);
-}
-.chart-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.chart-heading {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--text-dark);
-}
-.chart-badge-select {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #0091ff;
-  background: #e6f3ff;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-}
-
-.canvas-holder {
-  position: relative;
-  width: 100%;
-  height: 180px;
-}
-
-/* Donut Chart with Right Side Legend (Exactly like reference) */
-.donut-chart-flex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.donut-canvas-wrap {
-  width: 130px;
-  height: 130px;
-  position: relative;
-  flex-shrink: 0;
-}
-.donut-legend-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.legend-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-.legend-left {
-  display: flex;
+.btn-export-pdf {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--coral-rose);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25);
 }
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.btn-export-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--emerald-green);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
-.legend-pct {
-  font-weight: 800;
+.btn-export-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
   color: var(--text-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-/* Bottom Nav for Mobile */
-.eduka-mobile-bar {
-  display: flex;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  background: #ffffff;
-  border-top: 1px solid var(--border-light);
-  padding: 8px 12px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
-  align-items: center;
-  justify-content: space-around;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+/* ================= 5. SIGNATURE NAVY SPLIT BOARD (FROM FINNOVA IMAGE) ================= */
+.finnova-navy-board {
+  background: var(--finnova-navy-dark);
+  border-radius: var(--radius-xxl);
+  padding: 20px;
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(18, 21, 36, 0.2);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
 }
-@media (min-width: 768px) {
-  .eduka-mobile-bar {
-    display: none;
+@media (min-width: 1024px) {
+  .finnova-navy-board {
+    grid-template-columns: 1.1fr 1.3fr;
   }
 }
-.m-nav-pill {
+
+/* Left Side: Ledger List */
+.navy-left-col {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+.navy-header-row {
+  display: flex;
   align-items: center;
-  gap: 2px;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  font-size: 0.68rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 4px 8px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--finnova-navy-border);
 }
-.m-nav-pill.active {
-  color: var(--brand-green);
+.navy-title {
+  font-size: 1.05rem;
   font-weight: 800;
-}
-.m-center-fab {
-  width: 48px;
-  height: 48px;
-  margin-top: -22px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00c569, #0091ff);
   color: #ffffff;
+}
+
+.navy-sub-tabs {
+  display: flex;
+  gap: 4px;
+  background: #1e243b;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+}
+.navy-tab-pill {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.navy-tab-pill.active {
+  background: var(--finnova-purple);
+  color: #ffffff;
+}
+
+/* Item Rows in Navy Board */
+.navy-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.navy-tx-card {
+  background: var(--finnova-navy-card);
+  border: 1px solid var(--finnova-navy-border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.navy-tx-card:hover {
+  background: #232944;
+}
+.navy-tx-card.active {
+  background: #2b2b52;
+  border-color: var(--finnova-purple);
+}
+
+.navy-user-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.navy-avatar-sq {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  box-shadow: 0 8px 18px rgba(0, 197, 105, 0.4);
-  cursor: pointer;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.navy-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+.navy-date-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
 }
 
-/* Modals */
+.navy-right-amt {
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+.navy-right-amt.income {
+  color: #34d399;
+}
+.navy-right-amt.expense {
+  color: #fb7185;
+}
+
+/* Right Side: Expanded Vivid Purple Card (From Finnova Image) */
+.navy-right-col {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.35);
+  min-height: 340px;
+}
+
+.purple-details-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.purple-details-inv {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+.purple-company {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.purple-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 18px 0;
+}
+@media (max-width: 640px) {
+  .purple-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.purple-mini-box {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  backdrop-filter: blur(4px);
+}
+.purple-mini-box .title {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+.purple-mini-box .val {
+  font-size: 1rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.purple-details-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.btn-payout-now {
+  background: #ffffff;
+  color: var(--finnova-purple);
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: transform 0.1s ease;
+}
+.btn-payout-now:hover {
+  transform: translateY(-1px);
+}
+
+/* ================= 6. CHARTS & ANALYTICS SECTION ================= */
+.finnova-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 1024px) {
+  .finnova-charts-grid {
+    grid-template-columns: 1.3fr 1fr;
+  }
+}
+.finnova-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ================= 7. MODALS & FORMS WITH TYPEABLE CATEGORY ================= */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
-  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
+  background: rgba(18, 21, 36, 0.65);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
@@ -738,11 +782,13 @@ body {
 .modal-overlay.hidden {
   display: none !important;
 }
+
 .modal-dialog {
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  max-width: 500px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xxl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+  max-width: 520px;
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
@@ -757,36 +803,23 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* Form Inputs */
-.form-group {
+.modal-header-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 12px;
 }
-.form-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-.form-input {
-  width: 100%;
-  padding: 11px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background: var(--bg-subtle);
+.modal-heading-text {
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--text-dark);
-  font-size: 0.88rem;
-  outline: none;
-}
-.form-input:focus {
-  border-color: var(--brand-green);
-  background: #ffffff;
 }
 
 .type-segmented-control {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: var(--bg-app);
+  background: var(--bg-subtle);
   border-radius: var(--radius-md);
   padding: 4px;
   gap: 4px;
@@ -806,11 +839,11 @@ body {
   gap: 6px;
 }
 .segment-btn.active.expense {
-  background: #ff5722;
+  background: var(--coral-rose);
   color: #ffffff;
 }
 .segment-btn.active.income {
-  background: #00c569;
+  background: var(--emerald-green);
   color: #ffffff;
 }
 
@@ -838,37 +871,103 @@ body {
   outline: none;
 }
 .big-amount-input:focus {
-  border-color: var(--brand-green);
-  background: #ffffff;
+  border-color: var(--finnova-purple);
+  background: var(--bg-surface);
 }
 
-/* Category Chips */
-.chips-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+/* Category Autocomplete / Typeable Input */
+.category-typeable-wrap {
+  position: relative;
 }
-.category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
+.category-input-typeable {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
-  background: #ffffff;
+  background: var(--bg-subtle);
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  outline: none;
+}
+.category-input-typeable:focus {
+  border-color: var(--finnova-purple);
+  background: var(--bg-surface);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-label {
   font-size: 0.78rem;
-  font-weight: 600;
-}
-.color-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-.chip-del {
-  margin-left: 4px;
-  border: none;
-  background: transparent;
+  font-weight: 700;
   color: var(--text-muted);
+}
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+  color: var(--text-dark);
+  font-size: 0.88rem;
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--finnova-purple);
+  background: var(--bg-surface);
+}
+
+/* Mobile Bottom Navigation Bar */
+.finnova-mobile-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-light);
+  padding: 8px 12px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+}
+@media (min-width: 900px) {
+  .finnova-mobile-nav {
+    display: none;
+  }
+}
+.m-finnova-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.m-finnova-item.active {
+  color: var(--finnova-purple);
+}
+.m-center-create-fab {
+  width: 48px;
+  height: 48px;
+  margin-top: -22px;
+  border-radius: 50%;
+  background: var(--finnova-purple);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 8px 20px rgba(92, 84, 248, 0.45);
   cursor: pointer;
 }
 
@@ -899,3 +998,180 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* ================= 8. TAB VIEWS & UTILITY STYLES ================= */
+.tab-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.tab-view.hidden {
+  display: none !important;
+}
+
+.white-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.box-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+/* Category Chips */
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+.color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.chip-del {
+  margin-left: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+.chip-del:hover {
+  color: var(--coral-rose);
+}
+
+/* Quick Suggest Category Pills */
+.quick-cat-pill {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-dark);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.quick-cat-pill:hover {
+  border-color: var(--finnova-purple);
+  background: var(--finnova-purple-light);
+  color: var(--finnova-purple);
+}
+
+/* Action Button Pills */
+.action-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.btn-pill-green {
+  background: var(--emerald-green);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+.btn-pill-green:hover {
+  filter: brightness(1.06);
+}
+.btn-pill-rose {
+  background: var(--coral-rose);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.25);
+}
+.btn-pill-rose:hover {
+  filter: brightness(1.06);
+}
+.btn-pill-white {
+  background: var(--bg-surface);
+  border-color: var(--border-light);
+  color: var(--text-dark);
+  box-shadow: var(--shadow-sm);
+}
+.btn-pill-white:hover {
+  border-color: var(--finnova-purple);
+}
+
+/* Period 1-Click Cards in Reports View */
+.period-export-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (min-width: 640px) {
+  .period-export-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .period-export-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.period-report-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.period-report-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.period-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.period-badge-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.period-card-btns {
+  display: flex;
+  gap: 8px;
+}
+
