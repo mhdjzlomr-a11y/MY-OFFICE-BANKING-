@@ -659,6 +659,16 @@ class OfficeFinanceApp {
       headerBadge.textContent = `${icon} ${name}`;
     }
 
+    const navBadge = document.getElementById('navDivisionBadge');
+    if (navBadge) {
+      navBadge.textContent = `${icon} ${name}`;
+    }
+
+    const floatingBadge = document.getElementById('floatingDivBadgeText');
+    if (floatingBadge) {
+      floatingBadge.textContent = `${icon} ${name}`;
+    }
+
     const titleBadge = document.getElementById('activeDivisionTitleBadge');
     if (titleBadge) {
       titleBadge.textContent = `${icon} ${name}`;
@@ -672,6 +682,10 @@ class OfficeFinanceApp {
     const reportDiv = document.getElementById('reportDivisionSelect');
     if (reportDiv && reportDiv.value !== this.currentDivision) {
       reportDiv.value = this.currentDivision;
+    }
+
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
     }
   }
 
@@ -2593,6 +2607,9 @@ Thank you!`;
 
     // 27. Left Sidebar Drawer & Divisions Dashboard
     document.getElementById('btnToggleSidebarDrawer')?.addEventListener('click', () => this.toggleSidebarDrawer());
+    document.getElementById('btnNavToggleDivisions')?.addEventListener('click', () => this.toggleSidebarDrawer());
+    document.getElementById('btnDashDivisionSwitcher')?.addEventListener('click', () => this.toggleSidebarDrawer());
+    document.getElementById('btnFloatingSidebarToggle')?.addEventListener('click', () => this.toggleSidebarDrawer());
     document.getElementById('btnCloseSidebarDrawer')?.addEventListener('click', () => this.toggleSidebarDrawer(false));
     document.getElementById('sidebarBackdrop')?.addEventListener('click', () => this.toggleSidebarDrawer(false));
 

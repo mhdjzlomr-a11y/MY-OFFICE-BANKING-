@@ -128,22 +128,14 @@
 
     <!-- ================= 1. FINNOVA TOP HEADER BAR ================= -->
     <header class="finnova-top-header">
-      <!-- Left: Sidebar Toggle, Logo & Title -->
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <button type="button" id="btnToggleSidebarDrawer" class="sidebar-hamburger-btn" title="വിഭാഗങ്ങൾ & കാറ്റഗറികൾ (Divisions & Categories)">
-          <i data-lucide="menu"></i>
-          <span class="sidebar-toggle-text" data-i18n="menuDivisions">വിഭാഗങ്ങൾ</span>
-          <span id="headerDivisionBadge" class="header-div-badge">🏢 ഓഫീസ്</span>
-        </button>
-
-        <div class="finnova-logo">
-          <div class="finnova-ribbon-icon">
-            <i data-lucide="wallet"></i>
-          </div>
-          <div>
-            <h1 class="finnova-brand-text" id="headerOfficeName">OFFICE FINANCE TRACKER</h1>
-            <p class="finnova-brand-sub" data-i18n="appSubtitle">Smart Finances, Better Business</p>
-          </div>
+      <!-- Left: Logo & Title (Prominent & Enlarged) -->
+      <div class="finnova-logo">
+        <div class="finnova-ribbon-icon">
+          <i data-lucide="wallet"></i>
+        </div>
+        <div>
+          <h1 class="finnova-brand-text" id="headerOfficeName">OFFICE FINANCE TRACKER</h1>
+          <p class="finnova-brand-sub" data-i18n="appSubtitle">Smart Finances, Better Business</p>
         </div>
       </div>
 
@@ -163,6 +155,12 @@
         </button>
         <button class="finnova-nav-btn nav-item" data-target="settings">
           <i data-lucide="settings"></i> <span data-i18n="navSettings">Settings</span>
+        </button>
+        <!-- Division & Categories Drawer Nav Pill -->
+        <button type="button" class="finnova-nav-btn btn-division-nav-pill" id="btnNavToggleDivisions" title="വിഭാഗങ്ങൾ & കാറ്റഗറികൾ (Divisions & Categories)">
+          <i data-lucide="layers" style="color: #a78bfa;"></i>
+          <span data-i18n="menuDivisions">വിഭാഗങ്ങൾ</span>
+          <span id="navDivisionBadge" style="background: rgba(255, 255, 255, 0.2); color: white; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 800;">🏢 ഓഫീസ്</span>
         </button>
       </nav>
 
@@ -194,6 +192,12 @@
       </div>
     </header>
 
+    <!-- Floating Division Switcher Tab (Always accessible on left edge) -->
+    <button type="button" id="btnFloatingSidebarToggle" class="floating-division-tab" title="വിഭാഗങ്ങൾ & കാറ്റഗറികൾ (Divisions & Categories)">
+      <i data-lucide="layers"></i>
+      <span id="floatingDivBadgeText">🏢 ഓഫീസ്</span>
+    </button>
+
     <!-- ================= VIEW CONTENT AREA ================= -->
     <main>
 
@@ -203,9 +207,16 @@
         <!-- Title Row with Heading & Period Tabs -->
         <div class="finnova-title-row">
           <div class="page-heading-block">
-            <h2 class="page-title" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <h2 class="page-title" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
               <span data-i18n="pageTitle">Invoices & Finances</span>
-              <span id="activeDivisionTitleBadge" class="active-division-title-badge">🏢 ഓഫീസ് ഫിനാൻസ്</span>
+              <button type="button" id="btnDashDivisionSwitcher" class="active-division-title-badge-btn" title="വിഭാഗം മാറ്റുക / കാറ്റഗറികൾ കാണുക (Switch Division & Categories)">
+                <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+                <span id="activeDivisionTitleBadge">🏢 ഓഫീസ് ഫിനാൻസ്</span>
+                <span class="active-div-switch-pill">
+                  <i data-lucide="chevrons-right" style="width: 12px; height: 12px;"></i>
+                  <span data-i18n="btnSwitchDivision">മാറ്റുക (Switch)</span>
+                </span>
+              </button>
             </h2>
             <p class="page-sub" data-i18n="pageSub">Manage and track all your office income and expenses in one place.</p>
           </div>

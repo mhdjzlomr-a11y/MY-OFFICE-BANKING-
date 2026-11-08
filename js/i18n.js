@@ -345,7 +345,8 @@ const translations = {
     adminOnlySettings: 'ഈ സെറ്റിംഗ്സ് മാറ്റാൻ അഡ്മിൻ അനുമതി ആവശ്യമാണ്.',
     sessionLocked: 'സെഷൻ ലോക്ക് ചെയ്തു',
     welcomeUser: 'സ്വാഗതം',
-    btnSwitchUser: 'ഉപയോക്താവിനെ മാറ്റുക'
+    btnSwitchUser: 'ഉപയോക്താവിനെ മാറ്റുക',
+    btnSwitchDivision: 'മാറ്റുക (Switch)'
   },
 
   en: {
@@ -688,7 +689,8 @@ const translations = {
     adminOnlySettings: 'Admin privilege required for this configuration.',
     sessionLocked: 'App Locked',
     welcomeUser: 'Welcome',
-    btnSwitchUser: 'Switch User'
+    btnSwitchUser: 'Switch User',
+    btnSwitchDivision: 'Switch'
   }
 };
 

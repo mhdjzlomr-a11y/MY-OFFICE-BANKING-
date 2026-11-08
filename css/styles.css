@@ -127,34 +127,63 @@ body {
   flex-wrap: wrap;
 }
 
-/* Logo Left */
+/* Logo Left - Prominent & Enlarged */
 .finnova-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .finnova-ribbon-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #e11d48 0%, #8b5cf6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.38);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.finnova-ribbon-icon:hover {
+  transform: scale(1.05) rotate(3deg);
+}
+.finnova-ribbon-icon svg {
+  width: 26px;
+  height: 26px;
 }
 .finnova-brand-text {
-  font-size: 1.18rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 1.48rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
   color: var(--text-dark);
-  line-height: 1.1;
+  line-height: 1.12;
+  text-transform: uppercase;
 }
 .finnova-brand-sub {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+@media (max-width: 768px) {
+  .finnova-ribbon-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .finnova-ribbon-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .finnova-brand-text {
+    font-size: 1.2rem;
+  }
+  .finnova-brand-sub {
+    font-size: 0.7rem;
+  }
 }
 
 /* Center Dark Pill Nav (Finnova Style) */
@@ -1606,7 +1635,7 @@ body {
   box-shadow: 0 2px 6px rgba(92, 84, 248, 0.15);
 }
 
-/* Active Division Title Pill on Dashboard */
+/* Active Division Title Pill & Interactive Button on Dashboard */
 .active-division-title-badge {
   display: inline-flex;
   align-items: center;
@@ -1620,6 +1649,98 @@ body {
   border: 1px solid rgba(92, 84, 248, 0.25);
   margin-left: 8px;
   vertical-align: middle;
+}
+
+.active-division-title-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 800;
+  background: var(--finnova-purple-light);
+  color: var(--finnova-purple);
+  border: 1.5px solid rgba(92, 84, 248, 0.35);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  vertical-align: middle;
+  box-shadow: 0 2px 8px rgba(92, 84, 248, 0.15);
+  font-family: inherit;
+}
+.active-division-title-badge-btn:hover {
+  background: var(--finnova-purple);
+  color: #ffffff;
+  border-color: var(--finnova-purple);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(92, 84, 248, 0.35);
+}
+.active-division-title-badge-btn .active-div-switch-pill {
+  font-size: 0.68rem;
+  background: rgba(92, 84, 248, 0.18);
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+}
+.active-division-title-badge-btn:hover .active-div-switch-pill {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Nav Division Pill inside Center Nav */
+.btn-division-nav-pill {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  margin-left: 6px;
+}
+.btn-division-nav-pill:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+/* Floating Division Side Tab (Left Edge) */
+.floating-division-tab {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 990;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 0 16px 16px 0;
+  padding: 10px 14px 10px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 2px 4px 16px rgba(79, 70, 229, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+.floating-division-tab:hover {
+  padding-left: 15px;
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 4px 6px 20px rgba(79, 70, 229, 0.45);
+}
+@media (max-width: 640px) {
+  .floating-division-tab {
+    top: auto;
+    bottom: 84px;
+    transform: none;
+    border-radius: 0 14px 14px 0;
+    padding: 8px 12px 8px 8px;
+    font-size: 0.72rem;
+  }
+  .floating-division-tab:hover {
+    transform: scale(1.05);
+  }
 }
 
 
