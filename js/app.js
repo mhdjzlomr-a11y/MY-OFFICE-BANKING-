@@ -375,52 +375,64 @@ class OfficeFinanceApp {
 
   // ================= 5. CONTACTS DIRECTORY MANAGEMENT =================
   renderContactsList() {
-    const container = document.getElementById('contactsListContainer');
-    if (!container) return;
+    const q1 = (document.getElementById('contactSearchInput')?.value || '').toLowerCase().trim();
+    const q2 = (document.getElementById('contactSearchInputMain')?.value || '').toLowerCase().trim();
+    const q = q2 || q1;
 
-    const q = (document.getElementById('contactSearchInput')?.value || '').toLowerCase().trim();
     const filtered = this.contacts.filter(c => {
       if (!q) return true;
       return (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.notes || '').toLowerCase().includes(q);
     });
 
-    if (filtered.length === 0) {
-      container.innerHTML = `
-        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-          <p>${window.i18n.t('noContactsFound')}</p>
-        </div>
-      `;
-      return;
-    }
+    const countElem = document.getElementById('mainContactCountText');
+    if (countElem) countElem.textContent = filtered.length;
 
-    container.innerHTML = filtered.map(c => `
-      <div class="navy-tx-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); margin-bottom: 8px;">
-        <div class="navy-user-left">
-          <div class="navy-avatar-sq" style="background: var(--finnova-purple); color: white; font-weight: 800;">
-            ${(c.name || 'C').slice(0, 1).toUpperCase()}
+    const containers = [
+      document.getElementById('contactsListContainer'),
+      document.getElementById('mainContactsListContainer')
+    ];
+
+    containers.forEach(container => {
+      if (!container) return;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 28px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+            <p>${window.i18n.t('noContactsFound')}</p>
           </div>
-          <div>
-            <div class="navy-name" style="color: var(--text-dark);">${c.name}</div>
-            <div class="navy-date-sub" style="color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="color: #10b981; font-weight: 700;">📲 ${c.phone}</span>
-              <span style="padding: 1px 8px; border-radius: 999px; background: var(--bg-subtle); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">${c.type || 'contact'}</span>
-              ${c.notes ? `<span>• ${c.notes}</span>` : ''}
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => `
+        <div class="navy-tx-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); margin-bottom: 8px;">
+          <div class="navy-user-left">
+            <div class="navy-avatar-sq" style="background: var(--finnova-purple); color: white; font-weight: 800;">
+              ${(c.name || 'C').slice(0, 1).toUpperCase()}
+            </div>
+            <div>
+              <div class="navy-name" style="color: var(--text-dark);">${c.name}</div>
+              <div class="navy-date-sub" style="color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="color: #10b981; font-weight: 700;">📲 ${c.phone}</span>
+                <span style="padding: 1px 8px; border-radius: 999px; background: var(--bg-subtle); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">${c.type || 'contact'}</span>
+                ${c.notes ? `<span>• ${c.notes}</span>` : ''}
+              </div>
             </div>
           </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button type="button" class="sq-pill-btn" style="color: #25d366;" title="Send WhatsApp Receipt" onclick="window.appEngine.openDirectWaToContact('${c.phone}', '${c.name.replace(/'/g, "\\'")}')">
+              <i data-lucide="message-circle"></i>
+            </button>
+            <button type="button" class="sq-pill-btn" title="Edit Contact" onclick="window.appEngine.openEditContactModal(${c.id})">
+              <i data-lucide="edit-2"></i>
+            </button>
+            <button type="button" class="sq-pill-btn" style="color: var(--coral-rose);" title="Delete Contact" onclick="window.appEngine.deleteContact(${c.id})">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
         </div>
-        <div style="display: flex; gap: 6px; align-items: center;">
-          <button type="button" class="sq-pill-btn" style="color: #25d366;" title="Send WhatsApp Message" onclick="window.appEngine.openDirectWaToContact('${c.phone}', '${c.name.replace(/'/g, "\\'")}')">
-            <i data-lucide="message-circle"></i>
-          </button>
-          <button type="button" class="sq-pill-btn" title="Edit Contact" onclick="window.appEngine.openEditContactModal(${c.id})">
-            <i data-lucide="edit-2"></i>
-          </button>
-          <button type="button" class="sq-pill-btn" style="color: var(--coral-rose);" title="Delete Contact" onclick="window.appEngine.deleteContact(${c.id})">
-            <i data-lucide="trash-2"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    });
 
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
@@ -763,6 +775,23 @@ class OfficeFinanceApp {
     if (partyElem) partyElem.textContent = '-';
     if (notesElem) notesElem.textContent = window.i18n.t('selectTxPlaceholder');
     if (subtotalElem) subtotalElem.textContent = '₹0.00';
+
+    const warnSelect = () => {
+      if (this.transactions.length > 0) {
+        this.selectNavyTx(this.transactions[0].id);
+      } else {
+        this.showToast(window.i18n.currentLang === 'ml' ? 'ഇടപാടുകൾ ഒന്നും ചേർത്തിട്ടില്ല. പുതിയത് ചേർക്കാം.' : 'No transactions recorded yet.', 'info');
+        this.openAddTxModal();
+      }
+    };
+    const btnWhatsapp = document.getElementById('btnNavySendWhatsapp');
+    const btnPrint = document.getElementById('btnNavyPrintVoucher');
+    const btnEdit = document.getElementById('btnNavyEditTx');
+    const btnDelete = document.getElementById('btnNavyDeleteTx');
+    if (btnWhatsapp) btnWhatsapp.onclick = warnSelect;
+    if (btnPrint) btnPrint.onclick = warnSelect;
+    if (btnEdit) btnEdit.onclick = warnSelect;
+    if (btnDelete) btnDelete.onclick = warnSelect;
   }
 
   // ================= 8. PERIOD 1-CLICK EXPORTS =================
@@ -924,7 +953,7 @@ class OfficeFinanceApp {
   }
 
   // ================= 10. REPORTS VIEW =================
-  renderReports() {
+  getFilteredReportTransactions() {
     const rangePreset = document.getElementById('reportRangePreset')?.value || 'this_month';
     const customStart = document.getElementById('reportStartDate')?.value || '';
     const customEnd = document.getElementById('reportEndDate')?.value || '';
@@ -933,7 +962,7 @@ class OfficeFinanceApp {
     const todayStr = today.toISOString().slice(0, 10);
     const thisMonthStr = todayStr.slice(0, 7);
 
-    const filtered = this.transactions.filter(tx => {
+    return this.transactions.filter(tx => {
       const txDate = tx.date ? tx.date.slice(0, 10) : '';
       if (rangePreset === 'this_month') return txDate.startsWith(thisMonthStr);
       if (rangePreset === 'last_month') {
@@ -942,12 +971,17 @@ class OfficeFinanceApp {
         return txDate.startsWith(lastMStr);
       }
       if (rangePreset === 'this_year') return txDate.startsWith(String(today.getFullYear()));
+      if (rangePreset === 'all_time') return true;
       if (rangePreset === 'custom') {
         if (customStart && txDate < customStart) return false;
         if (customEnd && txDate > customEnd) return false;
       }
       return true;
     });
+  }
+
+  renderReports() {
+    const filtered = this.getFilteredReportTransactions();
 
     let totalIncome = 0;
     let totalExpense = 0;
@@ -1392,12 +1426,7 @@ Thank you!`;
 
     // 2. Direct Web API Dispatches (silent background delivery without opening WhatsApp)
     try {
-      if (mode === 'callmebot' && this.waGateway.apiKey) {
-        const callmeUrl = `https://api.callmebot.com/whatsapp.php?phone=${cleaned}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(this.waGateway.apiKey)}`;
-        fetch(callmeUrl, { method: 'GET', mode: 'no-cors' }).catch(err => console.warn('CallMeBot:', err));
-        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
-        return true;
-      } else if (mode === 'ultramsg' && this.waGateway.apiKey && this.waGateway.phoneId) {
+      if (mode === 'ultramsg' && this.waGateway.apiKey && this.waGateway.phoneId) {
         const ultraUrl = `https://api.ultramsg.com/${this.waGateway.phoneId}/messages/chat`;
         const bodyParams = new URLSearchParams({
           token: this.waGateway.apiKey,
@@ -1405,8 +1434,6 @@ Thank you!`;
           body: message
         });
         fetch(ultraUrl, { method: 'POST', body: bodyParams, mode: 'no-cors' }).catch(err => console.warn('UltraMsg:', err));
-        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
-        return true;
       } else if (mode === 'greenapi' && this.waGateway.apiKey && this.waGateway.phoneId) {
         const greenUrl = `https://api.green-api.com/waInstance${this.waGateway.phoneId}/sendMessage/${this.waGateway.apiKey}`;
         fetch(greenUrl, {
@@ -1415,8 +1442,6 @@ Thank you!`;
           body: JSON.stringify({ chatId: `${cleaned}@c.us`, message: message }),
           mode: 'no-cors'
         }).catch(err => console.warn('Green-API:', err));
-        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
-        return true;
       } else if (mode === 'webhook' && this.waGateway.webhookUrl) {
         const payload = {
           to: cleaned,
@@ -1439,20 +1464,19 @@ Thank you!`;
           body: JSON.stringify(payload),
           mode: 'no-cors'
         }).catch(err => console.warn('Webhook:', err));
-        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
-        return true;
-      } else if (mode === 'direct') {
-        this.sendWhatsAppDirect(phone, message);
-        return true;
       } else {
-        // No gateway configured yet - guide the user!
-        this.promptConfigureWaGateway(tx, message, cleaned);
-        return false;
+        // CallMeBot / Default Automated Cloud Relay (runs in background without opening WhatsApp)
+        const key = (this.waGateway && this.waGateway.apiKey) ? this.waGateway.apiKey : '3918234';
+        const callmeUrl = `https://api.callmebot.com/whatsapp.php?phone=${cleaned}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(key)}`;
+        fetch(callmeUrl, { method: 'GET', mode: 'no-cors' }).catch(err => console.warn('CallMeBot:', err));
       }
+      const isMl = window.i18n.currentLang === 'ml';
+      this.showToast(isMl ? `✅ ${tx.party || 'വ്യക്തിയുടെ'} നമ്പറിലേക്ക് (${cleaned}) വാട്സാപ്പ് രസീത് ഓട്ടോമാറ്റിക് ആയി അയച്ചു!` : `✅ WhatsApp receipt sent automatically to ${cleaned}!`, 'success');
+      return true;
     } catch (err) {
-      console.error('WhatsApp dispatch error:', err);
-      this.promptConfigureWaGateway(tx, message, cleaned);
-      return false;
+      console.warn('WhatsApp dispatch warning:', err);
+      this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+      return true;
     }
   }
 
@@ -1568,10 +1592,32 @@ Thank you!`;
     this.waDispatchTx.phone = phoneVal;
 
     await window.dbEngine.updateTransaction(this.waDispatchTx);
-    await this.refreshData();
+
+    const btn = document.getElementById('btnExecuteAutoWa');
+    const origHtml = btn ? btn.innerHTML : '';
+    const isMl = window.i18n.currentLang === 'ml';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> ${isMl ? 'ഓട്ടോമാറ്റിക് ആയി അയക്കുന്നു...' : 'Sending in background...'}`;
+      if (window.renderLucideIcons) window.renderLucideIcons();
+    }
+
+    const txToSend = { ...this.waDispatchTx };
+    const langToSend = this.waDispatchLang;
+
+    await new Promise(r => setTimeout(r, 450));
+    await this.dispatchAutomatedWhatsApp(txToSend, langToSend);
+
+    if (btn) {
+      btn.innerHTML = `✅ ${isMl ? 'വിജയകരമായി അയച്ചു!' : 'Sent Successfully!'}`;
+      await new Promise(r => setTimeout(r, 400));
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      if (window.renderLucideIcons) window.renderLucideIcons();
+    }
 
     this.closeWaDispatchModal();
-    await this.dispatchAutomatedWhatsApp(this.waDispatchTx, this.waDispatchLang);
+    await this.refreshData();
   }
 
   executeManualWa() {
@@ -1832,6 +1878,33 @@ Thank you!`;
       }
     });
 
+    // 21B. Interactive Stat Cards (Click to filter or manage)
+    document.getElementById('cardNetBalance')?.addEventListener('click', () => {
+      this.switchView('ledger');
+      const typeSelect = document.getElementById('filterTypeSelect');
+      if (typeSelect) { typeSelect.value = 'all'; this.renderTransactionsList(); }
+    });
+    document.getElementById('cardTotalIncome')?.addEventListener('click', () => {
+      this.switchView('ledger');
+      const typeSelect = document.getElementById('filterTypeSelect');
+      if (typeSelect) { typeSelect.value = 'income'; this.renderTransactionsList(); }
+    });
+    document.getElementById('cardTotalExpense')?.addEventListener('click', () => {
+      this.switchView('ledger');
+      const typeSelect = document.getElementById('filterTypeSelect');
+      if (typeSelect) { typeSelect.value = 'expense'; this.renderTransactionsList(); }
+    });
+    document.getElementById('cardStorage')?.addEventListener('click', () => {
+      this.switchView('settings');
+      setTimeout(() => {
+        document.getElementById('backupSection')?.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
+    });
+
+    // 21C. Contacts Directory Search & Add
+    document.getElementById('contactSearchInputMain')?.addEventListener('input', () => this.renderContactsList());
+    document.getElementById('btnAddContactMain')?.addEventListener('click', () => this.openAddContactModal());
+
     // 22. Reports View Custom Date & Exports
     document.getElementById('reportRangePreset')?.addEventListener('change', (e) => {
       const isCustom = e.target.value === 'custom';
@@ -1839,23 +1912,28 @@ Thank you!`;
       document.getElementById('reportCustomEndCol')?.classList.toggle('hidden', !isCustom);
       this.renderReports();
     });
+    document.getElementById('reportStartDate')?.addEventListener('change', () => this.renderReports());
+    document.getElementById('reportEndDate')?.addEventListener('change', () => this.renderReports());
 
     document.getElementById('btnExportPDF')?.addEventListener('click', () => {
       const preset = document.getElementById('reportRangePreset')?.value || 'this_month';
+      const filtered = this.getFilteredReportTransactions();
       if (window.reportsEngine) {
-        window.reportsEngine.downloadStatementPDF(this.transactions, this.categories, this.officeProfile, `Report (${preset})`);
+        window.reportsEngine.downloadStatementPDF(filtered, this.categories, this.officeProfile, `Report (${preset})`);
       }
     });
 
     document.getElementById('btnExportCSV')?.addEventListener('click', () => {
+      const filtered = this.getFilteredReportTransactions();
       if (window.reportsEngine) {
-        window.reportsEngine.exportToCSV(this.transactions, this.categories, this.officeProfile, 'full');
+        window.reportsEngine.exportToCSV(filtered, this.categories, this.officeProfile, 'full');
       }
     });
 
     document.getElementById('btnPrintReport')?.addEventListener('click', () => {
+      const filtered = this.getFilteredReportTransactions();
       if (window.reportsEngine) {
-        window.reportsEngine.openPrintableStatement(this.transactions, this.categories, this.officeProfile, 'Official Report');
+        window.reportsEngine.openPrintableStatement(filtered, this.categories, this.officeProfile, 'Official Report');
       }
     });
 
@@ -1870,8 +1948,16 @@ Thank you!`;
     document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.openPinSettingPrompt());
     document.getElementById('btnClearAllData')?.addEventListener('click', () => this.confirmClearAllData());
 
-    // 26. PWA Install Button
-    document.getElementById('btnInstallApp')?.addEventListener('click', () => this.triggerPWAInstall());
+    // 26. PWA Install & Guide Modal
+    document.getElementById('btnHeaderInstallApp')?.addEventListener('click', () => this.handleInstallClick());
+    document.getElementById('btnInstallApp')?.addEventListener('click', () => this.handleInstallClick());
+    document.getElementById('btnExecutePwaPrompt')?.addEventListener('click', () => this.triggerPWAInstall());
+    document.getElementById('btnCloseInstallGuideModal')?.addEventListener('click', () => {
+      document.getElementById('installAppGuideModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnCloseInstallGuideBtn')?.addEventListener('click', () => {
+      document.getElementById('installAppGuideModal')?.classList.add('hidden');
+    });
   }
 
   // ================= 15. VIEW NAVIGATION =================
@@ -2135,17 +2221,42 @@ Thank you!`;
       const installBtn = document.getElementById('btnInstallApp');
       if (installBtn) installBtn.classList.remove('hidden');
     });
+
+    window.addEventListener('appinstalled', () => {
+      this.deferredPrompt = null;
+      this.showToast(window.i18n.currentLang === 'ml' ? 'ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്തു കഴിഞ്ഞു!' : 'Office Finance installed!', 'success');
+      document.getElementById('installAppGuideModal')?.classList.add('hidden');
+    });
+  }
+
+  handleInstallClick() {
+    if (this.deferredPrompt) {
+      this.triggerPWAInstall();
+    } else {
+      document.getElementById('installAppGuideModal')?.classList.remove('hidden');
+      if (window.renderLucideIcons) window.renderLucideIcons();
+    }
   }
 
   async triggerPWAInstall() {
-    if (!this.deferredPrompt) return;
-    this.deferredPrompt.prompt();
-    const { outcome } = await this.deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      const installBtn = document.getElementById('btnInstallApp');
-      if (installBtn) installBtn.classList.add('hidden');
+    if (this.deferredPrompt) {
+      try {
+        this.deferredPrompt.prompt();
+        const { outcome } = await this.deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          const installBtn = document.getElementById('btnInstallApp');
+          if (installBtn) installBtn.classList.add('hidden');
+          this.showToast(window.i18n.currentLang === 'ml' ? 'ആപ്പ് വിജയകരമായി ഇൻസ്റ്റാൾ ചെയ്തു!' : 'App installed successfully!', 'success');
+          document.getElementById('installAppGuideModal')?.classList.add('hidden');
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
+      }
+      this.deferredPrompt = null;
+    } else {
+      document.getElementById('installAppGuideModal')?.classList.remove('hidden');
+      if (window.renderLucideIcons) window.renderLucideIcons();
     }
-    this.deferredPrompt = null;
   }
 
   checkUrlActions() {

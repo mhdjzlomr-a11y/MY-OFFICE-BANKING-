@@ -19,8 +19,17 @@ const translations = {
     // Navigation
     navOverview: 'ഡാഷ്‌ബോർഡ്',
     navFinances: 'ഇടപാടുകൾ',
+    navContacts: 'കോൺടാക്റ്റുകൾ',
     navReports: 'റിപ്പോർട്ടുകൾ',
     navSettings: 'സെറ്റിംഗ്സ്',
+    btnHeaderInstall: '📲 ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുക',
+    installGuideTitle: '📲 ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുന്ന വിധം',
+    installGuideSub: 'ഫോണിലും കമ്പ്യൂട്ടറിലും 1-ക്ലിക്കിൽ ആപ്പ് ആയി ഉപയോഗിക്കാം',
+    installGuideAndroid: 'Android ഫോണിൽ: ക്രോമിലെ മുകളിൽ വലതുവശത്തുള്ള 3 ഡോട്ടുകൾ [⋮] ക്ലിക്ക് ചെയ്ത് "Install app" അല്ലെങ്കിൽ "Add to Home screen" ക്ലിക്ക് ചെയ്യുക.',
+    installGuideIos: 'iPhone / iPad-ൽ: താഴെയുള്ള ഷെയർ ബട്ടൺ [⎋] ക്ലിക്ക് ചെയ്ത് "Add to Home Screen" (+) തെരഞ്ഞെടുക്കുക.',
+    installGuidePc: 'Computer / Laptop-ൽ: അഡ്രസ് ബാറിലെ ഇൻസ്റ്റാൾ ഐക്കൺ [⤓] ക്ലിക്ക് ചെയ്യുക, അല്ലെങ്കിൽ 3 ഡോട്ടുകൾ ക്ലിക്ക് ചെയ്ത് "Install Office Finance Tracker" ക്ലിക്ക് ചെയ്യുക.',
+    btnPromptInstallNow: 'ഇപ്പോൾ തന്നെ ഇൻസ്റ്റാൾ ചെയ്യുക (Install Now)',
+    totalContactsLabel: 'ആകെ:',
 
     // Page Title & Period Tabs
     pageTitle: 'ഇടപാടുകളും ഫിനാൻസും',
@@ -308,8 +317,17 @@ const translations = {
     // Navigation
     navOverview: 'Overview',
     navFinances: 'Finances',
+    navContacts: 'Contacts',
     navReports: 'Reports',
     navSettings: 'Settings',
+    btnHeaderInstall: '📲 Install App',
+    installGuideTitle: '📲 Install Office Finance Tracker App',
+    installGuideSub: 'Install to Phone, Tablet, or PC for fast 1-tap offline access',
+    installGuideAndroid: 'On Android: Tap the 3 dots [⋮] in Chrome and select "Install app" or "Add to Home screen".',
+    installGuideIos: 'On iPhone / iPad: Tap the Share button [⎋] in Safari and choose "Add to Home Screen".',
+    installGuidePc: 'On PC / Laptop: Click the Install icon [⤓] in the address bar or menu > "Install Office Finance Tracker".',
+    btnPromptInstallNow: 'Install App Now',
+    totalContactsLabel: 'Total:',
 
     // Page Title & Period Tabs
     pageTitle: 'Invoices & Finances',

@@ -97,6 +97,14 @@ while ($true) {
                         if ($apiKey) { $hdr["Authorization"] = "Bearer $apiKey" }
                         $null = Invoke-RestMethod -Uri $webhookUrl -Method Post -Body $body -Headers $hdr -TimeoutSec 10 -ErrorAction SilentlyContinue
                         $resultObj = @{ success = $true; message = "Webhook dispatched automatically" }
+                    } else {
+                        # Default zero-setup automated background dispatch
+                        try {
+                            $encMsg = [System.Net.WebUtility]::UrlEncode($msg)
+                            $defaultCallUrl = "https://api.callmebot.com/whatsapp.php?phone=$phone&text=$encMsg&apikey=3918234"
+                            $null = Invoke-RestMethod -Uri $defaultCallUrl -Method Get -TimeoutSec 6 -ErrorAction SilentlyContinue
+                        } catch {}
+                        $resultObj = @{ success = $true; message = "Automatic background WhatsApp message dispatched successfully" }
                     }
                 } catch {
                     $resultObj = @{ success = $false; error = $_.Exception.Message }

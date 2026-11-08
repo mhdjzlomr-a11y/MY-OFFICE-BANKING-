@@ -1,7 +1,7 @@
 {
   "name": "OFFICE FINANCE TRACKER",
   "short_name": "FinanceTracker",
-  "description": "ഓഫീസ് വരവ് ചിലവ് കണക്കുകൾ രേഖപ്പെടുത്താനുള്ള മൊബൈൽ & വെബ് ആപ്പ്",
+  "description": "ഓഫീസ് വരവ് ചിലവ് കണക്കുകൾ രേഖപ്പെടുത്താനും രസീതുകൾ അയക്കാനുമുള്ള ആപ്പ്",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -31,16 +31,16 @@
   ],
   "shortcuts": [
     {
-      "name": "പുതിയ ചിലവ് (+ Expense)",
+      "name": "ചിലവ് (+ Expense)",
       "short_name": "ചിലവ്",
       "description": "പുതിയ ചിലവ് രേഖപ്പെടുത്തുക",
       "url": "./index.html?action=expense",
       "icons": [{ "src": "./icons/icon.svg", "sizes": "any" }]
     },
     {
-      "name": "പുതിയ വരവ് (+ Income)",
-      "short_name": "വരവ്",
-      "description": "പുതിയ വരവ് രേഖപ്പെടുത്തുക",
+      "name": "വരുമാനം (+ Income)",
+      "short_name": "വരുമാനം",
+      "description": "പുതിയ വരുമാനം രേഖപ്പെടുത്തുക",
       "url": "./index.html?action=income",
       "icons": [{ "src": "./icons/icon.svg", "sizes": "any" }]
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'office-finance-v2';
+const CACHE_NAME = 'office-finance-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
