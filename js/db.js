@@ -190,22 +190,8 @@ class FinanceDB {
       await this.setSetting('divisions', DEFAULT_DIVISIONS);
     }
 
-    // Seed default authorized users (RBAC & multi-user access)
-    const savedUsers = await this.getSetting('authorizedUsers');
-    if (!savedUsers || !Array.isArray(savedUsers) || savedUsers.length === 0) {
-      const oldPin = await this.getSetting('appPin');
-      const initialUsers = [
-        {
-          id: 'user_master',
-          name: 'Owner (അഡ്മിൻ)',
-          role: 'admin',
-          pin: (oldPin && /^\d{4}$/.test(oldPin)) ? String(oldPin) : '1234',
-          isMaster: true,
-          createdAt: new Date().toISOString()
-        }
-      ];
-      await this.setSetting('authorizedUsers', initialUsers);
-    }
+    // Ensure PIN system is cleared / disabled
+    await this.setSetting('appPin', null);
 
     // Seed default office profile
     const profile = await this.getSetting('officeProfile');

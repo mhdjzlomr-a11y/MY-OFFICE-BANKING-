@@ -44,11 +44,9 @@ class OfficeFinanceApp {
     this.currentDivision = 'office'; // 'office' | 'school' | 'home' | 'all' | custom
     this.sidebarCatType = 'expense';  // 'expense' | 'income'
 
-    // Multi-User RBAC & Access Control
-    this.authorizedUsers = [];
-    this.currentUser = null;
-    this.selectedLoginUserId = 'user_master';
-    this.isLocked = true;
+    // Admin & Access Control (PIN system removed - direct open access)
+    this.currentUser = { id: 'user_master', name: 'Owner', role: 'admin' };
+    this.isLocked = false;
   }
 
   async init() {
@@ -76,9 +74,6 @@ class OfficeFinanceApp {
     // 7. Setup PWA & Service Worker
     this.setupPWA();
 
-    // 8. Enforce security gate on launch (Owner / Authorized Users only)
-    this.showPinLock();
-
     // 8. Check URL parameters
     this.checkUrlActions();
 
@@ -86,6 +81,7 @@ class OfficeFinanceApp {
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
+  }
   }
 
   // ================= 1. THEME HANDLING (DARK / LIGHT) =================
@@ -127,12 +123,9 @@ class OfficeFinanceApp {
     this.officeProfile = await window.dbEngine.getSetting('officeProfile', {});
     this.applyProfileToHeader();
 
-    // PIN Security Check
-    this.userPin = await window.dbEngine.getSetting('appPin', null);
-    this.updatePinStatusUI();
-    if (this.userPin) {
-      this.showPinLock();
-    }
+    // PIN Security Check (Disabled)
+    this.userPin = null;
+    await window.dbEngine.setSetting('appPin', null);
 
     // WhatsApp Gateway Settings
     const savedGateway = await window.dbEngine.getSetting('whatsappGateway', null);
@@ -275,21 +268,19 @@ class OfficeFinanceApp {
   }
 
   showPinLock() {
-    this.isLocked = true;
-    this.pinBuffer = '';
-    this.updatePinDots();
-    this.populateLockScreenUsers();
+    this.isLocked = false;
     const modal = document.getElementById('pinLockModal');
-    if (modal) modal.classList.remove('hidden');
-    const errMsg = document.getElementById('pinErrorMsg');
-    if (errMsg) errMsg.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
   }
 
   hidePinLock() {
+    this.isLocked = false;
     const modal = document.getElementById('pinLockModal');
     if (modal) modal.classList.add('hidden');
-    this.pinBuffer = '';
-    this.isLocked = false;
+  }
+
+  lockSession() {
+    // PIN system removed
   }
 
   populateLockScreenUsers() {
@@ -370,9 +361,7 @@ class OfficeFinanceApp {
   }
 
   lockSession() {
-    this.currentUser = null;
-    this.showPinLock();
-    this.showToast(window.i18n.t('sessionLocked'), 'info');
+    // PIN system removed
   }
 
   applyUserRoleUI() {
@@ -2340,20 +2329,7 @@ Thank you!`;
       window.i18n.setLanguage('en');
     });
 
-    // 4. Quick PIN Lock & Header User Profile Badge
-    document.getElementById('btnQuickLock')?.addEventListener('click', () => {
-      this.lockSession();
-    });
-    document.getElementById('btnHeaderUserBadge')?.addEventListener('click', () => {
-      this.lockSession();
-    });
-
-    // 5. PIN Keys
-    document.querySelectorAll('.pin-key').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.handlePinInput(btn.dataset.val);
-      });
-    });
+    // 4. Quick Lock (Removed)
 
     // 6. Period Filter Tabs on Dashboard
     document.querySelectorAll('.period-tab-btn').forEach(btn => {
@@ -2582,19 +2558,8 @@ Thank you!`;
     document.getElementById('btnDownloadBackupJSON')?.addEventListener('click', () => this.handleDownloadBackup());
     document.getElementById('inputRestoreJSON')?.addEventListener('change', (e) => this.handleRestoreBackup(e));
 
-    // 25. PIN & Data Wipe
-    document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.openPinSettingPrompt());
+    // 25. Data Wipe
     document.getElementById('btnClearAllData')?.addEventListener('click', () => this.confirmClearAllData());
-
-    // 25b. Authorized Users RBAC Modal
-    document.getElementById('btnOpenAddUserModal')?.addEventListener('click', () => this.openAddUserModal());
-    document.getElementById('btnCloseAddUserModal')?.addEventListener('click', () => {
-      document.getElementById('addUserModal')?.classList.add('hidden');
-    });
-    document.getElementById('btnCancelAddUser')?.addEventListener('click', () => {
-      document.getElementById('addUserModal')?.classList.add('hidden');
-    });
-    document.getElementById('addUserForm')?.addEventListener('submit', (e) => this.handleSaveUser(e));
 
     // 26. PWA Install & Guide Modal
     document.getElementById('btnHeaderInstallApp')?.addEventListener('click', () => this.handleInstallClick());

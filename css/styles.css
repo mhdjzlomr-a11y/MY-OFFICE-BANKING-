@@ -209,40 +209,30 @@ body {
     font-size: 0.68rem !important;
   }
 
-  /* Neat, balanced row for User Badge, Language and Theme on Mobile */
+  /* Neat, balanced row for Language and Theme on Mobile */
   .finnova-top-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    gap: 6px;
-    padding-top: 10px;
+    gap: 8px;
+    padding-top: 8px;
     border-top: 1px solid var(--border-light);
-    flex-wrap: nowrap;
-  }
-
-  .header-user-badge-btn {
-    padding: 5px 9px !important;
-    font-size: 0.72rem !important;
-    gap: 4px !important;
-    flex-shrink: 0;
   }
 
   .lang-pill-switcher {
-    padding: 2px !important;
-    gap: 2px !important;
-    flex-shrink: 0;
+    padding: 3px !important;
+    gap: 3px !important;
   }
   .lang-pill-btn {
-    padding: 4px 8px !important;
-    font-size: 0.7rem !important;
+    padding: 5px 12px !important;
+    font-size: 0.74rem !important;
   }
 
   .theme-switch-btn {
-    padding: 5px 9px !important;
-    font-size: 0.72rem !important;
-    gap: 4px !important;
-    flex-shrink: 0;
+    padding: 5px 14px !important;
+    font-size: 0.74rem !important;
+    gap: 6px !important;
   }
 }
 
@@ -253,17 +243,13 @@ body {
   .finnova-brand-text {
     font-size: 1rem !important;
   }
-  .header-user-badge-btn {
-    padding: 4px 7px !important;
-    font-size: 0.68rem !important;
-  }
   .lang-pill-btn {
-    padding: 3px 6px !important;
-    font-size: 0.66rem !important;
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
   }
   .theme-switch-btn {
-    padding: 4px 7px !important;
-    font-size: 0.68rem !important;
+    padding: 4px 10px !important;
+    font-size: 0.7rem !important;
   }
 }
 
