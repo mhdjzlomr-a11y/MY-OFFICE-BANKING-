@@ -12,6 +12,17 @@ const DEFAULT_DIVISIONS = [
   { id: 'home', nameMl: 'വീട് / വ്യക്തിഗതം', nameEn: 'Home & Personal', icon: 'home', color: '#f43f5e' }
 ];
 
+const DEFAULT_USERS = [
+  {
+    id: 'user_master',
+    name: 'Owner (അഡ്മിൻ)',
+    role: 'admin',      // 'admin' | 'staff' | 'viewer'
+    pin: '1234',
+    isMaster: true,
+    createdAt: new Date().toISOString()
+  }
+];
+
 const DEFAULT_CATEGORIES = [
   // ================= 1. OFFICE EXPENSES =================
   { id: 'rent', nameMl: 'ഓഫീസ് വാടക', nameEn: 'Office Rent', type: 'expense', color: '#f43f5e', icon: 'building', division: 'office', isCustom: false },
@@ -179,6 +190,23 @@ class FinanceDB {
       await this.setSetting('divisions', DEFAULT_DIVISIONS);
     }
 
+    // Seed default authorized users (RBAC & multi-user access)
+    const savedUsers = await this.getSetting('authorizedUsers');
+    if (!savedUsers || !Array.isArray(savedUsers) || savedUsers.length === 0) {
+      const oldPin = await this.getSetting('appPin');
+      const initialUsers = [
+        {
+          id: 'user_master',
+          name: 'Owner (അഡ്മിൻ)',
+          role: 'admin',
+          pin: (oldPin && /^\d{4}$/.test(oldPin)) ? String(oldPin) : '1234',
+          isMaster: true,
+          createdAt: new Date().toISOString()
+        }
+      ];
+      await this.setSetting('authorizedUsers', initialUsers);
+    }
+
     // Seed default office profile
     const profile = await this.getSetting('officeProfile');
     if (!profile) {
@@ -224,6 +252,34 @@ class FinanceDB {
     const list = await this.getDivisions();
     const filtered = list.filter(d => d.id !== divId);
     await this.setSetting('divisions', filtered);
+    return filtered;
+  }
+
+  // --- Authorized Users & RBAC Permissions ---
+
+  async getAuthorizedUsers() {
+    await this.init();
+    const users = await this.getSetting('authorizedUsers');
+    if (users && Array.isArray(users) && users.length > 0) return users;
+    return DEFAULT_USERS;
+  }
+
+  async saveAuthorizedUser(user) {
+    const list = await this.getAuthorizedUsers();
+    const idx = list.findIndex(u => u.id === user.id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...user };
+    } else {
+      list.push(user);
+    }
+    await this.setSetting('authorizedUsers', list);
+    return list;
+  }
+
+  async deleteAuthorizedUser(userId) {
+    const list = await this.getAuthorizedUsers();
+    const filtered = list.filter(u => u.id !== userId && !u.isMaster);
+    await this.setSetting('authorizedUsers', filtered);
     return filtered;
   }
 
@@ -461,27 +517,33 @@ class FinanceDB {
     });
   }
 
-  // --- Backup & Restore ---
+  // --- Backup & Restore & Lifetime Snapshots ---
 
   async exportBackup() {
     const transactions = await this.getAllTransactions();
     const categories = await this.getAllCategories();
     const contacts = await this.getAllContacts();
+    const divisions = await this.getDivisions();
+    const authorizedUsers = await this.getAuthorizedUsers();
     const officeProfile = await this.getSetting('officeProfile');
     const language = await this.getSetting('language');
     const theme = await this.getSetting('theme');
+    const whatsappGateway = await this.getSetting('whatsappGateway');
 
     return {
-      version: 2,
+      version: 3,
       appName: 'OfficeFinance',
       exportedAt: new Date().toISOString(),
       transactions,
       categories,
       contacts,
+      divisions,
+      authorizedUsers,
       settings: {
         officeProfile,
         language,
-        theme
+        theme,
+        whatsappGateway
       }
     };
   }
@@ -520,6 +582,16 @@ class FinanceDB {
       }
     }
 
+    // Import Divisions
+    if (Array.isArray(data.divisions)) {
+      await this.setSetting('divisions', data.divisions);
+    }
+
+    // Import Authorized Users
+    if (Array.isArray(data.authorizedUsers) && data.authorizedUsers.length > 0) {
+      await this.setSetting('authorizedUsers', data.authorizedUsers);
+    }
+
     // Import Settings
     if (data.settings) {
       if (data.settings.officeProfile) {
@@ -528,9 +600,50 @@ class FinanceDB {
       if (data.settings.language) {
         await this.setSetting('language', data.settings.language);
       }
+      if (data.settings.theme) {
+        await this.setSetting('theme', data.settings.theme);
+      }
+      if (data.settings.whatsappGateway) {
+        await this.setSetting('whatsappGateway', data.settings.whatsappGateway);
+      }
     }
 
+    // Save auto-snapshot right after import
+    await this.saveLocalSnapshot();
+
     return true;
+  }
+
+  // Multi-year safety snapshot (saves duplicate copy in localStorage to survive browser cache flushes)
+  async saveLocalSnapshot() {
+    try {
+      const backup = await this.exportBackup();
+      const payload = JSON.stringify(backup);
+      localStorage.setItem('office_finance_auto_snapshot_v3', payload);
+      localStorage.setItem('office_finance_snapshot_time', new Date().toISOString());
+    } catch (e) {
+      console.warn('Auto snapshot write skipped:', e);
+    }
+  }
+
+  async restoreLocalSnapshotIfEmpty() {
+    try {
+      const txs = await this.getAllTransactions();
+      if (!txs || txs.length === 0) {
+        const raw = localStorage.getItem('office_finance_auto_snapshot_v3') || localStorage.getItem('office_finance_auto_snapshot_v2');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.transactions) && parsed.transactions.length > 0) {
+            console.log('Restoring from safe local snapshot...', parsed.transactions.length, 'transactions');
+            await this.importBackup(parsed);
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Auto snapshot recovery check error:', e);
+    }
+    return false;
   }
 
   async clearAllData() {
@@ -538,7 +651,12 @@ class FinanceDB {
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction(['transactions'], 'readwrite');
       tx.objectStore('transactions').clear();
-      tx.oncomplete = () => resolve(true);
+      tx.oncomplete = () => {
+        try {
+          localStorage.removeItem('office_finance_auto_snapshot_v3');
+        } catch (_) {}
+        resolve(true);
+      };
       tx.onerror = () => reject(tx.error);
     });
   }

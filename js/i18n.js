@@ -322,7 +322,30 @@ const translations = {
     btnQuickAdd: 'ചേർക്കുക',
     divisionSaved: 'പുതിയ വിഭാഗം വിജയകരമായി ചേർത്തു!',
     categorySaved: 'കാറ്റഗറി വിജയകരമായി ചേർത്തു!',
-    divisionFilterAll: 'എല്ലാ വിഭാഗങ്ങളും (Consolidated)'
+    divisionFilterAll: 'എല്ലാ വിഭാഗങ്ങളും (Consolidated)',
+
+    // Multi-User RBAC & Access Control
+    userAccessTitle: 'ഉപയോക്തൃ ആക്സസ്സ് & സുരക്ഷ (User Access & Permissions)',
+    userAccessSub: 'ആപ്പിലേക്ക് പ്രവേശനം അനുവദിക്കാൻ ഉപയോക്താക്കളെ ചേർക്കുക. ഓരോരുത്തർക്കും പ്രത്യേകം 4-അക്ക PIN നൽകാം.',
+    btnAddUser: '+ പുതിയ ഉപയോക്താവ്',
+    userModalTitle: 'ഉപയോക്താവിനെ ചേർക്കുക / മാറ്റുക',
+    userNameLabel: 'ഉപയോക്താവിന്റെ പേര് (User Name)',
+    userRoleLabel: 'റോളും അനുമതികളും (Role & Permissions)',
+    userPinLabel: '4-അക്ക സെക്യൂരിറ്റി PIN (4-Digit PIN)',
+    roleAdmin: '👑 അഡ്മിൻ (മുഴുവൻ നിയന്ത്രണം - Admin)',
+    roleStaff: '💼 സ്റ്റാഫ് (വരവ്/ചിലവ് ചേർക്കാം, ഡിലീറ്റ് ചെയ്യാനാവില്ല - Staff)',
+    roleViewer: '👁️ വ്യൂവർ (കാണാനും റിപ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യാനും മാത്രം - Viewer)',
+    ownerBadge: '👑 ഉടമസ്ഥൻ (Owner)',
+    userCreatedSuccess: 'ഉപയോക്താവിനെ വിജയകരമായി ചേർത്തു!',
+    userDeletedSuccess: 'ഉപയോക്താവിനെ നീക്കം ചെയ്തു!',
+    cantDeleteMasterUser: 'പ്രധാന അഡ്മിൻ അക്കൗണ്ട് നീക്കം ചെയ്യാനാവില്ല!',
+    selectUserToUnlock: 'ലോഗിൻ ചെയ്യേണ്ട ഉപയോക്താവിനെ തിരഞ്ഞെടുക്കുക:',
+    viewerRestrictedAction: 'ക്ഷമിക്കണം! വ്യൂവർ അക്കൗണ്ടിൽ പുതിയ ഇടപാടുകൾ ചേർക്കാനോ തിരുത്താനോ അനുമതിയില്ല.',
+    staffRestrictedDelete: 'ക്ഷമിക്കണം! സ്റ്റാഫ് അക്കൗണ്ടിൽ വിവരങ്ങൾ ഡിലീറ്റ് ചെയ്യാൻ അനുമതിയില്ല.',
+    adminOnlySettings: 'ഈ സെറ്റിംഗ്സ് മാറ്റാൻ അഡ്മിൻ അനുമതി ആവശ്യമാണ്.',
+    sessionLocked: 'സെഷൻ ലോക്ക് ചെയ്തു',
+    welcomeUser: 'സ്വാഗതം',
+    btnSwitchUser: 'ഉപയോക്താവിനെ മാറ്റുക'
   },
 
   en: {
@@ -642,7 +665,30 @@ const translations = {
     btnQuickAdd: 'Add',
     divisionSaved: 'New division added successfully!',
     categorySaved: 'Category added successfully!',
-    divisionFilterAll: 'All Divisions (Consolidated)'
+    divisionFilterAll: 'All Divisions (Consolidated)',
+
+    // Multi-User RBAC & Access Control
+    userAccessTitle: 'User Access & Permissions (RBAC)',
+    userAccessSub: 'Manage authorized users who can access this financial application. Each user gets an independent 4-digit PIN.',
+    btnAddUser: '+ Add Authorized User',
+    userModalTitle: 'Add / Edit Authorized User',
+    userNameLabel: 'User Name',
+    userRoleLabel: 'Role & Permissions',
+    userPinLabel: '4-Digit Security PIN',
+    roleAdmin: '👑 Admin (Full Access & Settings)',
+    roleStaff: '💼 Staff (Can add/edit transactions, no delete)',
+    roleViewer: '👁️ Viewer (Read-only view & report download)',
+    ownerBadge: '👑 Owner (Master)',
+    userCreatedSuccess: 'Authorized user saved successfully!',
+    userDeletedSuccess: 'Authorized user removed!',
+    cantDeleteMasterUser: 'The master owner account cannot be deleted!',
+    selectUserToUnlock: 'Select User to Unlock:',
+    viewerRestrictedAction: 'Viewer role has read-only access. Creating or modifying records is disabled.',
+    staffRestrictedDelete: 'Staff role cannot delete existing records.',
+    adminOnlySettings: 'Admin privilege required for this configuration.',
+    sessionLocked: 'App Locked',
+    welcomeUser: 'Welcome',
+    btnSwitchUser: 'Switch User'
   }
 };
 

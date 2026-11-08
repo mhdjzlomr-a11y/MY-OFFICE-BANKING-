@@ -43,9 +43,18 @@ class OfficeFinanceApp {
     this.divisions = [];
     this.currentDivision = 'office'; // 'office' | 'school' | 'home' | 'all' | custom
     this.sidebarCatType = 'expense';  // 'expense' | 'income'
+
+    // Multi-User RBAC & Access Control
+    this.authorizedUsers = [];
+    this.currentUser = null;
+    this.selectedLoginUserId = 'user_master';
+    this.isLocked = true;
   }
 
   async init() {
+    // 0. Lifetime durability auto-recovery (IndexedDB flush protection)
+    await window.dbEngine.restoreLocalSnapshotIfEmpty();
+
     // 1. Initialize Database
     await window.dbEngine.init();
 
@@ -55,7 +64,7 @@ class OfficeFinanceApp {
     // 3. Initialize Translations
     await window.i18n.init();
 
-    // 4. Load Settings, Profile, PIN, and WhatsApp Gateway
+    // 4. Load Settings, Profile, Users, and WhatsApp Gateway
     await this.loadSettings();
 
     // 5. Load Data & populate UI
@@ -66,6 +75,9 @@ class OfficeFinanceApp {
 
     // 7. Setup PWA & Service Worker
     this.setupPWA();
+
+    // 8. Enforce security gate on launch (Owner / Authorized Users only)
+    this.showPinLock();
 
     // 8. Check URL parameters
     this.checkUrlActions();
@@ -238,11 +250,12 @@ class OfficeFinanceApp {
     this.showToast(window.i18n.t('waGatewaySaved'), 'success');
   }
 
-  // ================= 3. PIN SECURITY =================
+  // ================= 3. MULTI-USER ACCESS GATE & RBAC PERMISSIONS =================
   updatePinStatusUI() {
     const pinText = document.getElementById('pinStatusText');
     const pinBtn = document.getElementById('btnTogglePinSetting');
-    if (this.userPin) {
+    const master = (this.authorizedUsers || []).find(u => u.isMaster) || (this.authorizedUsers || [])[0];
+    if (master && master.pin) {
       if (pinText) pinText.textContent = window.i18n.t('pinStatusActive');
       if (pinBtn) pinBtn.textContent = window.i18n.t('btnChangePin');
     } else {
@@ -251,9 +264,21 @@ class OfficeFinanceApp {
     }
   }
 
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   showPinLock() {
+    this.isLocked = true;
     this.pinBuffer = '';
     this.updatePinDots();
+    this.populateLockScreenUsers();
     const modal = document.getElementById('pinLockModal');
     if (modal) modal.classList.remove('hidden');
     const errMsg = document.getElementById('pinErrorMsg');
@@ -264,6 +289,49 @@ class OfficeFinanceApp {
     const modal = document.getElementById('pinLockModal');
     if (modal) modal.classList.add('hidden');
     this.pinBuffer = '';
+    this.isLocked = false;
+  }
+
+  populateLockScreenUsers() {
+    const container = document.getElementById('lockScreenUserSelector');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!this.authorizedUsers || this.authorizedUsers.length === 0) {
+      this.authorizedUsers = [
+        { id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin', pin: '1234', isMaster: true }
+      ];
+    }
+
+    if (!this.selectedLoginUserId || !this.authorizedUsers.some(u => u.id === this.selectedLoginUserId)) {
+      this.selectedLoginUserId = this.authorizedUsers[0].id;
+    }
+
+    this.authorizedUsers.forEach(user => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      const isSelected = user.id === this.selectedLoginUserId;
+      chip.className = `action-btn-pill ${isSelected ? 'btn-pill-green' : 'btn-pill-white'}`;
+      chip.style.cssText = 'padding: 6px 12px; font-size: 0.76rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;';
+      
+      const avatar = user.role === 'admin' ? '👑' : user.role === 'staff' ? '💼' : '👁️';
+      chip.innerHTML = `<span>${avatar}</span> <span>${this.escapeHtml(user.name)}</span>`;
+      chip.addEventListener('click', () => {
+        this.selectedLoginUserId = user.id;
+        this.pinBuffer = '';
+        this.updatePinDots();
+        const errMsg = document.getElementById('pinErrorMsg');
+        if (errMsg) errMsg.classList.add('hidden');
+        this.populateLockScreenUsers();
+      });
+      container.appendChild(chip);
+    });
+
+    const activeUser = this.authorizedUsers.find(u => u.id === this.selectedLoginUserId) || this.authorizedUsers[0];
+    const avatarElem = document.getElementById('lockScreenUserAvatar');
+    const nameElem = document.getElementById('lockScreenUserName');
+    if (avatarElem) avatarElem.textContent = activeUser.role === 'admin' ? '👑' : activeUser.role === 'staff' ? '💼' : '👁️';
+    if (nameElem) nameElem.textContent = `${activeUser.name} (${activeUser.role.toUpperCase()})`;
   }
 
   handlePinInput(val) {
@@ -283,9 +351,14 @@ class OfficeFinanceApp {
     this.updatePinDots();
 
     if (this.pinBuffer.length === 4) {
-      if (this.pinBuffer === String(this.userPin)) {
+      const targetUser = (this.authorizedUsers || []).find(u => u.id === this.selectedLoginUserId) || (this.authorizedUsers || [])[0];
+      const validPin = targetUser && targetUser.pin ? String(targetUser.pin) : '1234';
+
+      if (this.pinBuffer === validPin) {
+        this.currentUser = targetUser;
         this.hidePinLock();
-        this.showToast(window.i18n.t('pinUnlocked'), 'success');
+        this.applyUserRoleUI();
+        this.showToast(`${window.i18n.t('welcomeUser')}, ${targetUser.name}!`, 'success');
       } else {
         if (errMsg) errMsg.classList.remove('hidden');
         setTimeout(() => {
@@ -294,6 +367,43 @@ class OfficeFinanceApp {
         }, 500);
       }
     }
+  }
+
+  lockSession() {
+    this.currentUser = null;
+    this.showPinLock();
+    this.showToast(window.i18n.t('sessionLocked'), 'info');
+  }
+
+  applyUserRoleUI() {
+    if (!this.currentUser) return;
+
+    // Update Header User Profile badge
+    const headerAvatar = document.getElementById('headerUserAvatar');
+    const headerName = document.getElementById('headerUserName');
+    if (headerAvatar) {
+      headerAvatar.textContent = this.currentUser.role === 'admin' ? '👑' : this.currentUser.role === 'staff' ? '💼' : '👁️';
+    }
+    if (headerName) {
+      headerName.textContent = `${this.currentUser.name}`;
+    }
+
+    // Role-based visibility
+    const isViewer = this.currentUser.role === 'viewer';
+    const isStaff = this.currentUser.role === 'staff';
+    const isAdmin = this.currentUser.role === 'admin';
+
+    // Viewer restriction: hide or disable Add Transaction buttons
+    const btnCreateTx = document.getElementById('btnOpenAddTxModal');
+    const btnSidebarQuickAdd = document.getElementById('btnSidebarQuickAddTx');
+    if (btnCreateTx) btnCreateTx.style.display = isViewer ? 'none' : 'inline-flex';
+    if (btnSidebarQuickAdd) btnSidebarQuickAdd.style.display = isViewer ? 'none' : 'inline-flex';
+
+    // Settings access restrictions: User management & clear data only for Admin
+    const userMgmtSec = document.getElementById('userAccessManagementSection');
+    const btnClearAll = document.getElementById('btnClearAllData');
+    if (userMgmtSec) userMgmtSec.style.opacity = isAdmin ? '1' : '0.5';
+    if (btnClearAll) btnClearAll.style.display = isAdmin ? 'inline-flex' : 'none';
   }
 
   updatePinDots() {
@@ -311,16 +421,161 @@ class OfficeFinanceApp {
     }
   }
 
+  // Authorized Users Management UI in Settings
+  renderAuthorizedUsersList() {
+    const container = document.getElementById('authorizedUsersList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!this.authorizedUsers || this.authorizedUsers.length === 0) {
+      this.authorizedUsers = [
+        { id: 'user_master', name: 'Owner (അഡ്മിൻ)', role: 'admin', pin: '1234', isMaster: true }
+      ];
+    }
+
+    this.authorizedUsers.forEach(user => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; box-shadow: var(--shadow-sm);';
+      
+      const roleBadge = user.role === 'admin' 
+        ? `<span style="background: rgba(99,102,241,0.15); color: var(--finnova-purple); padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">👑 Admin</span>`
+        : user.role === 'staff'
+        ? `<span style="background: rgba(16,185,129,0.15); color: #059669; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">💼 Staff</span>`
+        : `<span style="background: rgba(59,130,246,0.15); color: #2563eb; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">👁️ Viewer</span>`;
+
+      const avatar = user.role === 'admin' ? '👑' : user.role === 'staff' ? '💼' : '👁️';
+
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--finnova-card-bg); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: var(--shadow-sm);">
+              ${avatar}
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">${this.escapeHtml(user.name)}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">PIN: <strong style="letter-spacing: 2px;">••••</strong></div>
+            </div>
+          </div>
+          ${roleBadge}
+        </div>
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 6px; border-top: 1px dashed var(--border-light); padding-top: 8px;">
+          <button type="button" class="btn-edit-user action-btn-pill btn-pill-white" style="padding: 4px 10px; font-size: 0.72rem;" data-id="${user.id}">
+            ✏️ PIN മാറ്റുക (Edit PIN)
+          </button>
+          ${!user.isMaster ? `
+            <button type="button" class="btn-del-user action-btn-pill btn-pill-white" style="padding: 4px 8px; font-size: 0.72rem; color: var(--coral-rose);" data-id="${user.id}">
+              🗑️
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      card.querySelector('.btn-edit-user')?.addEventListener('click', () => this.openEditUserModal(user.id));
+      card.querySelector('.btn-del-user')?.addEventListener('click', () => this.handleDeleteUser(user.id));
+
+      container.appendChild(card);
+    });
+  }
+
+  openAddUserModal() {
+    if (this.currentUser && this.currentUser.role !== 'admin') {
+      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      return;
+    }
+    const form = document.getElementById('addUserForm');
+    if (form) form.reset();
+    const idInput = document.getElementById('userFormId');
+    if (idInput) idInput.value = '';
+    const modal = document.getElementById('addUserModal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  openEditUserModal(userId) {
+    if (this.currentUser && this.currentUser.role !== 'admin') {
+      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      return;
+    }
+    const user = this.authorizedUsers.find(u => u.id === userId);
+    if (!user) return;
+    const idInput = document.getElementById('userFormId');
+    const nameInput = document.getElementById('userFormName');
+    const roleInput = document.getElementById('userFormRole');
+    const pinInput = document.getElementById('userFormPin');
+
+    if (idInput) idInput.value = user.id;
+    if (nameInput) nameInput.value = user.name;
+    if (roleInput) roleInput.value = user.role;
+    if (pinInput) pinInput.value = user.pin || '';
+
+    const modal = document.getElementById('addUserModal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  async handleSaveUser(e) {
+    e.preventDefault();
+    if (this.currentUser && this.currentUser.role !== 'admin') {
+      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      return;
+    }
+    const id = document.getElementById('userFormId')?.value.trim();
+    const name = document.getElementById('userFormName')?.value.trim();
+    const role = document.getElementById('userFormRole')?.value;
+    const pin = document.getElementById('userFormPin')?.value.trim();
+
+    if (!name || !pin || !/^\d{4}$/.test(pin)) {
+      alert('ദയവായി സാധുവായ പേരും 4-അക്ക PIN നമ്പറും നൽകുക (Please enter a valid name and 4-digit PIN)');
+      return;
+    }
+
+    const userData = {
+      id: id || `user_${Date.now()}`,
+      name,
+      role,
+      pin,
+      isMaster: id === 'user_master'
+    };
+
+    await window.dbEngine.saveAuthorizedUser(userData);
+    this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
+    this.renderAuthorizedUsersList();
+    this.populateLockScreenUsers();
+    document.getElementById('addUserModal')?.classList.add('hidden');
+    this.showToast(window.i18n.t('userCreatedSuccess'), 'success');
+  }
+
+  async handleDeleteUser(userId) {
+    if (this.currentUser && this.currentUser.role !== 'admin') {
+      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      return;
+    }
+    if (userId === 'user_master') {
+      alert(window.i18n.t('cantDeleteMasterUser'));
+      return;
+    }
+    if (confirm('ഈ ഉപയോക്താവിനെ നീക്കം ചെയ്യണമെന്ന് ഉറപ്പാണോ? (Are you sure to remove this authorized user?)')) {
+      await window.dbEngine.deleteAuthorizedUser(userId);
+      this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
+      this.renderAuthorizedUsersList();
+      this.populateLockScreenUsers();
+      this.showToast(window.i18n.t('userDeletedSuccess'), 'info');
+    }
+  }
+
   // ================= 4. DATA REFRESH & DIVISIONS =================
   async refreshData() {
     this.transactions = await window.dbEngine.getAllTransactions();
     this.categories = await window.dbEngine.getAllCategories();
     this.contacts = await window.dbEngine.getAllContacts();
     this.divisions = await window.dbEngine.getDivisions();
+    this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
+
+    // Multi-year automatic snapshot trigger
+    window.dbEngine.saveLocalSnapshot();
 
     this.updateHeaderDivisionBadge();
     this.renderSidebarDivisions();
     this.renderSidebarCategories();
+    this.renderAuthorizedUsersList();
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
@@ -1410,6 +1665,10 @@ class OfficeFinanceApp {
 
   // ================= 12. ADD / EDIT TRANSACTION MODAL =================
   openAddTxModal(type = 'expense', preselectedDiv = null) {
+    if (this.currentUser && this.currentUser.role === 'viewer') {
+      this.showToast(window.i18n.t('viewerRestrictedAction'), 'error');
+      return;
+    }
     this.editingTxId = null;
     this.currentTxType = type;
     this.currentAttachment = null;
@@ -1459,6 +1718,10 @@ class OfficeFinanceApp {
   }
 
   async openEditTxModal(txId) {
+    if (this.currentUser && this.currentUser.role === 'viewer') {
+      this.showToast(window.i18n.t('viewerRestrictedAction'), 'error');
+      return;
+    }
     const tx = this.transactions.find(t => t.id === Number(txId));
     if (!tx) return;
 
@@ -2061,13 +2324,12 @@ Thank you!`;
       window.i18n.setLanguage('en');
     });
 
-    // 4. Quick PIN Lock
+    // 4. Quick PIN Lock & Header User Profile Badge
     document.getElementById('btnQuickLock')?.addEventListener('click', () => {
-      if (!this.userPin) {
-        this.openPinSettingPrompt();
-      } else {
-        this.showPinLock();
-      }
+      this.lockSession();
+    });
+    document.getElementById('btnHeaderUserBadge')?.addEventListener('click', () => {
+      this.lockSession();
     });
 
     // 5. PIN Keys
@@ -2308,6 +2570,16 @@ Thank you!`;
     document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.openPinSettingPrompt());
     document.getElementById('btnClearAllData')?.addEventListener('click', () => this.confirmClearAllData());
 
+    // 25b. Authorized Users RBAC Modal
+    document.getElementById('btnOpenAddUserModal')?.addEventListener('click', () => this.openAddUserModal());
+    document.getElementById('btnCloseAddUserModal')?.addEventListener('click', () => {
+      document.getElementById('addUserModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnCancelAddUser')?.addEventListener('click', () => {
+      document.getElementById('addUserModal')?.classList.add('hidden');
+    });
+    document.getElementById('addUserForm')?.addEventListener('submit', (e) => this.handleSaveUser(e));
+
     // 26. PWA Install & Guide Modal
     document.getElementById('btnHeaderInstallApp')?.addEventListener('click', () => this.handleInstallClick());
     document.getElementById('btnInstallApp')?.addEventListener('click', () => this.handleInstallClick());
@@ -2466,6 +2738,14 @@ Thank you!`;
   }
 
   async confirmDeleteTx(txId) {
+    if (this.currentUser && this.currentUser.role === 'viewer') {
+      this.showToast(window.i18n.t('viewerRestrictedAction'), 'error');
+      return;
+    }
+    if (this.currentUser && this.currentUser.role === 'staff') {
+      this.showToast(window.i18n.t('staffRestrictedDelete'), 'error');
+      return;
+    }
     if (confirm(window.i18n.t('confirmDelete'))) {
       await window.dbEngine.deleteTransaction(Number(txId));
       this.showToast(window.i18n.t('deletedSuccess'), 'info');
@@ -2587,6 +2867,14 @@ Thank you!`;
     if (trimmed && /^\d{4}$/.test(trimmed)) {
       this.userPin = trimmed;
       await window.dbEngine.setSetting('appPin', trimmed);
+      const masterUser = (this.authorizedUsers || []).find(u => u.isMaster) || (this.authorizedUsers || [])[0];
+      if (masterUser) {
+        masterUser.pin = trimmed;
+        await window.dbEngine.saveAuthorizedUser(masterUser);
+      }
+      this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
+      this.renderAuthorizedUsersList();
+      this.populateLockScreenUsers();
       this.updatePinStatusUI();
       this.showToast(window.i18n.t('pinChanged'), 'success');
     } else if (!trimmed) {

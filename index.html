@@ -168,10 +168,11 @@
 
       <!-- Right: Action Buttons (Install App, Theme Toggle, Lang, Lock) -->
       <div class="finnova-top-actions">
-        <!-- Prominent Install App Button at Top Header -->
-        <button id="btnHeaderInstallApp" class="action-btn-pill btn-pill-green" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 7px 14px; font-size: 0.82rem; font-weight: 800; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Install App to Mobile or PC">
-          <i data-lucide="download"></i>
-          <span data-i18n="btnHeaderInstall">📲 ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുക</span>
+        <!-- Active User Profile Badge & Lock Trigger (Owner / Staff / Viewer) -->
+        <button type="button" id="btnHeaderUserBadge" class="action-btn-pill" style="background: var(--bg-surface); border: 1.5px solid var(--finnova-purple); color: var(--finnova-purple); padding: 6px 14px; font-size: 0.8rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; box-shadow: var(--shadow-sm);" title="Current User / Lock Session">
+          <span id="headerUserAvatar">👑</span>
+          <span id="headerUserName">Owner (Admin)</span>
+          <i data-lucide="lock" style="width: 14px; height: 14px; margin-left: 2px;"></i>
         </button>
 
         <!-- Language Switcher Option (English & Malayalam) -->
@@ -934,6 +935,29 @@
           </form>
         </div>
 
+        <!-- ================= USER ACCESS & RBAC PERMISSIONS ================= -->
+        <div class="white-box" id="userAccessManagementSection" style="margin-bottom: 20px; border-left: 4px solid var(--finnova-purple);">
+          <div class="box-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.3rem;">🔐</span>
+                <h3 class="box-title" data-i18n="userAccessTitle">User Access & Permissions (RBAC)</h3>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" data-i18n="userAccessSub">
+                നിങ്ങൾക്ക് മാത്രം നിയന്ത്രണാധികാരമുള്ള അഡ്മിൻ, സ്റ്റാഫ്, വ്യൂവർ യൂസർമാരെ ചേർക്കാനും അവരുടെ 4-അക്ക PIN ക്രമീകരിക്കാനും കഴിയും
+              </p>
+            </div>
+            <button type="button" id="btnOpenAddUserModal" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.8rem;">
+              <i data-lucide="user-plus"></i>
+              <span data-i18n="btnAddUser">+ Add Authorized User</span>
+            </button>
+          </div>
+
+          <div id="authorizedUsersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 14px;">
+            <!-- Populated via app.js -->
+          </div>
+        </div>
+
         <!-- Backup & PIN Security -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
           <div class="white-box">
@@ -1493,6 +1517,47 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: ADD / EDIT AUTHORIZED USER ================= -->
+  <div id="addUserModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header-row">
+        <h3 id="addUserModalTitle" class="modal-heading-text" data-i18n="userModalTitle">Add / Edit Authorized User</h3>
+        <button type="button" id="btnCloseAddUserModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="addUserForm" style="display: flex; flex-direction: column; gap: 14px;">
+        <input type="hidden" id="userFormId" value="" />
+        
+        <div class="form-group">
+          <label class="form-label" data-i18n="userNameLabel">ഉപയോക്താവിന്റെ പേര് (User Name)</label>
+          <input id="userFormName" type="text" class="form-input" placeholder="e.g. Salim, Accountant, Auditor..." required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="userRoleLabel">റോളും അനുമതികളും (Role & Permissions)</label>
+          <select id="userFormRole" class="form-input" required>
+            <option value="admin" data-i18n="roleAdmin">👑 അഡ്മിൻ (മുഴുവൻ നിയന്ത്രണം - Admin)</option>
+            <option value="staff" data-i18n="roleStaff">💼 സ്റ്റാഫ് (വരവ്/ചിലവ് ചേർക്കാം, ഡിലീറ്റ് ചെയ്യാനാവില്ല - Staff)</option>
+            <option value="viewer" data-i18n="roleViewer">👁️ വ്യൂവർ (കാണാനും റിപ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യാനും മാത്രം - Viewer)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="userPinLabel">4-അക്ക സെക്യൂരിറ്റി PIN (4-Digit PIN)</label>
+          <input id="userFormPin" type="password" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" class="form-input" placeholder="4 digits (e.g. 1234)" required />
+          <small style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">ലോഗിൻ ചെയ്യാൻ ഉപയോഗിക്കുന്ന വ്യക്തിഗത 4-അക്ക കോഡ്</small>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button type="button" id="btnCancelAddUser" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;" data-i18n="btnCancel">Cancel</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnSave">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= MODAL: ATTACHMENT LIGHTBOX ================= -->
   <div id="lightboxModal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.92);">
     <button id="btnCloseLightbox" style="position: absolute; top: 20px; right: 20px; color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; padding: 10px; cursor: pointer;">
@@ -1501,22 +1566,33 @@
     <img id="lightboxImg" src="" alt="Bill Preview" style="max-width: 90%; max-height: 85vh; border-radius: 14px; object-fit: contain;" />
   </div>
 
-  <!-- ================= MODAL: PIN LOCK ================= -->
-  <div id="pinLockModal" class="modal-overlay hidden" style="background: var(--bg-surface);">
-    <div style="max-width: 290px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 20px;">
-      <div style="width: 58px; height: 58px; margin: 0 auto; border-radius: 18px; background: var(--finnova-purple-light); color: var(--finnova-purple); display: flex; align-items: center; justify-content: center;">
-        <i data-lucide="lock"></i>
+  <!-- ================= MODAL: MULTI-USER PIN ACCESS GATE ================= -->
+  <div id="pinLockModal" class="modal-overlay hidden" style="background: var(--bg-surface); z-index: 99999;">
+    <div style="max-width: 330px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 16px;">
+      <div style="width: 58px; height: 58px; margin: 0 auto; border-radius: 18px; background: var(--finnova-purple-light); color: var(--finnova-purple); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(99,102,241,0.25);">
+        <i data-lucide="shield-check" style="width: 28px; height: 28px;"></i>
       </div>
       <div>
-        <h3 style="font-size: 1.2rem; font-weight: 800;" data-i18n="enterPinTitle">Enter Security PIN</h3>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;" data-i18n="enterPinSub">Enter 4-digit code to continue</p>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-dark);" data-i18n="enterPinTitle">Enter Security PIN</h3>
+        <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px;" data-i18n="selectUserToUnlock">ലോഗിൻ ചെയ്യേണ്ട ഉപയോക്താവിനെ തിരഞ്ഞെടുക്കുക:</p>
       </div>
 
-      <div style="display: flex; justify-content: center; gap: 12px;">
-        <div id="pinDot0" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted);"></div>
-        <div id="pinDot1" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted);"></div>
-        <div id="pinDot2" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted);"></div>
-        <div id="pinDot3" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted);"></div>
+      <!-- User Selector Chips on Lock Screen -->
+      <div id="lockScreenUserSelector" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; max-height: 110px; overflow-y: auto; padding: 4px;">
+        <!-- Populated dynamically via app.js -->
+      </div>
+
+      <!-- Selected User Highlight Card -->
+      <div id="lockScreenSelectedUserCard" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--bg-subtle); border: 1px solid var(--border-light); font-size: 0.82rem; font-weight: 700;">
+        <span id="lockScreenUserAvatar">👑</span>
+        <span id="lockScreenUserName">Owner (Admin)</span>
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 12px; margin: 4px 0;">
+        <div id="pinDot0" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted); transition: all 0.2s;"></div>
+        <div id="pinDot1" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted); transition: all 0.2s;"></div>
+        <div id="pinDot2" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted); transition: all 0.2s;"></div>
+        <div id="pinDot3" style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text-muted); transition: all 0.2s;"></div>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
