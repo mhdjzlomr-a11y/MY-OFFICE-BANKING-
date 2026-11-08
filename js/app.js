@@ -1,5 +1,5 @@
 /**
- * app.js - Master Application Controller
+ * app.js - Master Application Controller (Eduka Theme)
  * Handles UI state, routing, modals, transactions, categories, exports, and PWA logic
  */
 
@@ -15,6 +15,7 @@ class OfficeFinanceApp {
     this.deferredPrompt = null;
     this.pinBuffer = '';
     this.userPin = null;
+    this.dashRecentFilter = 'all';
   }
 
   async init() {
@@ -24,8 +25,8 @@ class OfficeFinanceApp {
     // 2. Initialize Translations
     await window.i18n.init();
 
-    // 3. Load Settings, Theme, and PIN
-    await this.loadSettingsAndTheme();
+    // 3. Load Settings, Profile, and PIN
+    await this.loadSettings();
 
     // 4. Load Data & populate UI
     await this.refreshData();
@@ -45,18 +46,7 @@ class OfficeFinanceApp {
     }
   }
 
-  async loadSettingsAndTheme() {
-    // Theme
-    const savedTheme = await window.dbEngine.getSetting('theme', 'light');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      this.updateThemeIcon(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      this.updateThemeIcon(false);
-    }
-
-    // Office Profile
+  async loadSettings() {
     this.officeProfile = await window.dbEngine.getSetting('officeProfile', {});
     this.applyProfileToHeader();
 
@@ -70,29 +60,8 @@ class OfficeFinanceApp {
 
   applyProfileToHeader() {
     const nameElem = document.getElementById('headerOfficeName');
-    const tagElem = document.getElementById('headerOfficeTagline');
     if (nameElem && this.officeProfile.name) {
       nameElem.textContent = this.officeProfile.name;
-    }
-    if (tagElem && this.officeProfile.tagline) {
-      tagElem.textContent = this.officeProfile.tagline;
-    }
-  }
-
-  updateThemeIcon(isDark) {
-    const icon = document.getElementById('themeIcon');
-    if (icon) {
-      icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-      if (window.renderLucideIcons) window.renderLucideIcons();
-    }
-  }
-
-  async toggleTheme() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    await window.dbEngine.setSetting('theme', isDark ? 'dark' : 'light');
-    this.updateThemeIcon(isDark);
-    if (window.financeCharts) {
-      window.financeCharts.updateCharts(this.transactions, this.categories);
     }
   }
 
@@ -101,11 +70,11 @@ class OfficeFinanceApp {
     const pinText = document.getElementById('pinStatusText');
     const pinBtn = document.getElementById('btnTogglePinSetting');
     if (this.userPin) {
-      if (pinText) pinText.textContent = window.i18n.t('pinStatusActive');
-      if (pinBtn) pinBtn.textContent = window.i18n.t('btnRemovePin');
+      if (pinText) pinText.textContent = 'PIN സുരക്ഷ സജീവമാണ്';
+      if (pinBtn) pinBtn.textContent = 'PIN മാറ്റുക';
     } else {
-      if (pinText) pinText.textContent = window.i18n.t('pinStatusInactive');
-      if (pinBtn) pinBtn.textContent = window.i18n.t('btnSetPin');
+      if (pinText) pinText.textContent = 'PIN സുരക്ഷ ഓഫാണ്';
+      if (pinBtn) pinBtn.textContent = 'PIN സെറ്റ് ചെയ്യുക';
     }
   }
 
@@ -149,7 +118,7 @@ class OfficeFinanceApp {
       setTimeout(() => {
         if (this.pinBuffer === this.userPin) {
           this.hidePinLock();
-          this.showToast(window.i18n.t('appTitle') + ' Unlocked!', 'success');
+          this.showToast('App Unlocked!', 'success');
         } else {
           if (errMsg) errMsg.classList.remove('hidden');
           this.pinBuffer = '';
@@ -164,11 +133,11 @@ class OfficeFinanceApp {
       const dot = document.getElementById(`pinDot${i}`);
       if (dot) {
         if (i < this.pinBuffer.length) {
-          dot.style.background = 'var(--emerald-500)';
-          dot.style.borderColor = 'var(--emerald-500)';
+          dot.style.background = '#00c569';
+          dot.style.borderColor = '#00c569';
         } else {
           dot.style.background = 'transparent';
-          dot.style.borderColor = 'var(--text-muted)';
+          dot.style.borderColor = '#8a94a6';
         }
       }
     }
@@ -176,31 +145,29 @@ class OfficeFinanceApp {
 
   async togglePinSetting() {
     if (this.userPin) {
-      // Remove PIN
-      const entered = prompt(window.i18n.t('enterPinPrompt'));
+      const entered = prompt('സുരക്ഷാ PIN നൽകുക:');
       if (entered === this.userPin) {
         this.userPin = null;
         await window.dbEngine.setSetting('appPin', null);
         this.updatePinStatusUI();
-        this.showToast(window.i18n.t('pinStatusInactive'), 'info');
+        this.showToast('PIN ഒഴിവാക്കി', 'info');
       } else if (entered !== null) {
-        alert(window.i18n.t('wrongPin'));
+        alert('നൽകിയ PIN തെറ്റാണ്!');
       }
     } else {
-      // Set new PIN
-      const pin1 = prompt('പുതിയ 4-അക്ക PIN നൽകുക (Enter new 4-digit PIN):');
+      const pin1 = prompt('പുതിയ 4-അക്ക PIN നൽകുക:');
       if (!pin1 || pin1.length !== 4 || isNaN(pin1)) {
-        if (pin1 !== null) alert('ദയവായി 4 അക്കങ്ങൾ മാത്രമുള്ള PIN നൽകുക (4 digits only).');
+        if (pin1 !== null) alert('4 അക്കങ്ങൾ മാത്രമുള്ള PIN നൽകുക.');
         return;
       }
-      const pin2 = prompt('PIN ഒന്നുകൂടി നൽകുക (Confirm PIN):');
+      const pin2 = prompt('PIN ഒന്നുകൂടി നൽകുക (Confirm):');
       if (pin1 === pin2) {
         this.userPin = pin1;
         await window.dbEngine.setSetting('appPin', pin1);
         this.updatePinStatusUI();
-        this.showToast(window.i18n.t('pinSetSuccess'), 'success');
+        this.showToast('PIN വിജയകരമായി സെറ്റ് ചെയ്തു!', 'success');
       } else {
-        alert('PIN പൊരുത്തപ്പെടുന്നില്ല (PIN does not match).');
+        alert('PIN പൊരുത്തപ്പെടുന്നില്ല.');
       }
     }
   }
@@ -229,14 +196,11 @@ class OfficeFinanceApp {
   switchView(viewName) {
     this.currentView = viewName;
 
-    // Hide all view sections
     document.querySelectorAll('.tab-view').forEach(sec => sec.classList.add('hidden'));
 
-    // Show target section
     const targetSection = document.getElementById(`view-${viewName}`);
     if (targetSection) targetSection.classList.remove('hidden');
 
-    // Update active nav items (desktop + mobile)
     document.querySelectorAll('.nav-item').forEach(btn => {
       if (btn.getAttribute('data-target') === viewName) {
         btn.classList.add('active');
@@ -279,13 +243,14 @@ class OfficeFinanceApp {
     const netBalance = totalIncome - totalExpense;
     const monthNet = monthIncome - monthExpense;
 
-    // Stat card texts
+    // Stat cards
     const statNet = document.getElementById('statNetBalance');
     const statInc = document.getElementById('statTotalIncome');
     const statExp = document.getElementById('statTotalExpense');
     const statMNet = document.getElementById('statMonthNet');
     const statTInc = document.getElementById('statTodayIncome');
     const statTExp = document.getElementById('statTodayExpense');
+    const statTxCount = document.getElementById('statTotalTxCount');
 
     if (statNet) statNet.textContent = this.formatCurrency(netBalance);
     if (statInc) statInc.textContent = this.formatCurrency(totalIncome);
@@ -293,30 +258,53 @@ class OfficeFinanceApp {
     if (statMNet) statMNet.textContent = this.formatCurrency(monthNet);
     if (statTInc) statTInc.textContent = this.formatCurrency(todayIncome);
     if (statTExp) statTExp.textContent = this.formatCurrency(todayExpense);
+    if (statTxCount) statTxCount.textContent = `${this.transactions.length} Records`;
 
-    // Update Charts
+    // Update Eduka Charts
     if (window.financeCharts) {
       window.financeCharts.updateCharts(this.transactions, this.categories);
     }
 
-    // Render Recent 5 Transactions
-    const recentContainer = document.getElementById('recentTxList');
-    const countBadge = document.getElementById('recentTxCountBadge');
-    if (countBadge) countBadge.textContent = this.transactions.length;
+    // Render Filtered Recent List
+    this.renderDashboardRecentList();
+  }
 
+  renderDashboardRecentList() {
+    const recentContainer = document.getElementById('recentTxList');
     if (!recentContainer) return;
 
     if (this.transactions.length === 0) {
       recentContainer.innerHTML = `
         <div style="padding: 30px; text-align: center; color: var(--text-muted);">
-          <p style="font-size: 0.9rem;">${window.i18n.t('noTransactionsYet')}</p>
+          <p style="font-size: 0.88rem;">ഇടപാടുകൾ ഒന്നും ചേർത്തിട്ടില്ല. "+ വരവ്" അല്ലെങ്കിൽ "+ ചിലവ്" ചേർക്കുക!</p>
         </div>
       `;
       return;
     }
 
-    const recentList = this.transactions.slice(0, 5);
-    recentContainer.innerHTML = recentList.map(tx => this.renderTransactionItemHTML(tx)).join('');
+    const thisMonthStr = new Date().toISOString().slice(0, 7);
+    let list = this.transactions;
+
+    if (this.dashRecentFilter === 'expense') {
+      list = list.filter(t => t.type === 'expense');
+    } else if (this.dashRecentFilter === 'income') {
+      list = list.filter(t => t.type === 'income');
+    } else if (this.dashRecentFilter === 'month') {
+      list = list.filter(t => t.date && t.date.startsWith(thisMonthStr));
+    }
+
+    const displayList = list.slice(0, 5);
+
+    if (displayList.length === 0) {
+      recentContainer.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+          ഇടപാടുകൾ ഒന്നും കണ്ടെത്തിയില്ല
+        </div>
+      `;
+      return;
+    }
+
+    recentContainer.innerHTML = displayList.map(tx => this.renderTransactionItemHTML(tx)).join('');
   }
 
   // --- View 2: Transactions Ledger Rendering ---
@@ -339,13 +327,9 @@ class OfficeFinanceApp {
     const thisMonthStr = todayStr.slice(0, 7);
 
     const filtered = this.transactions.filter(tx => {
-      // 1. Type Filter
       if (typeFilter !== 'all' && tx.type !== typeFilter) return false;
-
-      // 2. Category Filter
       if (catFilter !== 'all' && tx.category !== catFilter) return false;
 
-      // 3. Date Filter
       const txDate = tx.date ? tx.date.slice(0, 10) : '';
       if (dateRangeFilter === 'today' && txDate !== todayStr) return false;
       if (dateRangeFilter === 'yesterday' && txDate !== yesterdayStr) return false;
@@ -356,7 +340,6 @@ class OfficeFinanceApp {
         if (customEnd && txDate > customEnd) return false;
       }
 
-      // 4. Search Filter
       if (searchVal) {
         const cat = this.categories.find(c => c.id === tx.category);
         const catName = cat ? `${cat.nameMl} ${cat.nameEn}`.toLowerCase() : '';
@@ -377,7 +360,6 @@ class OfficeFinanceApp {
       return true;
     });
 
-    // Update Filtered Totals
     let fIncome = 0;
     let fExpense = 0;
     filtered.forEach(t => {
@@ -411,68 +393,63 @@ class OfficeFinanceApp {
   renderTransactionItemHTML(tx) {
     const cat = this.categories.find(c => c.id === tx.category);
     const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
-    const catColor = cat && cat.color ? cat.color : '#64748b';
+    const catColor = cat && cat.color ? cat.color : '#00c569';
     const isIncome = tx.type === 'income';
 
     const formattedDate = this.formatDate(tx.date);
     const sign = isIncome ? '+' : '-';
     const amountClass = isIncome ? 'income' : 'expense';
-    const tagClass = isIncome ? 'income' : 'expense';
+    const pillClass = isIncome ? 'pill-income' : 'pill-expense';
+    const pillLabel = isIncome ? 'Income' : 'Expense';
 
     const hasAttachment = Boolean(tx.attachment);
 
     return `
-      <div class="tx-item">
-        <!-- Left: Icon & Info -->
-        <div class="tx-left">
-          <div class="cat-avatar" style="background-color: ${catColor};">
+      <div class="tx-table-row">
+        <!-- Left: Cute Avatar & Info -->
+        <div class="tx-left-col">
+          <div class="tx-avatar-box" style="background-color: ${catColor};">
             ${catName.slice(0, 1)}
           </div>
 
-          <div class="tx-details">
-            <div class="tx-title-row">
-              <span class="tx-party">
-                ${tx.party || catName}
-              </span>
-              <span class="cat-tag ${tagClass}">
-                ${catName}
-              </span>
-              ${tx.billNo ? `<span class="bill-tag">#${tx.billNo}</span>` : ''}
+          <div class="tx-info-block">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="tx-party-name">${tx.party || catName}</span>
+              <span class="tx-status-pill ${pillClass}">${pillLabel}</span>
+              ${tx.billNo ? `<span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #64748b;">#${tx.billNo}</span>` : ''}
               ${hasAttachment ? `
-                <button onclick="window.appEngine.openAttachmentLightbox(${tx.id})" class="action-icon-btn" style="color: var(--emerald-600); padding: 2px;" title="View Bill Photo">
+                <button onclick="window.appEngine.openAttachmentLightbox(${tx.id})" style="border: none; background: transparent; color: #00c569; cursor: pointer; padding: 2px;" title="View Bill">
                   <i data-lucide="paperclip"></i>
                 </button>
               ` : ''}
             </div>
 
-            <div class="tx-meta">
+            <div class="tx-sub-info">
               <span>${formattedDate}</span>
+              <span>• ${catName}</span>
               ${tx.notes ? `<span>• ${tx.notes}</span>` : ''}
             </div>
           </div>
         </div>
 
-        <!-- Right: Amount & Actions -->
-        <div class="tx-right">
-          <div>
-            <div class="tx-amount ${amountClass}">
-              ${sign} ${this.formatCurrency(tx.amount)}
-            </div>
+        <!-- Right: Amount & Action Dropdown -->
+        <div class="tx-right-col">
+          <div class="tx-amt-num ${amountClass}">
+            ${sign} ${this.formatCurrency(tx.amount)}
           </div>
 
-          <div class="tx-btn-group">
-            <button onclick="window.appEngine.downloadSingleVoucher(${tx.id})" class="action-icon-btn" title="Voucher PDF">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button onclick="window.appEngine.downloadSingleVoucher(${tx.id})" class="icon-action-menu" title="Voucher PDF">
               <i data-lucide="file-text"></i>
             </button>
-            <button onclick="window.appEngine.openEditTxModal(${tx.id})" class="action-icon-btn" title="Edit">
+            <button onclick="window.appEngine.openEditTxModal(${tx.id})" class="icon-action-menu" title="Edit">
               <i data-lucide="edit-2"></i>
             </button>
-            <button onclick="window.appEngine.confirmDeleteTx(${tx.id})" class="action-icon-btn danger" title="Delete">
+            <button onclick="window.appEngine.confirmDeleteTx(${tx.id})" class="icon-action-menu" style="color: #ff5722;" title="Delete">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
         </div>
-
       </div>
     `;
   }
@@ -503,7 +480,7 @@ class OfficeFinanceApp {
         if (customEnd && txDate > customEnd) return false;
         return true;
       }
-      return true; // all_time
+      return true;
     });
 
     let totalIncome = 0;
@@ -529,7 +506,6 @@ class OfficeFinanceApp {
     document.getElementById('reportTotalExpense').textContent = this.formatCurrency(totalExpense);
     document.getElementById('reportNetBalance').textContent = this.formatCurrency(netBal);
 
-    // Render Category Breakdown Table
     const tableBody = document.getElementById('reportCategoryTableBody');
     if (!tableBody) return;
 
@@ -547,11 +523,11 @@ class OfficeFinanceApp {
       const pct = totalExpense > 0 ? ((data.total / totalExpense) * 100).toFixed(1) : '0';
 
       return `
-        <tr style="border-bottom: 1px solid var(--border-color);">
-          <td style="padding: 10px 8px; font-weight: 600;">${catName}</td>
+        <tr style="border-bottom: 1px solid var(--border-light);">
+          <td style="padding: 10px 8px; font-weight: 700;">${catName}</td>
           <td style="padding: 10px 8px; color: var(--text-muted);">${data.count}</td>
-          <td style="padding: 10px 8px; text-align: right; font-weight: bold; color: var(--rose-600);">${this.formatCurrency(data.total)}</td>
-          <td style="padding: 10px 8px; text-align: right; color: var(--text-muted);">${pct}%</td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: #ff5e36;">${this.formatCurrency(data.total)}</td>
+          <td style="padding: 10px 8px; text-align: right; color: var(--text-muted); font-weight: 700;">${pct}%</td>
         </tr>
       `;
     }).join('');
@@ -566,7 +542,7 @@ class OfficeFinanceApp {
       const phoneInp = document.getElementById('settingOfficePhone');
       const currInp = document.getElementById('settingOfficeCurrency');
 
-      if (nameInp) nameInp.value = this.officeProfile.name || '';
+      if (nameInp) nameInp.value = this.officeProfile.name || 'OFFICE FINANCE TRACKER';
       if (tagInp) tagInp.value = this.officeProfile.tagline || '';
       if (addrInp) addrInp.value = this.officeProfile.address || '';
       if (phoneInp) phoneInp.value = this.officeProfile.phone || '';
@@ -581,7 +557,7 @@ class OfficeFinanceApp {
 
     const renderChip = (cat) => `
       <div class="category-chip">
-        <span class="color-dot" style="background-color: ${cat.color || '#64748b'};"></span>
+        <span class="color-dot" style="background-color: ${cat.color || '#00c569'};"></span>
         <span>${window.i18n.getCategoryName(cat)}</span>
         ${cat.isCustom ? `
           <button onclick="window.appEngine.deleteCustomCategory('${cat.id}')" class="chip-del" title="Delete">
@@ -608,7 +584,7 @@ class OfficeFinanceApp {
 
     if (filterCatSelect) {
       filterCatSelect.innerHTML = `
-        <option value="all">${window.i18n.t('filterAllCategories')}</option>
+        <option value="all">All Categories</option>
         ${this.categories.map(c => `
           <option value="${c.id}">${window.i18n.getCategoryName(c)} (${c.type === 'income' ? 'വരവ്' : 'ചിലവ്'})</option>
         `).join('')}
@@ -633,7 +609,7 @@ class OfficeFinanceApp {
     this.updateTxTypeToggleUI();
     this.populateCategoryDropdowns();
 
-    document.getElementById('txModalTitle').textContent = window.i18n.t('modalAddTitle');
+    document.getElementById('txModalTitle').textContent = 'പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക';
     document.getElementById('transactionModal').classList.remove('hidden');
 
     setTimeout(() => {
@@ -668,7 +644,7 @@ class OfficeFinanceApp {
       this.hideAttachmentPreview();
     }
 
-    document.getElementById('txModalTitle').textContent = window.i18n.t('modalEditTitle');
+    document.getElementById('txModalTitle').textContent = 'ഇടപാട് തിരുത്തുക';
     document.getElementById('transactionModal').classList.remove('hidden');
   }
 
@@ -692,11 +668,11 @@ class OfficeFinanceApp {
     if (this.currentTxType === 'income') {
       btnInc.className = 'segment-btn active income';
       btnExp.className = 'segment-btn expense';
-      if (partyLabel) partyLabel.textContent = window.i18n.t('labelPartyIncome');
+      if (partyLabel) partyLabel.textContent = 'ആരിൽ നിന്ന് ലഭിച്ചു (Received From)';
     } else {
       btnExp.className = 'segment-btn active expense';
       btnInc.className = 'segment-btn income';
-      if (partyLabel) partyLabel.textContent = window.i18n.t('labelPartyExpense');
+      if (partyLabel) partyLabel.textContent = 'ആർക്ക് നൽകി (Paid To)';
     }
   }
 
@@ -705,7 +681,7 @@ class OfficeFinanceApp {
 
     const amount = parseFloat(document.getElementById('txAmount').value);
     if (!amount || amount <= 0) {
-      alert('സാധുവായ ഒരു തുക നൽകുക (Please enter a valid amount).');
+      alert('സാധുവായ ഒരു തുക നൽകുക.');
       return;
     }
 
@@ -729,10 +705,10 @@ class OfficeFinanceApp {
     if (this.editingTxId) {
       txData.id = this.editingTxId;
       await window.dbEngine.updateTransaction(txData);
-      this.showToast(window.i18n.t('updatedSuccess'), 'success');
+      this.showToast('ഇടപാട് അപ്ഡേറ്റ് ചെയ്തു!', 'success');
     } else {
       await window.dbEngine.addTransaction(txData);
-      this.showToast(window.i18n.t('savedSuccess'), 'success');
+      this.showToast('ഇടപാട് വിജയകരമായി സേവ് ചെയ്തു!', 'success');
     }
 
     this.closeTxModal();
@@ -740,9 +716,9 @@ class OfficeFinanceApp {
   }
 
   async confirmDeleteTx(id) {
-    if (confirm(window.i18n.t('confirmDelete'))) {
+    if (confirm('ഈ ഇടപാട് തീർച്ചയായും ഒഴിവാക്കണമോ?')) {
       await window.dbEngine.deleteTransaction(id);
-      this.showToast(window.i18n.t('deletedSuccess'), 'info');
+      this.showToast('ഇടപാട് നീക്കം ചെയ്തു', 'info');
       await this.refreshData();
     }
   }
@@ -853,7 +829,7 @@ class OfficeFinanceApp {
     };
 
     await window.dbEngine.addCategory(cat);
-    this.showToast(window.i18n.t('categoryAdded'), 'success');
+    this.showToast('പുതിയ കാറ്റഗറി ചേർത്തു!', 'success');
     this.closeAddCategoryModal();
     await this.refreshData();
   }
@@ -912,10 +888,9 @@ class OfficeFinanceApp {
 
   downloadExcel() {
     window.reportsEngine.exportToCSV(this.transactions, this.categories, this.officeProfile);
-    this.showToast('എക്സൽ (CSV) ഡൗൺലോഡ് ചെയ്യുന്നു...', 'success');
+    this.showToast('എക്സൽ ഡൗൺലോഡ് ചെയ്യുന്നു...', 'success');
   }
 
-  // --- Backup & Restore Engine ---
   async downloadBackupJSON() {
     const data = await window.dbEngine.exportBackup();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -927,7 +902,7 @@ class OfficeFinanceApp {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    this.showToast(window.i18n.t('backupDownloaded'), 'success');
+    this.showToast('ബാക്കപ്പ് ഫയൽ ഡൗൺലോഡ് ചെയ്തു!', 'success');
   }
 
   async handleRestoreJSON(file) {
@@ -937,30 +912,29 @@ class OfficeFinanceApp {
       try {
         const json = JSON.parse(e.target.result);
         await window.dbEngine.importBackup(json);
-        this.showToast(window.i18n.t('backupSuccess'), 'success');
-        await this.loadSettingsAndTheme();
+        this.showToast('ബാക്കപ്പ് റീസ്റ്റോർ ചെയ്തു!', 'success');
+        await this.loadSettings();
         await this.refreshData();
       } catch (err) {
-        alert(window.i18n.t('backupError') + ': ' + err.message);
+        alert('ബാക്കപ്പ് ഫയൽ തെറ്റാണ്: ' + err.message);
       }
     };
     reader.readAsText(file);
   }
 
   async clearAllData() {
-    if (confirm(window.i18n.t('confirmClearAll'))) {
+    if (confirm('ശ്രദ്ധിക്കുക: എല്ലാ കണക്കുകളും സ്ഥിരമായി മായ്ക്കപ്പെടും! തുടരണമോ?')) {
       await window.dbEngine.clearAllData();
       this.showToast('എല്ലാ ഇടപാടുകളും നീക്കം ചെയ്തു!', 'info');
       await this.refreshData();
     }
   }
 
-  // --- Office Profile Save ---
   async handleSaveProfile(event) {
     event.preventDefault();
 
     this.officeProfile = {
-      name: document.getElementById('settingOfficeName').value.trim(),
+      name: document.getElementById('settingOfficeName').value.trim() || 'OFFICE FINANCE TRACKER',
       tagline: document.getElementById('settingOfficeTagline').value.trim(),
       address: document.getElementById('settingOfficeAddress').value.trim(),
       phone: document.getElementById('settingOfficePhone').value.trim(),
@@ -969,16 +943,13 @@ class OfficeFinanceApp {
 
     await window.dbEngine.setSetting('officeProfile', this.officeProfile);
     this.applyProfileToHeader();
-    this.showToast(window.i18n.t('profileSaved'), 'success');
+    this.showToast('ഓഫീസ് പ്രൊഫൈൽ സേവ് ചെയ്തു!', 'success');
   }
 
-  // --- PWA Installation Setup ---
   setupPWA() {
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch((err) => {
-          console.log('[PWA] Service Worker notice:', err);
-        });
+        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
       });
     }
 
@@ -986,40 +957,30 @@ class OfficeFinanceApp {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferredPrompt = e;
-      if (installBtn) {
-        installBtn.classList.remove('hidden');
-      }
+      if (installBtn) installBtn.classList.remove('hidden');
     });
 
     if (installBtn) {
       installBtn.addEventListener('click', async () => {
         if (this.deferredPrompt) {
           this.deferredPrompt.prompt();
-          const { outcome } = await this.deferredPrompt.userChoice;
+          await this.deferredPrompt.userChoice;
           this.deferredPrompt = null;
           installBtn.classList.add('hidden');
         }
       });
     }
-
-    window.addEventListener('appinstalled', () => {
-      if (installBtn) installBtn.classList.add('hidden');
-      this.showToast('ആപ്പ് വിജയകരമായി ഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്തു!', 'success');
-    });
   }
 
   checkUrlActions() {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    if (action === 'expense') {
-      this.openAddTxModal('expense');
-    } else if (action === 'income') {
-      this.openAddTxModal('income');
-    }
+    if (action === 'expense') this.openAddTxModal('expense');
+    else if (action === 'income') this.openAddTxModal('income');
   }
 
-  // --- Event Listeners Setup ---
   setupEventListeners() {
+    // Navigation
     document.querySelectorAll('.nav-item').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.getAttribute('data-target');
@@ -1027,22 +988,47 @@ class OfficeFinanceApp {
       });
     });
 
-    document.getElementById('btnThemeToggle')?.addEventListener('click', () => this.toggleTheme());
-
-    document.getElementById('btnLangToggle')?.addEventListener('click', () => {
+    // Language Toggle
+    const toggleLang = () => {
       const nextLang = window.i18n.currentLang === 'ml' ? 'en' : 'ml';
       window.i18n.setLanguage(nextLang);
-      document.getElementById('langLabelText').textContent = nextLang === 'ml' ? 'English' : 'മലയാളം';
+      const text = nextLang === 'ml' ? 'English' : 'മലയാളം';
+      const label = document.getElementById('langLabelText');
+      if (label) label.textContent = text;
+    };
+    document.getElementById('btnLangToggle')?.addEventListener('click', toggleLang);
+    document.getElementById('btnSidebarLang')?.addEventListener('click', toggleLang);
+
+    // Lock button
+    document.getElementById('btnQuickLock')?.addEventListener('click', () => {
+      if (this.userPin) this.showPinLock();
+      else this.togglePinSetting();
     });
 
-    document.getElementById('btnSecurityLock')?.addEventListener('click', () => {
-      if (this.userPin) {
-        this.showPinLock();
-      } else {
-        this.togglePinSetting();
+    // Sub-tabs on Dashboard
+    document.querySelectorAll('.sub-tab-item').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.sub-tab-item').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        this.dashRecentFilter = tab.getAttribute('data-filter') || 'all';
+        this.renderDashboardRecentList();
+      });
+    });
+
+    // Global Search Bar in Top Nav
+    document.getElementById('globalQuickSearch')?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val) {
+        this.switchView('transactions');
+        const txSearch = document.getElementById('txSearchInput');
+        if (txSearch) {
+          txSearch.value = val;
+          this.renderTransactionsLedger();
+        }
       }
     });
 
+    // PIN Keypad
     document.querySelectorAll('.pin-key').forEach(btn => {
       btn.addEventListener('click', () => {
         const val = btn.getAttribute('data-val');
@@ -1050,9 +1036,8 @@ class OfficeFinanceApp {
       });
     });
 
+    // Action buttons
     document.getElementById('mobileFabAdd')?.addEventListener('click', () => this.openAddTxModal('expense'));
-    document.getElementById('sidebarBtnExpense')?.addEventListener('click', () => this.openAddTxModal('expense'));
-    document.getElementById('sidebarBtnIncome')?.addEventListener('click', () => this.openAddTxModal('income'));
     document.getElementById('dashBtnExpense')?.addEventListener('click', () => this.openAddTxModal('expense'));
     document.getElementById('dashBtnIncome')?.addEventListener('click', () => this.openAddTxModal('income'));
 
@@ -1060,6 +1045,7 @@ class OfficeFinanceApp {
     document.getElementById('dashBtnExcel')?.addEventListener('click', () => this.downloadExcel());
     document.getElementById('btnViewAllFromDash')?.addEventListener('click', () => this.switchView('transactions'));
 
+    // Modal
     document.getElementById('btnCloseTxModal')?.addEventListener('click', () => this.closeTxModal());
     document.getElementById('btnCancelTx')?.addEventListener('click', () => this.closeTxModal());
 
@@ -1090,17 +1076,14 @@ class OfficeFinanceApp {
     document.getElementById('filterCategorySelect')?.addEventListener('change', () => this.renderTransactionsLedger());
     document.getElementById('filterDateRangeSelect')?.addEventListener('change', (e) => {
       const customRow = document.getElementById('customDateRangeRow');
-      if (e.target.value === 'custom') {
-        customRow?.classList.remove('hidden');
-      } else {
-        customRow?.classList.add('hidden');
-      }
+      if (e.target.value === 'custom') customRow?.classList.remove('hidden');
+      else customRow?.classList.add('hidden');
       this.renderTransactionsLedger();
     });
     document.getElementById('customStartDate')?.addEventListener('change', () => this.renderTransactionsLedger());
     document.getElementById('customEndDate')?.addEventListener('change', () => this.renderTransactionsLedger());
 
-    // Report Controls
+    // Reports
     document.getElementById('reportRangePreset')?.addEventListener('change', (e) => {
       const startCol = document.getElementById('reportCustomStartCol');
       const endCol = document.getElementById('reportCustomEndCol');
@@ -1154,7 +1137,7 @@ class OfficeFinanceApp {
     if (!container) return;
 
     const toast = document.createElement('div');
-    const bg = type === 'success' ? '#10b981' : type === 'error' ? '#f43f5e' : '#1e293b';
+    const bg = type === 'success' ? '#00c569' : type === 'error' ? '#ff5722' : '#1e293b';
 
     toast.className = 'toast-msg';
     toast.style.backgroundColor = bg;
@@ -1166,7 +1149,7 @@ class OfficeFinanceApp {
       toast.style.transform = 'translateY(10px)';
       toast.style.transition = 'all 0.3s ease';
       setTimeout(() => toast.remove(), 300);
-    }, 2800);
+    }, 2600);
   }
 }
 

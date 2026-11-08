@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="theme-color" content="#00c569" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="description" content="ഓഫീസ് വരവ് ചിലവ് കണക്കുകൾ രേഖപ്പെടുത്താനുള്ള മൊബൈൽ & വെബ് ആപ്പ്" />
   <title>OFFICE FINANCE TRACKER</title>
 
@@ -14,552 +14,565 @@
   <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
 
-  <!-- Self-Contained Stylesheet -->
+  <!-- Eduka-Themed Stylesheet -->
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
 
 <body>
 
-  <!-- ================= TOP HEADER BAR ================= -->
-  <header class="app-header">
-    <div class="header-container">
-      
-      <!-- Logo & Office Name -->
-      <div class="logo-area">
-        <div class="logo-icon">
-          <i data-lucide="wallet"></i>
-        </div>
-        <div>
-          <h1 id="headerOfficeName" class="logo-title">OFFICE FINANCE TRACKER</h1>
-          <p id="headerOfficeTagline" class="logo-sub">വരവ്-ചിലവ് മാനേജ്‌മെന്റ് സിസ്റ്റം</p>
-        </div>
-      </div>
-
-      <!-- Header Actions -->
-      <div class="header-actions">
-        <!-- Install App Button (PWA) -->
-        <button id="btnInstallApp" class="btn-pill hidden">
-          <i data-lucide="download"></i>
-          <span data-i18n="installApp">ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുക</span>
-        </button>
-
-        <!-- Language Toggle -->
-        <button id="btnLangToggle" class="btn-pill">
-          <i data-lucide="globe"></i>
-          <span id="langLabelText">English</span>
-        </button>
-
-        <!-- Theme Toggle -->
-        <button id="btnThemeToggle" class="btn-icon" title="Toggle Theme">
-          <i id="themeIcon" data-lucide="moon"></i>
-        </button>
-
-        <!-- Security Lock -->
-        <button id="btnSecurityLock" class="btn-icon" title="Lock App">
-          <i data-lucide="lock"></i>
-        </button>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- ================= MAIN LAYOUT ================= -->
-  <div class="app-layout">
+  <!-- ================= MAIN APP WRAPPER (EDUKA DASHBOARD SHELL) ================= -->
+  <div class="app-window-wrapper">
     
-    <!-- Desktop Sidebar -->
-    <aside class="desktop-sidebar">
-      <nav class="sidebar-nav">
-        <button class="nav-link nav-item active" data-target="dashboard">
-          <i data-lucide="layout-dashboard"></i>
-          <span data-i18n="navDashboard">ഡാഷ്‌ബോർഡ്</span>
-        </button>
-
-        <button class="nav-link nav-item" data-target="transactions">
-          <i data-lucide="receipt"></i>
-          <span data-i18n="navTransactions">കണക്കുകൾ</span>
-        </button>
-
-        <button class="nav-link nav-item" data-target="reports">
-          <i data-lucide="bar-chart-3"></i>
-          <span data-i18n="navReports">റിപ്പോർട്ടുകൾ</span>
-        </button>
-
-        <button class="nav-link nav-item" data-target="settings">
-          <i data-lucide="settings"></i>
-          <span data-i18n="navSettings">സെറ്റിംഗ്സ്</span>
-        </button>
-
-        <hr class="sidebar-divider" />
-
-        <div class="sidebar-actions">
-          <button id="sidebarBtnExpense" class="btn-action-primary btn-expense">
-            <i data-lucide="minus-circle"></i>
-            <span data-i18n="btnNewExpense">+ ചിലവ് ചേർക്കുക</span>
-          </button>
-
-          <button id="sidebarBtnIncome" class="btn-action-primary btn-income">
-            <i data-lucide="plus-circle"></i>
-            <span data-i18n="btnNewIncome">+ വരവ് ചേർക്കുക</span>
-          </button>
+    <!-- LEFT SIDEBAR -->
+    <aside class="eduka-sidebar">
+      <div>
+        <!-- Brand Logo Header -->
+        <div class="brand-header">
+          <div class="brand-logo-badge">
+            <i data-lucide="wallet"></i>
+          </div>
+          <span class="brand-title">FinanceTracker</span>
         </div>
-      </nav>
+
+        <!-- Navigation Menu -->
+        <nav class="sidebar-menu">
+          <button class="menu-btn nav-item active" data-target="dashboard">
+            <i data-lucide="layout-dashboard"></i>
+            <span data-i18n="navDashboard">Dashboard</span>
+          </button>
+
+          <button class="menu-btn nav-item" data-target="transactions">
+            <i data-lucide="receipt"></i>
+            <span data-i18n="navTransactions">ഇടപാടുകൾ</span>
+          </button>
+
+          <button class="menu-btn nav-item" data-target="reports">
+            <i data-lucide="bar-chart-3"></i>
+            <span data-i18n="navReports">റിപ്പോർട്ടുകൾ</span>
+          </button>
+
+          <button class="menu-btn nav-item" data-target="settings">
+            <i data-lucide="settings"></i>
+            <span data-i18n="navSettings">സെറ്റിംഗ്സ്</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Sidebar Bottom -->
+      <div class="sidebar-bottom">
+        <button id="btnQuickLock" class="menu-btn">
+          <i data-lucide="lock"></i>
+          <span>സെക്യൂരിറ്റി ലോക്ക്</span>
+        </button>
+        <button id="btnSidebarLang" class="menu-btn">
+          <i data-lucide="globe"></i>
+          <span id="sidebarLangLabel">മലയാളം / English</span>
+        </button>
+      </div>
     </aside>
 
-    <!-- Main Views Container -->
-    <main class="app-content">
+    <!-- RIGHT MAIN WORKSPACE -->
+    <div class="eduka-workspace">
+      
+      <!-- TOP NAVIGATION BAR -->
+      <header class="top-nav-bar">
+        <!-- Greeting -->
+        <div class="user-greeting">
+          <span>നമസ്കാരം, Office Admin!</span>
+          <span class="greeting-wave">👋</span>
+        </div>
 
-      <!-- ================= 1. DASHBOARD VIEW ================= -->
-      <section id="view-dashboard" class="tab-view">
-        
-        <!-- Stat Cards Grid -->
-        <div class="stat-grid">
+        <!-- Top Right Actions -->
+        <div class="top-nav-right">
+          <!-- Search Pill -->
+          <div class="search-pill-wrap">
+            <span class="search-icon-inside"><i data-lucide="search"></i></span>
+            <input id="globalQuickSearch" type="text" class="search-pill" placeholder="Search transactions..." />
+          </div>
+
+          <!-- Language Pill -->
+          <button id="btnLangToggle" class="top-action-btn">
+            <i data-lucide="globe"></i>
+            <span id="langLabelText">English</span>
+          </button>
+
+          <!-- Install App Pill -->
+          <button id="btnInstallApp" class="top-action-btn hidden" style="color: var(--brand-green);">
+            <i data-lucide="download"></i>
+            <span data-i18n="installApp">Install App</span>
+          </button>
+
+          <!-- User Avatar Circle -->
+          <div class="avatar-circle" title="Office Finance Manager">
+            OF
+          </div>
+        </div>
+      </header>
+
+      <!-- VIEW CONTENT AREA -->
+      <main class="view-content-area">
+
+        <!-- ================= 1. DASHBOARD VIEW ================= -->
+        <section id="view-dashboard" class="tab-view">
           
-          <!-- Net Balance Card -->
-          <div class="stat-card span-2">
-            <div class="stat-head">
-              <span class="stat-label" data-i18n="netBalance">ആകെ മിച്ചം (ബാലൻസ്)</span>
-              <div class="stat-icon-wrap" style="background: var(--indigo-50); color: var(--indigo-600);">
-                <i data-lucide="scale"></i>
-              </div>
-            </div>
-            <div id="statNetBalance" class="stat-val">₹0.00</div>
-            <div class="stat-sub" style="color: var(--emerald-600); font-weight: 600;">
-              <i data-lucide="trending-up"></i> സുരക്ഷിത ബാലൻസ്
-            </div>
-          </div>
-
-          <!-- Total Income Card -->
-          <div class="stat-card">
-            <div class="stat-head">
-              <span class="stat-label" data-i18n="totalIncome">ആകെ വരവ്</span>
-              <div class="stat-icon-wrap" style="background: var(--emerald-50); color: var(--emerald-600);">
-                <i data-lucide="arrow-down-left"></i>
-              </div>
-            </div>
-            <div id="statTotalIncome" class="stat-val income">₹0.00</div>
-            <div class="stat-sub">
-              <span data-i18n="todayIncome">ഇന്ന്</span>: <strong id="statTodayIncome" style="color: var(--emerald-600);">₹0</strong>
-            </div>
-          </div>
-
-          <!-- Total Expense Card -->
-          <div class="stat-card">
-            <div class="stat-head">
-              <span class="stat-label" data-i18n="totalExpense">ആകെ ചിലവ്</span>
-              <div class="stat-icon-wrap" style="background: var(--rose-50); color: var(--rose-600);">
-                <i data-lucide="arrow-up-right"></i>
-              </div>
-            </div>
-            <div id="statTotalExpense" class="stat-val expense">₹0.00</div>
-            <div class="stat-sub">
-              <span data-i18n="todayExpense">ഇന്ന്</span>: <strong id="statTodayExpense" style="color: var(--rose-600);">₹0</strong>
-            </div>
-          </div>
-
-          <!-- This Month Net Card -->
-          <div class="stat-card span-2">
-            <div class="stat-head">
-              <span class="stat-label" data-i18n="thisMonthNet">ഈ മാസത്തെ മിച്ചം</span>
-              <div class="stat-icon-wrap" style="background: var(--amber-50); color: var(--amber-600);">
-                <i data-lucide="calendar"></i>
-              </div>
-            </div>
-            <div id="statMonthNet" class="stat-val">₹0.00</div>
-            <div class="stat-sub">ഈ മാസത്തെ ആകെ ബാലൻസ്</div>
-          </div>
-
-        </div>
-
-        <!-- Quick Action Buttons -->
-        <div class="action-row">
-          <button id="dashBtnExpense" class="btn-action-primary btn-expense">
-            <i data-lucide="minus-circle"></i>
-            <span data-i18n="btnNewExpense">+ ചിലവ് ചേർക്കുക</span>
-          </button>
-
-          <button id="dashBtnIncome" class="btn-action-primary btn-income">
-            <i data-lucide="plus-circle"></i>
-            <span data-i18n="btnNewIncome">+ വരവ് ചേർക്കുക</span>
-          </button>
-
-          <button id="dashBtnPDF" class="btn-action-primary btn-secondary">
-            <i data-lucide="file-text" style="color: var(--rose-500);"></i>
-            <span data-i18n="btnDownloadPDF">PDF റിപ്പോർട്ട്</span>
-          </button>
-
-          <button id="dashBtnExcel" class="btn-action-primary btn-secondary">
-            <i data-lucide="sheet" style="color: var(--emerald-600);"></i>
-            <span data-i18n="btnDownloadExcel">എക്സൽ</span>
-          </button>
-        </div>
-
-        <!-- Visual Analytics Charts -->
-        <div class="charts-grid">
-          
-          <!-- Monthly Trend Bar Chart -->
-          <div class="chart-box">
-            <div class="chart-header">
-              <div>
-                <h3 class="chart-title" data-i18n="monthlyTrend">പ്രതിമാസ വരവ്-ചിലവ് അവലോകനം</h3>
-                <p class="chart-sub">കഴിഞ്ഞ 6 മാസങ്ങളിലെ ഒഴുക്ക്</p>
-              </div>
-              <div class="stat-icon-wrap" style="background: var(--bg-card-subtle);">
-                <i data-lucide="trending-up"></i>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap">
-              <canvas id="monthlyTrendCanvas"></canvas>
-            </div>
-          </div>
-
-          <!-- Expense Category Donut -->
-          <div class="chart-box">
-            <div class="chart-header">
-              <div>
-                <h3 class="chart-title" data-i18n="expenseBreakdown">ചിലവുകളുടെ കാറ്റഗറി വിഹിതം</h3>
-                <p class="chart-sub">കൂടുതൽ ചിലവായ ഇനങ്ങൾ</p>
-              </div>
-              <div class="stat-icon-wrap" style="background: var(--bg-card-subtle);">
-                <i data-lucide="pie-chart"></i>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap" style="display: flex; align-items: center; justify-content: center;">
-              <canvas id="categoryDonutCanvas"></canvas>
-              <div id="donutEmptyMessage" class="hidden" style="flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.8rem;">
-                <p>ചിലവുകൾ ഒന്നും ചേർത്തിട്ടില്ല</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Recent Transactions Feed -->
-        <div class="card" style="margin-top: 20px;">
-          <div class="section-header">
-            <div style="display: flex; align-items: center;">
-              <h3 class="section-title" data-i18n="recentTransactions">സമീപകാല ഇടപാടുകൾ</h3>
-              <span id="recentTxCountBadge" class="badge-count">0</span>
-            </div>
-            <button id="btnViewAllFromDash" class="btn-pill" style="border: none; background: transparent; color: var(--emerald-600);">
-              <span data-i18n="viewAll">മുഴുവൻ കാണുക</span>
-              <i data-lucide="chevron-right"></i>
-            </button>
-          </div>
-
-          <div id="recentTxList" class="tx-list">
-            <!-- Rendered reactively via app.js -->
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ================= 2. TRANSACTIONS LEDGER VIEW ================= -->
-      <section id="view-transactions" class="tab-view hidden">
-        
-        <!-- Filter Controls -->
-        <div class="card" style="margin-bottom: 16px;">
-          <div class="filter-bar">
+          <!-- ================= THE 4 VIBRANT STAT CARDS ================= -->
+          <div class="vibrant-stat-grid">
             
-            <div class="search-wrap">
-              <span class="search-icon"><i data-lucide="search"></i></span>
-              <input id="txSearchInput" type="text" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="വ്യക്തി, ബിൽ നമ്പർ, വിവരണം തിരയുക..." />
+            <!-- Card 1: Vibrant Emerald Green (Total Balance) -->
+            <div class="vibrant-card card-theme-green">
+              <div class="v-card-top">
+                <div>
+                  <div class="v-card-title" data-i18n="netBalance">ആകെ മിച്ചം (Net Balance)</div>
+                  <div id="statNetBalance" class="v-card-num">₹0.00</div>
+                </div>
+                <div class="v-card-icon-bubble">
+                  <i data-lucide="scale"></i>
+                </div>
+              </div>
+              <div class="v-card-bottom-strip">
+                <span>ഈ മാസത്തെ മിച്ചം</span>
+                <span id="statMonthNet">₹0.00</span>
+              </div>
             </div>
 
-            <select id="filterTypeSelect" class="select-input">
-              <option value="all" data-i18n="filterAll">എല്ലാം</option>
-              <option value="income" data-i18n="filterIncome">വരവ് മാത്രം</option>
-              <option value="expense" data-i18n="filterExpense">ചിലവ് മാത്രം</option>
-            </select>
+            <!-- Card 2: Vibrant Electric Blue (Total Income) -->
+            <div class="vibrant-card card-theme-blue">
+              <div class="v-card-top">
+                <div>
+                  <div class="v-card-title" data-i18n="totalIncome">ആകെ വരവ് (Total Income)</div>
+                  <div id="statTotalIncome" class="v-card-num">₹0.00</div>
+                </div>
+                <div class="v-card-icon-bubble">
+                  <i data-lucide="arrow-down-left"></i>
+                </div>
+              </div>
+              <div class="v-card-bottom-strip">
+                <span>ഇന്നത്തെ വരവ്</span>
+                <span id="statTodayIncome">₹0</span>
+              </div>
+            </div>
 
-            <select id="filterCategorySelect" class="select-input">
-              <option value="all" data-i18n="filterAllCategories">എല്ലാ കാറ്റഗറികളും</option>
-            </select>
+            <!-- Card 3: Vibrant Vivid Purple (Total Expense) -->
+            <div class="vibrant-card card-theme-purple">
+              <div class="v-card-top">
+                <div>
+                  <div class="v-card-title" data-i18n="totalExpense">ആകെ ചിലവ് (Total Expense)</div>
+                  <div id="statTotalExpense" class="v-card-num">₹0.00</div>
+                </div>
+                <div class="v-card-icon-bubble">
+                  <i data-lucide="arrow-up-right"></i>
+                </div>
+              </div>
+              <div class="v-card-bottom-strip">
+                <span>ഇന്നത്തെ ചിലവ്</span>
+                <span id="statTodayExpense">₹0</span>
+              </div>
+            </div>
 
-            <select id="filterDateRangeSelect" class="select-input">
-              <option value="all" data-i18n="rangeAllTime">എല്ലാ സമയത്തെയും</option>
-              <option value="today" data-i18n="rangeToday">ഇന്ന്</option>
-              <option value="yesterday" data-i18n="rangeYesterday">ഇന്നലെ</option>
-              <option value="this_week" data-i18n="rangeThisWeek">ഈ ആഴ്ച</option>
-              <option value="this_month" data-i18n="rangeThisMonth">ഈ മാസം</option>
-              <option value="custom" data-i18n="rangeCustom">നിശ്ചിത തീയതി</option>
-            </select>
+            <!-- Card 4: Vibrant Coral Orange (Petty Cash / Quick Health) -->
+            <div class="vibrant-card card-theme-orange">
+              <div class="v-card-top">
+                <div>
+                  <div class="v-card-title">പെറ്റി ക്യാഷ് / ഇടപാടുകൾ</div>
+                  <div id="statTotalTxCount" class="v-card-num">0 Active</div>
+                </div>
+                <div class="v-card-icon-bubble">
+                  <i data-lucide="wallet"></i>
+                </div>
+              </div>
+              <div class="v-card-bottom-strip">
+                <span>സുരക്ഷിത സ്റ്റോറേജ്</span>
+                <span>IndexedDB 100%</span>
+              </div>
+            </div>
 
           </div>
 
-          <!-- Custom Date Range Row -->
-          <div id="customDateRangeRow" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
-            <div class="form-group">
-              <label class="form-label" data-i18n="fromDate">തീയതി മുതൽ</label>
-              <input id="customStartDate" type="date" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="toDate">തീയതി വരെ</label>
-              <input id="customEndDate" type="date" class="form-input" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Filter Totals Strip -->
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; padding: 4px 8px 12px 8px;">
-          <div>കണ്ടെത്തിയവ: <strong id="filteredCountText" style="color: var(--text-main);">0</strong> ഇടപാടുകൾ</div>
-          <div style="display: flex; gap: 16px;">
-            <span>വരവ്: <strong id="filteredIncomeText" style="color: var(--emerald-600);">₹0</strong></span>
-            <span>ചിലവ്: <strong id="filteredExpenseText" style="color: var(--rose-600);">₹0</strong></span>
-          </div>
-        </div>
-
-        <!-- Full Ledger Card -->
-        <div class="card" style="padding: 6px;">
-          <div id="fullLedgerContainer" class="tx-list">
-            <!-- Rendered reactively via app.js -->
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ================= 3. REPORTS & EXPORTS VIEW ================= -->
-      <section id="view-reports" class="tab-view hidden">
-        
-        <div class="card" style="margin-bottom: 20px;">
-          <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 4px;" data-i18n="reportsTitle">റിപ്പോർട്ടുകളും സ്റ്റേറ്റ്‌മെന്റുകളും</h3>
-          <p class="chart-sub" style="margin-bottom: 16px;" data-i18n="reportsSubtitle">
-            ഔദ്യോഗിക PDF സ്റ്റേറ്റ്‌മെന്റുകൾ, വൗച്ചറുകൾ, എക്സൽ സ്പ്രെഡ്ഷീറ്റുകൾ ഡൗൺലോഡ് ചെയ്യുക
-          </p>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <div class="form-group">
-              <label class="form-label" data-i18n="filterDateRange">തീയതി ക്രമം</label>
-              <select id="reportRangePreset" class="select-input" style="width: 100%;">
-                <option value="this_month">ഈ മാസം (This Month)</option>
-                <option value="last_month">കഴിഞ്ഞ മാസം (Last Month)</option>
-                <option value="this_year">ഈ വർഷം (This Year)</option>
-                <option value="all_time">മുഴുവൻ കണക്കുകൾ (All Time)</option>
-                <option value="custom">പ്രത്യേക തീയതി (Custom Date)</option>
-              </select>
-            </div>
-
-            <div id="reportCustomStartCol" class="form-group hidden">
-              <label class="form-label" data-i18n="fromDate">തീയതി മുതൽ</label>
-              <input id="reportStartDate" type="date" class="form-input" />
-            </div>
-
-            <div id="reportCustomEndCol" class="form-group hidden">
-              <label class="form-label" data-i18n="toDate">തീയതി വരെ</label>
-              <input id="reportEndDate" type="date" class="form-input" />
-            </div>
-          </div>
-
-          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-            <button id="btnExportPDF" class="btn-action-primary btn-expense">
-              <i data-lucide="file-down"></i>
-              <span data-i18n="btnDownloadPDF">📄 PDF സ്റ്റേറ്റ്‌മെന്റ് ഡൗൺലോഡ്</span>
+          <!-- Quick Action Buttons Banner -->
+          <div class="action-banner">
+            <button id="dashBtnExpense" class="action-btn-pill btn-pill-rose">
+              <i data-lucide="minus-circle"></i>
+              <span data-i18n="btnNewExpense">+ ചിലവ് ചേർക്കുക</span>
             </button>
 
-            <button id="btnExportCSV" class="btn-action-primary btn-income">
-              <i data-lucide="table"></i>
-              <span data-i18n="btnDownloadExcel">📊 എക്സൽ (Excel / CSV) ഡൗൺലോഡ്</span>
+            <button id="dashBtnIncome" class="action-btn-pill btn-pill-green">
+              <i data-lucide="plus-circle"></i>
+              <span data-i18n="btnNewIncome">+ വരവ് ചേർക്കുക</span>
             </button>
 
-            <button id="btnPrintReport" class="btn-action-primary btn-secondary">
-              <i data-lucide="printer"></i>
-              <span data-i18n="btnPrintStatement">🖨️ പ്രിന്റ് ചെയ്യുക</span>
+            <button id="dashBtnPDF" class="action-btn-pill btn-pill-white">
+              <i data-lucide="file-text" style="color: #ff5722;"></i>
+              <span data-i18n="btnDownloadPDF">PDF റിപ്പോർട്ട്</span>
             </button>
-          </div>
-        </div>
 
-        <!-- Period Summary Stat Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
-          <div class="card" style="border-left: 4px solid var(--emerald-500);">
-            <div class="stat-label" data-i18n="totalIncome">ആകെ വരവ്</div>
-            <div id="reportTotalIncome" class="stat-val income" style="font-size: 1.3rem; margin-top: 4px;">₹0.00</div>
-          </div>
-          <div class="card" style="border-left: 4px solid var(--rose-500);">
-            <div class="stat-label" data-i18n="totalExpense">ആകെ ചിലവ്</div>
-            <div id="reportTotalExpense" class="stat-val expense" style="font-size: 1.3rem; margin-top: 4px;">₹0.00</div>
-          </div>
-          <div class="card" style="border-left: 4px solid var(--indigo-500);">
-            <div class="stat-label" data-i18n="netBalance">മിച്ചമുള്ള തുക</div>
-            <div id="reportNetBalance" class="stat-val" style="font-size: 1.3rem; margin-top: 4px; color: var(--indigo-600);">₹0.00</div>
-          </div>
-        </div>
-
-        <!-- Category Breakdown Table -->
-        <div class="card">
-          <h4 class="section-title" style="margin-bottom: 12px;" data-i18n="expenseBreakdown">ചിലവുകളുടെ കാറ്റഗറി വിഹിതം</h4>
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
-              <thead>
-                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem;">
-                  <th style="padding: 10px 8px;">വിഭാഗം</th>
-                  <th style="padding: 10px 8px;">ഇടപാടുകൾ</th>
-                  <th style="padding: 10px 8px; text-align: right;">തുക</th>
-                  <th style="padding: 10px 8px; text-align: right;">ശതമാനം</th>
-                </tr>
-              </thead>
-              <tbody id="reportCategoryTableBody">
-                <!-- Rendered reactively via app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ================= 4. SETTINGS & CATEGORIES VIEW ================= -->
-      <section id="view-settings" class="tab-view hidden">
-        
-        <!-- Category Manager -->
-        <div class="card" style="margin-bottom: 20px;">
-          <div class="section-header">
-            <div>
-              <h3 class="section-title" data-i18n="categorySection">കാറ്റഗറി മാനേജ്‌മെന്റ്</h3>
-              <p class="chart-sub">വരവ്, ചിലവ് വിഭാഗങ്ങൾ പരിശോധിക്കുകയോ പുതിയവ ചേർക്കുകയോ ചെയ്യാം</p>
-            </div>
-            <button id="btnOpenAddCategoryModal" class="btn-action-primary btn-income" style="padding: 8px 14px; font-size: 0.8rem;">
-              <i data-lucide="plus"></i>
-              <span data-i18n="btnAddCategory">+ പുതിയ കാറ്റഗറി</span>
+            <button id="dashBtnExcel" class="action-btn-pill btn-pill-white">
+              <i data-lucide="sheet" style="color: #00c569;"></i>
+              <span data-i18n="btnDownloadExcel">എക്സൽ (Excel)</span>
             </button>
           </div>
 
-          <div style="margin-bottom: 16px;">
-            <div style="font-size: 0.75rem; font-weight: 700; color: var(--rose-500); text-transform: uppercase; margin-bottom: 8px;" data-i18n="typeExpense">
-              ചിലവ് വിഭാഗങ്ങൾ (Expense Categories)
-            </div>
-            <div id="expenseCategoryChips" class="chips-container">
-              <!-- Rendered reactively -->
-            </div>
-          </div>
-
-          <div style="padding-top: 14px; border-top: 1px solid var(--border-color);">
-            <div style="font-size: 0.75rem; font-weight: 700; color: var(--emerald-600); text-transform: uppercase; margin-bottom: 8px;" data-i18n="typeIncome">
-              വരവ് വിഭാഗങ്ങൾ (Income Categories)
-            </div>
-            <div id="incomeCategoryChips" class="chips-container">
-              <!-- Rendered reactively -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Office Profile -->
-        <div class="card" style="margin-bottom: 20px;">
-          <h3 class="section-title" data-i18n="profileSection">ഓഫീസ് പ്രൊഫൈൽ</h3>
-          <p class="chart-sub" style="margin-bottom: 14px;">PDF വൗച്ചറുകളിലും സ്റ്റേറ്റ്‌മെന്റുകളിലും വരുന്ന വിവരങ്ങൾ</p>
-
-          <form id="officeProfileForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-            <div class="form-group">
-              <label class="form-label" data-i18n="profileName">സ്ഥാപനത്തിന്റെ പേര്</label>
-              <input id="settingOfficeName" type="text" class="form-input" required />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" data-i18n="profileTagline">ഉപശീർഷകം / വിവരണം</label>
-              <input id="settingOfficeTagline" type="text" class="form-input" />
-            </div>
-
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label" data-i18n="profileAddress">വിലാസം</label>
-              <input id="settingOfficeAddress" type="text" class="form-input" />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" data-i18n="profilePhone">ഫോൺ നമ്പർ</label>
-              <input id="settingOfficePhone" type="text" class="form-input" />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" data-i18n="profileCurrency">കറൻസി ചിഹ്നം</label>
-              <input id="settingOfficeCurrency" type="text" value="₹" class="form-input" />
-            </div>
-
-            <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 6px;">
-              <button type="submit" class="btn-action-primary btn-income" data-i18n="btnSaveProfile">
-                പ്രൊഫൈൽ സേവ് ചെയ്യുക
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Backup & PIN Security -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-          
-          <div class="card">
-            <h3 class="section-title" data-i18n="backupSection">ഡാറ്റാ ബാക്കപ്പും സുരക്ഷയും</h3>
-            <p class="chart-sub" style="margin-bottom: 14px;">കണക്കുകൾ മറ്റൊരു ഫോണിലേക്ക് മാറ്റാനോ സൂക്ഷിക്കാനോ ഉള്ള സൗകര്യം</p>
-
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button id="btnDownloadBackupJSON" class="btn-pill" style="justify-content: center; padding: 10px;">
-                <i data-lucide="download"></i>
-                <span data-i18n="btnBackupJSON">📥 ബാക്കപ്പ് ഫയൽ ഡൗൺലോഡ് (JSON)</span>
-              </button>
-
-              <label class="btn-pill" style="justify-content: center; padding: 10px; cursor: pointer;">
-                <i data-lucide="upload"></i>
-                <span data-i18n="btnRestoreJSON">📤 ബാക്കപ്പ് ഫയൽ റീസ്റ്റോർ ചെയ്യുക</span>
-                <input id="inputRestoreJSON" type="file" accept=".json" class="hidden" />
-              </label>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3 class="section-title" data-i18n="securitySection">ആപ്പ് സെക്യൂരിറ്റി PIN</h3>
-            <p class="chart-sub" style="margin-bottom: 14px;">മറ്റുള്ളവർ കാണാതിരിക്കാൻ 4-അക്ക സെക്യൂരിറ്റി PIN</p>
-
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 10px; background: var(--bg-card-subtle); border: 1px solid var(--border-color); font-size: 0.8rem; font-weight: 700;">
-                <span id="pinStatusText">PIN സുരക്ഷ ഓഫാണ്</span>
-                <button id="btnTogglePinSetting" style="border: none; background: transparent; color: var(--emerald-600); font-weight: bold; cursor: pointer;">
-                  PIN സെറ്റ് ചെയ്യുക
+          <!-- ================= EDUKA SPLIT GRID ================= -->
+          <div class="eduka-split-grid">
+            
+            <!-- Left Card: Recent Transactions (Courses Style from reference) -->
+            <div class="white-box">
+              <div class="box-header">
+                <div>
+                  <h3 class="box-title" data-i18n="recentTransactions">സമീപകാല ഇടപാടുകൾ (Transactions)</h3>
+                </div>
+                <button id="btnViewAllFromDash" class="box-badge" style="border: none; cursor: pointer;">
+                  <span data-i18n="viewAll">View All</span> &rarr;
                 </button>
               </div>
 
-              <button id="btnClearAllData" class="btn-pill" style="justify-content: center; padding: 10px; color: var(--rose-600); border-color: var(--rose-100); background: var(--rose-50);">
-                <i data-lucide="trash-2"></i>
-                <span data-i18n="btnClearAll">⚠️ എല്ലാ ഇടപാടുകളും മായ്ക്കുക</span>
+              <!-- Filter Sub Tabs (All, Expense, Income, etc.) -->
+              <div class="sub-tabs-row">
+                <span class="sub-tab-item active" data-filter="all">All</span>
+                <span class="sub-tab-item" data-filter="expense">Expenses (ചിലവ്)</span>
+                <span class="sub-tab-item" data-filter="income">Income (വരവ്)</span>
+                <span class="sub-tab-item" data-filter="month">This Month</span>
+              </div>
+
+              <!-- Transaction Feed Rows -->
+              <div id="recentTxList" class="tx-table-list">
+                <!-- Rendered reactively via app.js -->
+              </div>
+            </div>
+
+            <!-- Right Column: Visual Charts Stack -->
+            <div class="charts-stack">
+              
+              <!-- Top Chart: Smooth Wave Flow (Financial Trend) -->
+              <div class="chart-card-box">
+                <div class="chart-top-row">
+                  <h4 class="chart-heading">Financial Flow (ഒഴുക്ക്)</h4>
+                  <span class="chart-badge-select">Show: Monthly</span>
+                </div>
+                <div class="canvas-holder">
+                  <canvas id="monthlyTrendCanvas"></canvas>
+                </div>
+              </div>
+
+              <!-- Bottom Chart: Donut with Side Legend -->
+              <div class="chart-card-box">
+                <div class="chart-top-row">
+                  <h4 class="chart-heading" data-i18n="expenseBreakdown">Category Breakdown</h4>
+                  <span class="chart-badge-select" style="color: #8d4bf6; background: #f3ebff;">Show: This Month</span>
+                </div>
+                <div class="donut-chart-flex">
+                  <div class="donut-canvas-wrap">
+                    <canvas id="categoryDonutCanvas"></canvas>
+                    <div id="donutEmptyMessage" class="hidden" style="align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 0.75rem;">
+                      <span>No Data</span>
+                    </div>
+                  </div>
+                  <div id="edukaLegendContainer" class="donut-legend-wrap">
+                    <!-- Populated reactively via charts.js -->
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================= 2. TRANSACTIONS LEDGER VIEW ================= -->
+        <section id="view-transactions" class="tab-view hidden">
+          
+          <div class="white-box" style="margin-bottom: 16px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+              <input id="txSearchInput" type="text" class="form-input" style="flex: 2; min-width: 220px;" placeholder="Search party, category, notes..." />
+              
+              <select id="filterTypeSelect" class="form-input" style="flex: 1; min-width: 130px;">
+                <option value="all">All Types (എല്ലാം)</option>
+                <option value="income">Income Only (വരവ്)</option>
+                <option value="expense">Expense Only (ചിലവ്)</option>
+              </select>
+
+              <select id="filterCategorySelect" class="form-input" style="flex: 1; min-width: 140px;">
+                <option value="all">All Categories</option>
+              </select>
+
+              <select id="filterDateRangeSelect" class="form-input" style="flex: 1; min-width: 130px;">
+                <option value="all">All Time</option>
+                <option value="today">Today (ഇന്ന്)</option>
+                <option value="yesterday">Yesterday (ഇന്നലെ)</option>
+                <option value="this_week">This Week (ഈ ആഴ്ച)</option>
+                <option value="this_month">This Month (ഈ മാസം)</option>
+                <option value="custom">Custom Date</option>
+              </select>
+            </div>
+
+            <!-- Custom Date Range Row -->
+            <div id="customDateRangeRow" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light);">
+              <div class="form-group">
+                <label class="form-label">From Date</label>
+                <input id="customStartDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">To Date</label>
+                <input id="customEndDate" type="date" class="form-input" />
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; padding-top: 8px;">
+              <div>കണ്ടെത്തിയവ: <strong id="filteredCountText" style="color: var(--text-dark);">0</strong> ഇടപാടുകൾ</div>
+              <div style="display: flex; gap: 14px;">
+                <span>വരവ്: <strong id="filteredIncomeText" style="color: var(--brand-green);">₹0</strong></span>
+                <span>ചിലവ്: <strong id="filteredExpenseText" style="color: #ff5722;">₹0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="white-box">
+            <div id="fullLedgerContainer" class="tx-table-list">
+              <!-- Rendered reactively via app.js -->
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================= 3. REPORTS & EXPORTS VIEW ================= -->
+        <section id="view-reports" class="tab-view hidden">
+          <div class="white-box" style="margin-bottom: 20px;">
+            <div class="box-header">
+              <div>
+                <h3 class="box-title" data-i18n="reportsTitle">റിപ്പോർട്ടുകളും സ്റ്റേറ്റ്‌മെന്റുകളും</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                  ഔദ്യോഗിക PDF വൗച്ചറുകൾ, ഫിനാൻഷ്യൽ സ്റ്റേറ്റ്‌മെന്റുകൾ, എക്സൽ ഷീറ്റുകൾ ഡൗൺലോഡ് ചെയ്യുക
+                </p>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+              <div class="form-group">
+                <label class="form-label">Period Selection</label>
+                <select id="reportRangePreset" class="form-input">
+                  <option value="this_month">This Month (ഈ മാസം)</option>
+                  <option value="last_month">Last Month (കഴിഞ്ഞ മാസം)</option>
+                  <option value="this_year">This Year (ഈ വർഷം)</option>
+                  <option value="all_time">All Time (മുഴുവൻ)</option>
+                  <option value="custom">Custom Date Range</option>
+                </select>
+              </div>
+
+              <div id="reportCustomStartCol" class="form-group hidden">
+                <label class="form-label">Start Date</label>
+                <input id="reportStartDate" type="date" class="form-input" />
+              </div>
+
+              <div id="reportCustomEndCol" class="form-group hidden">
+                <label class="form-label">End Date</label>
+                <input id="reportEndDate" type="date" class="form-input" />
+              </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+              <button id="btnExportPDF" class="action-btn-pill btn-pill-rose">
+                <i data-lucide="file-down"></i>
+                <span data-i18n="btnDownloadPDF">📄 PDF സ്റ്റേറ്റ്‌മെന്റ് ഡൗൺലോഡ്</span>
+              </button>
+
+              <button id="btnExportCSV" class="action-btn-pill btn-pill-green">
+                <i data-lucide="table"></i>
+                <span data-i18n="btnDownloadExcel">📊 എക്സൽ (Excel / CSV) ഡൗൺലോഡ്</span>
+              </button>
+
+              <button id="btnPrintReport" class="action-btn-pill btn-pill-white">
+                <i data-lucide="printer"></i>
+                <span data-i18n="btnPrintStatement">🖨️ പ്രിന്റ് ചെയ്യുക</span>
               </button>
             </div>
           </div>
 
-        </div>
+          <!-- Summary Metric Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div class="white-box" style="border-left: 4px solid #00c968;">
+              <div class="form-label">ആകെ വരവ് (Total Income)</div>
+              <div id="reportTotalIncome" style="font-size: 1.4rem; font-weight: 800; color: #00c968; margin-top: 4px;">₹0.00</div>
+            </div>
+            <div class="white-box" style="border-left: 4px solid #ff5e36;">
+              <div class="form-label">ആകെ ചിലവ് (Total Expense)</div>
+              <div id="reportTotalExpense" style="font-size: 1.4rem; font-weight: 800; color: #ff5e36; margin-top: 4px;">₹0.00</div>
+            </div>
+            <div class="white-box" style="border-left: 4px solid #0091ff;">
+              <div class="form-label">മിച്ചം (Net Balance)</div>
+              <div id="reportNetBalance" style="font-size: 1.4rem; font-weight: 800; color: #0091ff; margin-top: 4px;">₹0.00</div>
+            </div>
+          </div>
 
-      </section>
+          <!-- Category Breakdown Table -->
+          <div class="white-box">
+            <h4 class="box-title" style="margin-bottom: 12px;">Category Breakdown Table</h4>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-muted); font-size: 0.74rem;">
+                    <th style="padding: 10px 8px;">CATEGORY</th>
+                    <th style="padding: 10px 8px;">TRANSACTIONS</th>
+                    <th style="padding: 10px 8px; text-align: right;">AMOUNT</th>
+                    <th style="padding: 10px 8px; text-align: right;">PERCENTAGE</th>
+                  </tr>
+                </thead>
+                <tbody id="reportCategoryTableBody">
+                  <!-- Populated via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-    </main>
+        </section>
+
+        <!-- ================= 4. SETTINGS VIEW ================= -->
+        <section id="view-settings" class="tab-view hidden">
+          
+          <div class="white-box" style="margin-bottom: 20px;">
+            <div class="box-header">
+              <div>
+                <h3 class="box-title" data-i18n="categorySection">കാറ്റഗറി മാനേജ്‌മെന്റ്</h3>
+                <p style="font-size: 0.76rem; color: var(--text-muted);">വരവ്, ചിലവ് വിഭാഗങ്ങൾ പരിശോധിക്കുകയോ പുതിയവ ചേർക്കുകയോ ചെയ്യാം</p>
+              </div>
+              <button id="btnOpenAddCategoryModal" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.8rem;">
+                <i data-lucide="plus"></i>
+                <span data-i18n="btnAddCategory">+ പുതിയ കാറ്റഗറി</span>
+              </button>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <div style="font-size: 0.74rem; font-weight: 700; color: #ff5722; text-transform: uppercase; margin-bottom: 8px;">
+                ചിലവ് വിഭാഗങ്ങൾ (Expense Categories)
+              </div>
+              <div id="expenseCategoryChips" class="chips-container">
+                <!-- Populated via app.js -->
+              </div>
+            </div>
+
+            <div style="padding-top: 14px; border-top: 1px solid var(--border-light);">
+              <div style="font-size: 0.74rem; font-weight: 700; color: #00c968; text-transform: uppercase; margin-bottom: 8px;">
+                വരവ് വിഭാഗങ്ങൾ (Income Categories)
+              </div>
+              <div id="incomeCategoryChips" class="chips-container">
+                <!-- Populated via app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Office Profile -->
+          <div class="white-box" style="margin-bottom: 20px;">
+            <h3 class="box-title" data-i18n="profileSection">ഓഫീസ് പ്രൊഫൈൽ</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;">PDF വൗച്ചറുകളിലും സ്റ്റേറ്റ്‌മെന്റുകളിലും വരുന്ന വിവരങ്ങൾ</p>
+
+            <form id="officeProfileForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+              <div class="form-group">
+                <label class="form-label" data-i18n="profileName">സ്ഥാപനത്തിന്റെ പേര്</label>
+                <input id="settingOfficeName" type="text" class="form-input" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="profileTagline">ഉപശീർഷകം</label>
+                <input id="settingOfficeTagline" type="text" class="form-input" />
+              </div>
+
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label" data-i18n="profileAddress">വിലാസം</label>
+                <input id="settingOfficeAddress" type="text" class="form-input" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="profilePhone">ഫോൺ നമ്പർ</label>
+                <input id="settingOfficePhone" type="text" class="form-input" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="profileCurrency">കറൻസി</label>
+                <input id="settingOfficeCurrency" type="text" value="₹" class="form-input" />
+              </div>
+
+              <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                <button type="submit" class="action-btn-pill btn-pill-green" data-i18n="btnSaveProfile">
+                  സേവ് ചെയ്യുക
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Backup & PIN Security -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <div class="white-box">
+              <h3 class="box-title" data-i18n="backupSection">ഡാറ്റാ ബാക്കപ്പ്</h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">കണക്കുകൾ ബാക്കപ്പ് എടുക്കാനും തിരിച്ചെടുക്കാനും</p>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button id="btnDownloadBackupJSON" class="action-btn-pill btn-pill-white">
+                  <i data-lucide="download"></i>
+                  <span>📥 ഡൗൺലോഡ് ബാക്കപ്പ് (JSON)</span>
+                </button>
+                <label class="action-btn-pill btn-pill-white" style="cursor: pointer; justify-content: center;">
+                  <i data-lucide="upload"></i>
+                  <span>📤 ബാക്കപ്പ് റീസ്റ്റോർ ചെയ്യുക</span>
+                  <input id="inputRestoreJSON" type="file" accept=".json" class="hidden" />
+                </label>
+              </div>
+            </div>
+
+            <div class="white-box">
+              <h3 class="box-title" data-i18n="securitySection">ആപ്പ് സെക്യൂരിറ്റി</h3>
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">4-അക്ക സുരക്ഷാ PIN ലോക്ക്</p>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 12px; background: var(--bg-subtle); border: 1px solid var(--border-light); font-size: 0.8rem; font-weight: 700;">
+                  <span id="pinStatusText">PIN സുരക്ഷ ഓഫാണ്</span>
+                  <button id="btnTogglePinSetting" style="border: none; background: transparent; color: #00c569; font-weight: bold; cursor: pointer;">
+                    PIN മാറ്റുക
+                  </button>
+                </div>
+                <button id="btnClearAllData" class="action-btn-pill btn-pill-white" style="color: #ff5722; border-color: #ffdacf; background: #fff4f1;">
+                  <i data-lucide="trash-2"></i>
+                  <span>⚠️ എല്ലാ ഇടപാടുകളും മായ്ക്കുക</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
   </div>
 
   <!-- ================= MOBILE BOTTOM NAVIGATION ================= -->
-  <nav class="mobile-nav-bar">
-    <button class="m-nav-item nav-item active" data-target="dashboard">
+  <nav class="eduka-mobile-bar">
+    <button class="m-nav-pill nav-item active" data-target="dashboard">
       <i data-lucide="layout-dashboard"></i>
-      <span data-i18n="navDashboard">ഡാഷ്‌ബോർഡ്</span>
+      <span>Home</span>
     </button>
 
-    <button class="m-nav-item nav-item" data-target="transactions">
+    <button class="m-nav-pill nav-item" data-target="transactions">
       <i data-lucide="receipt"></i>
-      <span data-i18n="navTransactions">കണക്കുകൾ</span>
+      <span>കണക്കുകൾ</span>
     </button>
 
-    <button id="mobileFabAdd" class="m-fab" title="Add Transaction">
+    <button id="mobileFabAdd" class="m-center-fab" title="Add">
       <i data-lucide="plus"></i>
     </button>
 
-    <button class="m-nav-item nav-item" data-target="reports">
+    <button class="m-nav-pill nav-item" data-target="reports">
       <i data-lucide="bar-chart-3"></i>
-      <span data-i18n="navReports">റിപ്പോർട്ടുകൾ</span>
+      <span>റിപ്പോർട്ടുകൾ</span>
     </button>
 
-    <button class="m-nav-item nav-item" data-target="settings">
+    <button class="m-nav-pill nav-item" data-target="settings">
       <i data-lucide="settings"></i>
-      <span data-i18n="navSettings">സെറ്റിംഗ്സ്</span>
+      <span>സെറ്റിംഗ്സ്</span>
     </button>
   </nav>
 
   <!-- ================= MODAL: ADD / EDIT TRANSACTION ================= -->
   <div id="transactionModal" class="modal-overlay hidden">
     <div class="modal-dialog">
-      
-      <div class="modal-top">
-        <h3 id="txModalTitle" class="modal-heading" data-i18n="modalAddTitle">പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക</h3>
-        <button id="btnCloseTxModal" class="action-icon-btn">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+        <h3 id="txModalTitle" style="font-size: 1.1rem; font-weight: 800;">പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക</h3>
+        <button id="btnCloseTxModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
           <i data-lucide="x"></i>
         </button>
       </div>
@@ -567,19 +580,17 @@
       <form id="txForm" style="display: flex; flex-direction: column; gap: 14px;">
         <input type="hidden" id="txId" value="" />
 
-        <!-- Segment: Expense vs Income -->
         <div class="type-segmented-control">
           <button type="button" id="toggleTypeExpense" class="segment-btn active expense">
             <i data-lucide="arrow-up-right"></i>
-            <span data-i18n="typeExpense">ചിലവ് (Expense)</span>
+            <span>ചിലവ് (Expense)</span>
           </button>
           <button type="button" id="toggleTypeIncome" class="segment-btn income">
             <i data-lucide="arrow-down-left"></i>
-            <span data-i18n="typeIncome">വരവ് (Income)</span>
+            <span>വരവ് (Income)</span>
           </button>
         </div>
 
-        <!-- Big Amount Input -->
         <div class="form-group">
           <label class="form-label" data-i18n="labelAmount">തുക (₹)</label>
           <div class="big-amount-wrap">
@@ -588,91 +599,76 @@
           </div>
         </div>
 
-        <!-- Category Dropdown + Quick Add -->
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label class="form-label" data-i18n="labelCategory">കാറ്റഗറി തിരഞ്ഞെടുക്കുക</label>
-            <button type="button" id="btnQuickAddCat" style="border: none; background: transparent; color: var(--emerald-600); font-weight: bold; font-size: 0.75rem; cursor: pointer;">
+            <label class="form-label" data-i18n="labelCategory">വിഭാഗം (Category)</label>
+            <button type="button" id="btnQuickAddCat" style="border: none; background: transparent; color: var(--brand-green); font-weight: 800; font-size: 0.75rem; cursor: pointer;">
               + പുതിയ കാറ്റഗറി
             </button>
           </div>
-          <select id="txCategory" class="form-input" required>
-            <!-- Populated reactively -->
-          </select>
+          <select id="txCategory" class="form-input" required></select>
         </div>
 
-        <!-- Date Input -->
         <div class="form-group">
           <label class="form-label" data-i18n="labelDate">തീയതി</label>
           <input id="txDate" type="date" class="form-input" required />
         </div>
 
-        <!-- Party: Paid To / Received From -->
         <div class="form-group">
-          <label id="labelParty" class="form-label" data-i18n="labelPartyExpense">ആർക്ക് നൽകി (Paid To)</label>
-          <input id="txParty" type="text" class="form-input" placeholder="വ്യക്തി അല്ലെങ്കിൽ കമ്പനിയുടെ പേര്" />
+          <label id="labelParty" class="form-label">ആർക്ക് നൽകി / ആരിൽ നിന്ന് ലഭിച്ചു</label>
+          <input id="txParty" type="text" class="form-input" placeholder="വ്യക്തി അല്ലെങ്കിൽ സ്ഥാപനത്തിന്റെ പേര്" />
         </div>
 
-        <!-- Bill / Invoice No -->
         <div class="form-group">
-          <label class="form-label" data-i18n="labelBillNo">ബിൽ / ഇൻവോയ്സ് / വൗച്ചർ നമ്പർ (ഓപ്ഷണൽ)</label>
-          <input id="txBillNo" type="text" class="form-input" placeholder="e.g. INV-1029 / BILL-405" />
+          <label class="form-label">ബിൽ / ഇൻവോയ്സ് നമ്പർ (ഓപ്ഷണൽ)</label>
+          <input id="txBillNo" type="text" class="form-input" placeholder="e.g. INV-1002" />
         </div>
 
-        <!-- Notes / Remarks -->
         <div class="form-group">
-          <label class="form-label" data-i18n="labelNotes">കുറിപ്പുകൾ / വിവരണം (ഓപ്ഷണൽ)</label>
+          <label class="form-label">കുറിപ്പുകൾ / വിവരണം (ഓപ്ഷണൽ)</label>
           <textarea id="txNotes" rows="2" class="form-input" placeholder="കൂടുതൽ വിവരങ്ങൾ..."></textarea>
         </div>
 
-        <!-- Photo / Receipt Attachment -->
         <div class="form-group">
-          <label class="form-label" data-i18n="labelAttachment">ബിൽ / രസീത് ഫോട്ടോ (ഓപ്ഷണൽ)</label>
-          
-          <div id="attachmentPreviewBox" class="hidden" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 10px; background: var(--bg-card-subtle); margin-bottom: 6px;">
+          <label class="form-label">ബിൽ / രസീത് ഫോട്ടോ</label>
+          <div id="attachmentPreviewBox" class="hidden" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 12px; background: var(--bg-subtle);">
             <div style="display: flex; align-items: center; gap: 8px;">
               <img id="attachmentImgPreview" src="" alt="Receipt" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;" />
-              <span style="font-size: 0.75rem; font-weight: bold; color: var(--emerald-600);">ഫോട്ടോ അറ്റാച്ച് ചെയ്തു</span>
+              <span style="font-size: 0.75rem; font-weight: bold; color: var(--brand-green);">ഫോട്ടോ അറ്റാച്ച് ചെയ്തു</span>
             </div>
-            <button type="button" id="btnDeleteAttachment" class="action-icon-btn danger">
+            <button type="button" id="btnDeleteAttachment" style="border: none; background: transparent; color: #ff5722; cursor: pointer;">
               <i data-lucide="trash-2"></i>
             </button>
           </div>
 
-          <label class="btn-pill" style="justify-content: center; padding: 10px; cursor: pointer; border-style: dashed;">
-            <i data-lucide="camera" style="color: var(--emerald-600);"></i>
-            <span data-i18n="btnTakePhoto">ഫോട്ടോ എടുക്കുക / അപ്‌ലോഡ് ചെയ്യുക</span>
+          <label class="action-btn-pill btn-pill-white" style="cursor: pointer; justify-content: center; border-style: dashed;">
+            <i data-lucide="camera" style="color: var(--brand-green);"></i>
+            <span>ഫോട്ടോ എടുക്കുക / അപ്‌ലോഡ് ചെയ്യുക</span>
             <input id="txPhotoInput" type="file" accept="image/*" class="hidden" />
           </label>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 10px;">
-          <button type="button" id="btnCancelTx" class="btn-action-primary btn-secondary" style="flex: 1;" data-i18n="btnCancel">
-            റദ്ദാക്കുക
-          </button>
-          <button type="submit" id="btnSaveTx" class="btn-action-primary btn-income" style="flex: 1;" data-i18n="btnSave">
-            സേവ് ചെയ്യുക
-          </button>
+          <button type="button" id="btnCancelTx" class="action-btn-pill btn-pill-white" style="flex: 1;">റദ്ദാക്കുക</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1;">സേവ് ചെയ്യുക</button>
         </div>
-
       </form>
     </div>
   </div>
 
-  <!-- ================= MODAL: ADD CATEGORY ================= -->
+  <!-- ================= MODAL: ADD CUSTOM CATEGORY ================= -->
   <div id="categoryModal" class="modal-overlay hidden">
     <div class="modal-dialog" style="max-width: 400px;">
-      
-      <div class="modal-top">
-        <h3 class="modal-heading" data-i18n="catModalTitle">പുതിയ കാറ്റഗറി ചേർക്കുക</h3>
-        <button id="btnCloseCatModal" class="action-icon-btn">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+        <h3 style="font-size: 1.05rem; font-weight: 800;">പുതിയ കാറ്റഗറി ചേർക്കുക</h3>
+        <button id="btnCloseCatModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
           <i data-lucide="x"></i>
         </button>
       </div>
 
       <form id="categoryForm" style="display: flex; flex-direction: column; gap: 12px;">
         <div class="form-group">
-          <label class="form-label" data-i18n="catTypeLabel">കാറ്റഗറിയുടെ തരം</label>
+          <label class="form-label">കാറ്റഗറിയുടെ തരം</label>
           <select id="newCatType" class="form-input">
             <option value="expense">ചിലവ് (Expense)</option>
             <option value="income">വരവ് (Income)</option>
@@ -680,52 +676,48 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" data-i18n="catNameMl">മലയാളം പേര്</label>
-          <input id="newCatNameMl" type="text" class="form-input" placeholder="e.g. പുതിയ പ്രൊജക്റ്റ് ചിലവ്" required />
+          <label class="form-label">മലയാളം പേര്</label>
+          <input id="newCatNameMl" type="text" class="form-input" placeholder="e.g. പുതിയ ചിലവ്" required />
         </div>
 
         <div class="form-group">
-          <label class="form-label" data-i18n="catNameEn">English പേര്</label>
+          <label class="form-label">English പേര്</label>
           <input id="newCatNameEn" type="text" class="form-input" placeholder="e.g. Project Expense" />
         </div>
 
         <div class="form-group">
-          <label class="form-label" data-i18n="catColorLabel">നിറം</label>
+          <label class="form-label">നിറം</label>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <input id="newCatColor" type="color" value="#10b981" style="width: 42px; height: 38px; border: none; background: transparent; cursor: pointer;" />
-            <span style="font-size: 0.75rem; color: var(--text-muted);">കാറ്റഗറി തിരിച്ചറിയാനുള്ള കളർ</span>
+            <input id="newCatColor" type="color" value="#00c569" style="width: 44px; height: 38px; border: none; background: transparent; cursor: pointer;" />
+            <span style="font-size: 0.75rem; color: var(--text-muted);">തിരിച്ചറിയാനുള്ള കളർ</span>
           </div>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 8px;">
-          <button type="button" id="btnCancelCat" class="btn-action-primary btn-secondary" style="flex: 1;" data-i18n="btnCancel">
-            റദ്ദാക്കുക
-          </button>
-          <button type="submit" class="btn-action-primary btn-income" style="flex: 1;" data-i18n="btnSaveCat">
-            ചേർക്കുക
-          </button>
+          <button type="button" id="btnCancelCat" class="action-btn-pill btn-pill-white" style="flex: 1;">റദ്ദാക്കുക</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1;">ചേർക്കുക</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ================= MODAL: ATTACHMENT LIGHTBOX ================= -->
-  <div id="lightboxModal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.9);">
-    <button id="btnCloseLightbox" style="position: absolute; top: 16px; right: 16px; color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; padding: 8px; cursor: pointer;">
+  <div id="lightboxModal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.92);">
+    <button id="btnCloseLightbox" style="position: absolute; top: 20px; right: 20px; color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; padding: 10px; cursor: pointer;">
       <i data-lucide="x"></i>
     </button>
-    <img id="lightboxImg" src="" alt="Bill Preview" style="max-width: 90%; max-height: 85vh; border-radius: 12px; object-contain: fit;" />
+    <img id="lightboxImg" src="" alt="Bill Preview" style="max-width: 90%; max-height: 85vh; border-radius: 14px; object-fit: contain;" />
   </div>
 
   <!-- ================= MODAL: PIN LOCK ================= -->
-  <div id="pinLockModal" class="modal-overlay hidden" style="background: var(--bg-body);">
-    <div style="max-width: 280px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 20px;">
-      <div style="width: 56px; height: 56px; margin: 0 auto; border-radius: 16px; background: var(--emerald-50); color: var(--emerald-600); display: flex; align-items: center; justify-content: center;">
+  <div id="pinLockModal" class="modal-overlay hidden" style="background: #ffffff;">
+    <div style="max-width: 290px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 20px;">
+      <div style="width: 58px; height: 58px; margin: 0 auto; border-radius: 18px; background: var(--brand-green-light); color: var(--brand-green); display: flex; align-items: center; justify-content: center;">
         <i data-lucide="lock"></i>
       </div>
       <div>
-        <h3 style="font-size: 1.15rem; font-weight: 800;" data-i18n="enterPinPrompt">സുരക്ഷാ PIN നൽകുക</h3>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">തുടരാൻ 4-അക്ക സെക്യൂരിറ്റി കോഡ് അടിക്കുക</p>
+        <h3 style="font-size: 1.2rem; font-weight: 800;">സുരക്ഷാ PIN നൽകുക</h3>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">തുടരാൻ 4-അക്ക കോഡ് അടിക്കുക</p>
       </div>
 
       <div style="display: flex; justify-content: center; gap: 12px;">
@@ -736,28 +728,27 @@
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="1">1</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="2">2</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="3">3</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="4">4</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="5">5</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="6">6</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="7">7</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="8">8</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="9">9</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.1rem; justify-content: center; color: var(--rose-600);" data-val="clear">C</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="0">0</button>
-        <button class="pin-key btn-pill" style="height: 52px; font-size: 1.1rem; justify-content: center;" data-val="back">⌫</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="1">1</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="2">2</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="3">3</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="4">4</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="5">5</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="6">6</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="7">7</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="8">8</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="9">9</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.1rem; justify-content: center; color: #ff5722;" data-val="clear">C</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.3rem; justify-content: center;" data-val="0">0</button>
+        <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.1rem; justify-content: center;" data-val="back">⌫</button>
       </div>
 
-      <p id="pinErrorMsg" class="hidden" style="color: var(--rose-600); font-size: 0.8rem; font-weight: bold;" data-i18n="wrongPin">നൽകിയ PIN തെറ്റാണ്!</p>
+      <p id="pinErrorMsg" class="hidden" style="color: #ff5722; font-size: 0.8rem; font-weight: bold;">നൽകിയ PIN തെറ്റാണ്!</p>
     </div>
   </div>
 
-  <!-- Toast Notification Container -->
   <div id="toast-container"></div>
 
-  <!-- Scripts -->
+  <!-- JavaScript Modules -->
   <script src="./js/icons.js"></script>
   <script src="./js/db.js"></script>
   <script src="./js/i18n.js"></script>

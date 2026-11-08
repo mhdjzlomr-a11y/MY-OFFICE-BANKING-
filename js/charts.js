@@ -1,6 +1,6 @@
 /**
- * charts.js - Standalone Native Canvas Chart Engine
- * Completely self-contained: works 100% offline without external libraries
+ * charts.js - Pixel-Perfect Eduka-Themed Canvas Charts
+ * Renders smooth curved area charts and donut charts with side legend matching reference image
  */
 
 class FinanceCharts {
@@ -9,27 +9,22 @@ class FinanceCharts {
     this.cachedCategories = [];
   }
 
-  isDarkTheme() {
-    return document.documentElement.classList.contains('dark');
-  }
-
   updateCharts(transactions, categories) {
     this.cachedTransactions = transactions || [];
     this.cachedCategories = categories || [];
-    this.renderMonthlyTrend(this.cachedTransactions);
-    this.renderCategoryBreakdown(this.cachedTransactions, this.cachedCategories);
+    this.renderWaveFlowChart(this.cachedTransactions);
+    this.renderDonutWithSideLegend(this.cachedTransactions, this.cachedCategories);
   }
 
-  // --- 1. Monthly Trend Bar Chart ---
-  renderMonthlyTrend(transactions) {
+  // --- 1. Wave Flow Area Chart (Matches top chart from reference image) ---
+  renderWaveFlowChart(transactions) {
     const canvas = document.getElementById('monthlyTrendCanvas');
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const width = canvas.parentElement.clientWidth || 600;
-    const height = canvas.parentElement.clientHeight || 240;
+    const width = canvas.parentElement.clientWidth || 360;
+    const height = canvas.parentElement.clientHeight || 180;
 
-    // Handle high DPI displays
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
@@ -37,146 +32,167 @@ class FinanceCharts {
     canvas.style.height = height + 'px';
     ctx.scale(dpr, dpr);
 
-    const isDark = this.isDarkTheme();
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(100, 116, 139, 0.08)';
-
-    // Group last 6 months
+    // Group last 6 points / months
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const today = new Date();
-    const months = [];
+    const points = [];
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 4; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      months.push({
-        key: mKey,
-        label: `${monthNames[d.getMonth()]} '${d.getFullYear().toString().slice(2)}`,
-        income: 0,
-        expense: 0
+      points.push({
+        label: `${d.getDate()} ${monthNames[d.getMonth()]}`,
+        mKey,
+        val: 0
       });
     }
 
     transactions.forEach(tx => {
       if (!tx.date) return;
       const mKey = tx.date.slice(0, 7);
-      const m = months.find(item => item.key === mKey);
-      if (m) {
-        const amt = parseFloat(tx.amount) || 0;
-        if (tx.type === 'income') m.income += amt;
-        else if (tx.type === 'expense') m.expense += amt;
+      const p = points.find(item => item.mKey === mKey);
+      if (p) {
+        p.val += parseFloat(tx.amount) || 0;
       }
     });
 
-    let maxVal = 5000;
-    months.forEach(m => {
-      if (m.income > maxVal) maxVal = m.income;
-      if (m.expense > maxVal) maxVal = m.expense;
-    });
-    maxVal = Math.ceil(maxVal * 1.15); // Add headroom
+    let maxVal = 10000;
+    points.forEach(p => { if (p.val > maxVal) maxVal = p.val; });
+    maxVal = Math.ceil(maxVal * 1.2);
 
-    // Clear
     ctx.clearRect(0, 0, width, height);
 
-    const padLeft = 45;
-    const padRight = 15;
-    const padTop = 30;
-    const padBottom = 30;
+    const padLeft = 32;
+    const padRight = 20;
+    const padTop = 20;
+    const padBottom = 26;
     const chartW = width - padLeft - padRight;
     const chartH = height - padTop - padBottom;
 
-    // Draw Grid & Y-Axis labels
-    const steps = 4;
+    // Dashed horizontal grid lines (e.g. 50, 100, 150, 200)
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+
+    const steps = 3;
     ctx.font = '10px sans-serif';
-    ctx.fillStyle = textColor;
+    ctx.fillStyle = '#94a3b8';
     ctx.textAlign = 'right';
 
     for (let i = 0; i <= steps; i++) {
-      const val = Math.round((maxVal / steps) * i);
+      const yVal = Math.round((maxVal / steps) * i);
       const y = padTop + chartH - (chartH * (i / steps));
 
-      // Grid line
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padLeft, y);
       ctx.lineTo(width - padRight, y);
       ctx.stroke();
 
-      // Label
-      const labelText = val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val;
-      ctx.fillText('₹' + labelText, padLeft - 6, y + 3);
+      const label = yVal >= 1000 ? (yVal / 1000).toFixed(0) + 'k' : yVal;
+      ctx.fillText(label, padLeft - 6, y + 3);
+    }
+    ctx.setLineDash([]); // Reset dash
+
+    // Calculate curve coordinates
+    const coords = points.map((p, i) => {
+      const x = padLeft + (i * (chartW / (points.length - 1)));
+      const ratio = Math.min(1, Math.max(0.1, p.val / maxVal));
+      const y = padTop + chartH - (chartH * ratio);
+      return { x, y, val: p.val, label: p.label };
+    });
+
+    // Draw Smooth Wave Area
+    if (coords.length > 1) {
+      // Area gradient
+      const grad = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
+      grad.addColorStop(0, 'rgba(0, 201, 104, 0.22)');
+      grad.addColorStop(1, 'rgba(0, 201, 104, 0.01)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(coords[0].x, padTop + chartH);
+      ctx.lineTo(coords[0].x, coords[0].y);
+
+      for (let i = 0; i < coords.length - 1; i++) {
+        const cpX = (coords[i].x + coords[i + 1].x) / 2;
+        ctx.bezierCurveTo(cpX, coords[i].y, cpX, coords[i + 1].y, coords[i + 1].x, coords[i + 1].y);
+      }
+
+      ctx.lineTo(coords[coords.length - 1].x, padTop + chartH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Stroke Line
+      ctx.strokeStyle = '#00c968';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(coords[0].x, coords[0].y);
+
+      for (let i = 0; i < coords.length - 1; i++) {
+        const cpX = (coords[i].x + coords[i + 1].x) / 2;
+        ctx.bezierCurveTo(cpX, coords[i].y, cpX, coords[i + 1].y, coords[i + 1].x, coords[i + 1].y);
+      }
+      ctx.stroke();
+
+      // Highlight active point (with vertical guide and dark pill tooltip)
+      const highlightIdx = Math.min(3, coords.length - 1);
+      const hl = coords[highlightIdx];
+
+      // Vertical guide line
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(hl.x, hl.y);
+      ctx.lineTo(hl.x, padTop + chartH);
+      ctx.stroke();
+
+      // Outer halo dot
+      ctx.fillStyle = '#00c968';
+      ctx.beginPath();
+      ctx.arc(hl.x, hl.y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(hl.x, hl.y, 2.5, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Dark pill tooltip
+      const tooltipText = '₹' + (hl.val >= 1000 ? (hl.val / 1000).toFixed(1) + 'k' : hl.val);
+      ctx.fillStyle = '#1e293b';
+      this.drawPill(ctx, hl.x + 8, hl.y - 12, 46, 20, 10);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(tooltipText, hl.x + 31, hl.y + 2);
     }
 
-    // Legend on top
-    ctx.textAlign = 'left';
-    ctx.font = 'bold 11px sans-serif';
-
-    // Income legend
-    ctx.fillStyle = '#10b981';
-    ctx.fillRect(padLeft, 10, 10, 10);
-    ctx.fillStyle = textColor;
-    ctx.fillText('വരവ് (Income)', padLeft + 14, 18);
-
-    // Expense legend
-    ctx.fillStyle = '#f43f5e';
-    ctx.fillRect(padLeft + 120, 10, 10, 10);
-    ctx.fillStyle = textColor;
-    ctx.fillText('ചിലവ് (Expense)', padLeft + 134, 18);
-
-    // Draw Bars
-    const colWidth = chartW / months.length;
-    const barWidth = Math.min(22, (colWidth - 16) / 2);
-
-    months.forEach((m, idx) => {
-      const colX = padLeft + (idx * colWidth);
-      const centerX = colX + (colWidth / 2);
-
-      // X-Axis Month Label
-      ctx.fillStyle = textColor;
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(m.label, centerX, height - 10);
-
-      // Income Bar (Green)
-      const incH = (m.income / maxVal) * chartH;
-      const incY = padTop + chartH - incH;
-      const incX = centerX - barWidth - 2;
-
-      ctx.fillStyle = '#10b981';
-      this.drawRoundedRect(ctx, incX, incY, barWidth, incH, 4);
-
-      // Expense Bar (Rose)
-      const expH = (m.expense / maxVal) * chartH;
-      const expY = padTop + chartH - expH;
-      const expX = centerX + 2;
-
-      ctx.fillStyle = '#f43f5e';
-      this.drawRoundedRect(ctx, expX, expY, barWidth, expH, 4);
+    // X Axis Labels
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#8a94a6';
+    ctx.font = '10px sans-serif';
+    coords.forEach(c => {
+      ctx.fillText(c.label, c.x, height - 6);
     });
   }
 
-  // --- 2. Category Breakdown Donut Chart ---
-  renderCategoryBreakdown(transactions, categories) {
+  // --- 2. Donut Chart with Right-Side Legend ---
+  renderDonutWithSideLegend(transactions, categories) {
     const canvas = document.getElementById('categoryDonutCanvas');
+    const legendContainer = document.getElementById('edukaLegendContainer');
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const width = canvas.parentElement.clientWidth || 300;
-    const height = canvas.parentElement.clientHeight || 240;
+    const size = 120;
 
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
     ctx.scale(dpr, dpr);
 
-    const isDark = this.isDarkTheme();
-    const textColor = isDark ? '#f8fafc' : '#0f172a';
-    const subTextColor = isDark ? '#94a3b8' : '#64748b';
-
-    // Group only expenses
+    // Group expenses
     const catTotals = {};
     let totalExpense = 0;
 
@@ -191,8 +207,9 @@ class FinanceCharts {
 
     const emptyMsg = document.getElementById('donutEmptyMessage');
     if (totalExpense === 0) {
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, size, size);
       if (emptyMsg) emptyMsg.style.display = 'flex';
+      if (legendContainer) legendContainer.innerHTML = '';
       return;
     } else {
       if (emptyMsg) emptyMsg.style.display = 'none';
@@ -204,7 +221,8 @@ class FinanceCharts {
     const sortedCats = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]);
     const topCats = sortedCats.slice(0, 5);
 
-    const palette = ['#f43f5e', '#ef4444', '#f97316', '#eab308', '#8b5cf6', '#64748b'];
+    // 5 Vibrant colors from the reference image:
+    const palette = ['#ff6a3c', '#0091ff', '#00c968', '#8d4bf6', '#ffc107'];
     const slices = [];
 
     topCats.forEach((cid, i) => {
@@ -212,26 +230,28 @@ class FinanceCharts {
       slices.push({
         label: cat ? (window.i18n ? window.i18n.getCategoryName(cat) : cat.nameMl) : cid,
         amount: catTotals[cid],
-        color: cat && cat.color ? cat.color : palette[i % palette.length]
+        color: palette[i % palette.length],
+        pct: totalExpense > 0 ? Math.round((catTotals[cid] / totalExpense) * 100) : 0
       });
     });
 
     if (sortedCats.length > 5) {
       const otherTotal = sortedCats.slice(5).reduce((s, cid) => s + catTotals[cid], 0);
       slices.push({
-        label: 'Others (മറ്റുള്ളവ)',
+        label: 'Others',
         amount: otherTotal,
-        color: '#94a3b8'
+        color: '#94a3b8',
+        pct: totalExpense > 0 ? Math.round((otherTotal / totalExpense) * 100) : 0
       });
     }
 
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, size, size);
 
-    // Draw Donut
-    const centerX = width / 2;
-    const centerY = (height / 2) - 10;
-    const radius = Math.min(centerX, centerY) - 15;
-    const innerRadius = radius * 0.65;
+    // Draw Crisp Donut
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = (size / 2) - 4;
+    const innerRadius = radius * 0.62;
 
     let currentAngle = -0.5 * Math.PI;
 
@@ -246,35 +266,37 @@ class FinanceCharts {
       ctx.closePath();
       ctx.fill();
 
-      // Border between slices
-      ctx.strokeStyle = isDark ? '#151f32' : '#ffffff';
-      ctx.lineWidth = 2;
+      // Thin separation
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
       ctx.stroke();
 
       currentAngle = nextAngle;
     });
 
-    // Center Text
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillStyle = textColor;
-    ctx.fillText('₹' + Number(totalExpense).toLocaleString('en-IN'), centerX, centerY - 4);
-
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = subTextColor;
-    ctx.fillText('ആകെ ചിലവ്', centerX, centerY + 12);
+    // Render Side Legend List
+    if (legendContainer) {
+      legendContainer.innerHTML = slices.map(s => `
+        <div class="legend-item-row">
+          <div class="legend-left">
+            <span class="legend-dot" style="background: ${s.color};"></span>
+            <span style="max-width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.label}</span>
+          </div>
+          <span class="legend-pct">${s.pct}%</span>
+        </div>
+      `).join('');
+    }
   }
 
-  drawRoundedRect(ctx, x, y, width, height, radius) {
-    if (height <= 0) return;
-    const r = Math.min(radius, height / 2, width / 2);
+  drawPill(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
-    ctx.lineTo(x + width - r, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-    ctx.lineTo(x + width, y + height);
-    ctx.lineTo(x, y + height);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
     ctx.lineTo(x, y + r);
     ctx.quadraticCurveTo(x, y, x + r, y);
     ctx.closePath();
