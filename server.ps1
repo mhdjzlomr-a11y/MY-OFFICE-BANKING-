@@ -1,4 +1,7 @@
-# PowerShell Local Static HTTP Web Server for Office Finance
+# =====================================================================
+# Office Finance Local Web Server (Windows PowerShell)
+# =====================================================================
+
 $Port = 5050
 $Root = $PSScriptRoot
 
@@ -6,33 +9,59 @@ $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
 $listener.Prefixes.Add("http://127.0.0.1:$Port/")
 
+# Try to add local Wi-Fi IP for Android mobile access
+$localIP = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "*Wi-Fi*", "*Ethernet*" -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" } | Select-Object -ExpandProperty IPAddress -First 1)
+
+if ($localIP) {
+    try {
+        $listener.Prefixes.Add("http://${localIP}:${Port}/")
+    } catch {
+        # continue with localhost
+    }
+}
+
 try {
     $listener.Start()
 } catch {
-    Write-Host "Port $Port is busy, trying port 8080..."
     $Port = 8080
     $listener = New-Object System.Net.HttpListener
     $listener.Prefixes.Add("http://localhost:$Port/")
+    $listener.Prefixes.Add("http://127.0.0.1:$Port/")
     $listener.Start()
 }
 
-Write-Host "==========================================================" -ForegroundColor Green
-Write-Host " Office Finance Local Web Server is Running!" -ForegroundColor Cyan
-Write-Host " Open URL: http://localhost:$Port" -ForegroundColor Yellow
-Write-Host " (Press Ctrl+C to stop the server)" -ForegroundColor Gray
-Write-Host "==========================================================" -ForegroundColor Green
+Clear-Host
+Write-Host "=================================================================" -ForegroundColor Green
+Write-Host "         OFFICE FINANCE LOCAL SERVER IS LIVE & RUNNING!          " -ForegroundColor Cyan
+Write-Host "         ഓഫീസ് ഫിനാൻസ് ലോക്കൽ വെബ് സെർവർ തയ്യാറാണ്!              " -ForegroundColor Yellow
+Write-Host "=================================================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "  💻 PC Browser URL:      " -NoNewline -ForegroundColor White
+Write-Host "http://localhost:$Port" -ForegroundColor Cyan
+if ($localIP) {
+    Write-Host "  📱 Mobile (Same Wi-Fi): " -NoNewline -ForegroundColor White
+    Write-Host "http://${localIP}:${Port}" -ForegroundColor Yellow
+}
+Write-Host ""
+Write-Host "  [!] Keep this window OPEN while using the application." -ForegroundColor Gray
+Write-Host "  [!] To stop the server: Press Ctrl + C or close this window." -ForegroundColor Gray
+Write-Host "=================================================================" -ForegroundColor Green
+Write-Host ""
 
+# Launch Browser
 Start-Process "http://localhost:$Port"
 
 $mimeTypes = @{
-    ".html" = "text/html; charset=utf-8"
-    ".css"  = "text/css; charset=utf-8"
-    ".js"   = "application/javascript; charset=utf-8"
-    ".json" = "application/json; charset=utf-8"
+    ".html"        = "text/html; charset=utf-8"
+    ".css"         = "text/css; charset=utf-8"
+    ".js"          = "application/javascript; charset=utf-8"
+    ".json"        = "application/json; charset=utf-8"
     ".webmanifest" = "application/manifest+json; charset=utf-8"
-    ".png"  = "image/png"
-    ".svg"  = "image/svg+xml"
-    ".ico"  = "image/x-icon"
+    ".png"         = "image/png"
+    ".svg"         = "image/svg+xml"
+    ".ico"         = "image/x-icon"
+    ".woff2"       = "font/woff2"
+    ".ttf"         = "font/ttf"
 }
 
 while ($listener.IsListening) {
@@ -57,6 +86,7 @@ while ($listener.IsListening) {
             $response.ContentType = $mime
             $response.ContentLength64 = $bytes.Length
             $response.AddHeader("Access-Control-Allow-Origin", "*")
+            $response.AddHeader("Cache-Control", "no-cache")
             $response.OutputStream.Write($bytes, 0, $bytes.Length)
         } else {
             $response.StatusCode = 404
