@@ -103,10 +103,10 @@ class FinanceCharts {
 
     // Draw Smooth Wave Area
     if (coords.length > 1) {
-      // Area gradient
+      // Area gradient matching image (Pink/Magenta Wave)
       const grad = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
-      grad.addColorStop(0, 'rgba(0, 201, 104, 0.22)');
-      grad.addColorStop(1, 'rgba(0, 201, 104, 0.01)');
+      grad.addColorStop(0, 'rgba(225, 29, 72, 0.25)');
+      grad.addColorStop(1, 'rgba(225, 29, 72, 0.01)');
 
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -122,8 +122,8 @@ class FinanceCharts {
       ctx.closePath();
       ctx.fill();
 
-      // Stroke Line
-      ctx.strokeStyle = '#00c968';
+      // Stroke Line (Vibrant Rose/Magenta)
+      ctx.strokeStyle = '#e11d48';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(coords[0].x, coords[0].y);
@@ -134,7 +134,7 @@ class FinanceCharts {
       }
       ctx.stroke();
 
-      // Highlight active point (with vertical guide and dark pill tooltip)
+      // Highlight active point
       const highlightIdx = Math.min(3, coords.length - 1);
       const hl = coords[highlightIdx];
 
@@ -147,7 +147,7 @@ class FinanceCharts {
       ctx.stroke();
 
       // Outer halo dot
-      ctx.fillStyle = '#00c968';
+      ctx.fillStyle = '#e11d48';
       ctx.beginPath();
       ctx.arc(hl.x, hl.y, 5, 0, 2 * Math.PI);
       ctx.fill();
@@ -221,8 +221,8 @@ class FinanceCharts {
     const sortedCats = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]);
     const topCats = sortedCats.slice(0, 5);
 
-    // 5 Vibrant colors from the reference image:
-    const palette = ['#ff6a3c', '#0091ff', '#00c968', '#8d4bf6', '#ffc107'];
+    // Vibrant palette matching reference image:
+    const palette = ['#e11d48', '#6366f1', '#0ea5e9', '#f59e0b', '#10b981'];
     const slices = [];
 
     topCats.forEach((cid, i) => {

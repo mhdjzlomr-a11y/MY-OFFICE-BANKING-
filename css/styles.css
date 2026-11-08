@@ -137,12 +137,12 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--finnova-purple), #818cf8);
+  background: linear-gradient(135deg, #e11d48 0%, #8b5cf6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(92, 84, 248, 0.35);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
 }
 .finnova-brand-text {
   font-size: 1.18rem;
@@ -217,6 +217,38 @@ body {
   border-color: var(--finnova-purple);
   color: var(--finnova-purple);
 }
+/* Language Switcher Option (English | മലയാളം) */
+.lang-pill-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 3px;
+  box-shadow: var(--shadow-sm);
+}
+.lang-pill-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.lang-pill-btn:hover {
+  color: var(--text-dark);
+}
+.lang-pill-btn.active {
+  background: linear-gradient(135deg, #e11d48 0%, #ec4899 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(225, 29, 72, 0.35);
+}
+
 .theme-switch-btn {
   display: inline-flex;
   align-items: center;
@@ -232,8 +264,8 @@ body {
   transition: all 0.15s ease;
 }
 .theme-switch-btn:hover {
-  border-color: var(--finnova-purple);
-  background: var(--finnova-purple-light);
+  border-color: #e11d48;
+  background: rgba(225, 29, 72, 0.08);
 }
 
 /* ================= 2. TITLE BAR & PERIOD FILTER TABS ================= */
@@ -289,9 +321,9 @@ body {
   color: var(--text-dark);
 }
 .period-tab-btn.active {
-  background: var(--light-blue-600);
+  background: #e11d48;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35);
 }
 
 /* Create Entry Button */
@@ -299,23 +331,23 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 10px 22px;
   border-radius: var(--radius-pill);
-  background: var(--finnova-purple);
+  background: linear-gradient(135deg, #e11d48 0%, #d946ef 100%);
   color: #ffffff;
   font-size: 0.88rem;
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(92, 84, 248, 0.35);
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
   transition: all 0.15s ease;
 }
 .btn-create-entry:hover {
-  background: var(--finnova-purple-hover);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
-/* ================= 3. THE 4 STAT CARDS (WITH LIGHT BLUE ACCENT) ================= */
+/* ================= 3. THE 4 VIBRANT GRADIENT STAT CARDS (FROM REFERENCE IMAGE) ================= */
 .finnova-stat-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -333,28 +365,43 @@ body {
 }
 
 .finnova-stat-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
   padding: 20px;
-  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
-  min-height: 150px;
+  min-height: 154px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  color: #ffffff;
 }
 .finnova-stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
 }
 
-/* Special Light Blue Card Accent (User Requested) */
-.finnova-stat-card.accent-light-blue {
-  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--light-blue-50) 100%);
-  border-color: rgba(14, 165, 233, 0.3);
+/* 1. Pink / Magenta Gradient Card */
+.finnova-stat-card.card-gradient-pink {
+  background: linear-gradient(135deg, #e11d48 0%, #be185d 100%);
+  box-shadow: 0 10px 24px rgba(225, 29, 72, 0.28);
+}
+
+/* 2. Purple / Indigo Gradient Card */
+.finnova-stat-card.card-gradient-purple {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.28);
+}
+
+/* 3. Sky / Light Blue Gradient Card */
+.finnova-stat-card.card-gradient-blue {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.28);
+}
+
+/* 4. Warm Orange / Amber Gradient Card */
+.finnova-stat-card.card-gradient-orange {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.28);
 }
 
 .card-label-row {
@@ -366,49 +413,26 @@ body {
 .card-label-text {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.9);
 }
 .card-indicator-bubble {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.bubble-light-blue {
-  background: var(--light-blue-light);
-  color: var(--light-blue-600);
-}
-.bubble-purple {
-  background: var(--finnova-purple-light);
-  color: var(--finnova-purple);
-}
-.bubble-rose {
-  background: var(--coral-light);
-  color: var(--coral-rose);
-}
-.bubble-green {
-  background: var(--emerald-light);
-  color: var(--emerald-green);
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
 
 .card-amount-val {
   font-size: 1.7rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-dark);
+  color: #ffffff !important;
   line-height: 1.1;
   margin-bottom: 8px;
-}
-.card-amount-val.light-blue {
-  color: var(--light-blue-600);
-}
-.card-amount-val.emerald {
-  color: var(--emerald-green);
-}
-.card-amount-val.rose {
-  color: var(--coral-rose);
 }
 
 .card-footer-mini {
@@ -417,7 +441,7 @@ body {
   gap: 6px;
   font-size: 0.74rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.88);
 }
 .trend-pill {
   display: inline-flex;
@@ -426,14 +450,8 @@ body {
   padding: 2px 7px;
   border-radius: var(--radius-pill);
   font-size: 0.7rem;
-}
-.trend-pill.up {
-  background: var(--emerald-light);
-  color: var(--emerald-green);
-}
-.trend-pill.down {
-  background: var(--coral-light);
-  color: var(--coral-rose);
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 /* Mini Bar / Sparkline simulation inside cards */
@@ -441,10 +459,18 @@ body {
   display: flex;
   align-items: flex-end;
   gap: 4px;
-  height: 30px;
+  height: 28px;
   margin-top: 6px;
 }
 .mini-bar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
+  transition: height 0.3s ease;
+}
+.mini-bar.active {
+  background: #ffffff;
+}
   flex: 1;
   background: var(--finnova-purple-light);
   border-radius: 3px;

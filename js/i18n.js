@@ -1,302 +1,357 @@
 /**
- * i18n.js - Bilingual Internationalization (Malayalam & English)
+ * i18n.js - Complete Bilingual Internationalization Engine (Malayalam & English)
  */
 
 const translations = {
   ml: {
     // Top Bar & App Info
     appTitle: 'OFFICE FINANCE TRACKER',
-    appSubtitle: 'വരവ്-ചിലവ് മാനേജ്‌മെന്റ് സിസ്റ്റം',
+    appSubtitle: 'സ്മാർട്ട് ഓഫീസ് ഫിനാൻസ് മാനേജ്‌മെന്റ്',
     langToggle: 'English',
     themeToggle: 'തീം മാറ്റുക',
+    dark: 'ഡാർക്ക്',
+    light: 'ലൈറ്റ്',
     installApp: 'ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുക',
 
     // Navigation
-    navDashboard: 'ഡാഷ്‌ബോർഡ്',
-    navTransactions: 'കണക്കുകൾ',
-    navAdd: 'പുതിയത്',
-    navReports: 'റിപ്പോർട്ടുകൾ',
-    navSettings: 'സെറ്റിംഗ്സ്',
+    navOverview: 'Overview',
+    navFinances: 'Finances',
+    navReports: 'Reports',
+    navSettings: 'Settings',
 
-    // Dashboard Cards
-    netBalance: 'ആകെ മിച്ചം (ബാലൻസ്)',
-    totalIncome: 'ആകെ വരവ്',
-    totalExpense: 'ആകെ ചിലവ്',
-    thisMonthNet: 'ഈ മാസത്തെ മിച്ചം',
-    todayIncome: 'ഇന്നത്തെ വരവ്',
-    todayExpense: 'ഇന്നത്തെ ചിലവ്',
-    quickActions: 'ദ്രുത എൻട്രികൾ',
-    btnNewIncome: '+ വരവ് ചേർക്കുക',
-    btnNewExpense: '+ ചിലവ് ചേർക്കുക',
-    monthlyTrend: 'പ്രതിമാസ വരവ്-ചിലവ് അവലോകനം',
-    expenseBreakdown: 'ചിലവുകളുടെ കാറ്റഗറി വിഹിതം',
-    recentTransactions: 'സമീപകാല ഇടപാടുകൾ',
-    viewAll: 'മുഴുവൻ കാണുക',
-    noTransactionsYet: 'ഇടപാടുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല. "+ വരവ്" അല്ലെങ്കിൽ "+ ചിലവ്" ക്ലിക്ക് ചെയ്ത് തുടങ്ങുക!',
+    // Page Title & Period Tabs
+    pageTitle: 'ഇടപാടുകളും ഫിനാൻസും',
+    pageSub: 'ഓഫീസ് വരവ് ചിലവ് കണക്കുകൾ കൃത്യമായി രേഖപ്പെടുത്താം.',
+    periodDaily: 'Daily (ഇന്ന്)',
+    periodWeekly: 'Weekly (ഈ ആഴ്ച)',
+    periodMonthly: 'Monthly (ഈ മാസം)',
+    periodYearly: 'Yearly (ഈ വർഷം)',
+    periodAll: 'All Time (മുഴുവൻ)',
+    btnCreateTx: '+ പുതിയ ഇടപാട്',
 
-    // Transactions Ledger
-    ledgerTitle: 'ഇടപാടുകളുടെ ലെഡ്ജർ',
-    searchPlaceholder: 'വ്യക്തി, ബിൽ നമ്പർ, വിവരണം തിരയുക...',
-    filterAll: 'എല്ലാം',
-    filterIncome: 'വരവ് മാത്രം',
-    filterExpense: 'ചിലവ് മാത്രം',
-    filterCategory: 'കാറ്റഗറി',
-    filterAllCategories: 'എല്ലാ കാറ്റഗറികളും',
-    filterDateRange: 'തീയതി ക്രമം',
-    rangeAllTime: 'എല്ലാ സമയത്തെയും',
-    rangeToday: 'ഇന്ന്',
-    rangeYesterday: 'ഇന്നലെ',
-    rangeThisWeek: 'ഈ ആഴ്ച',
-    rangeThisMonth: 'ഈ മാസം',
-    rangeCustom: 'നിശ്ചിത തീയതി',
-    fromDate: 'തീയതി മുതൽ',
-    toDate: 'തീയതി വരെ',
-    colDate: 'തീയതി',
-    colCategory: 'വിഭാഗം',
-    colParty: 'വ്യക്തി / സ്ഥാപനം',
-    colNotes: 'വിവരണം / ബിൽ',
-    colAmount: 'തുക',
-    colActions: 'നടപടികൾ',
+    // The 4 Stat Cards
+    netBalance: 'ആകെ മിച്ചം (Net Balance)',
+    totalIncome: 'ആകെ വരവ് (Total Income)',
+    totalExpense: 'ആകെ ചിലവ് (Total Expense)',
+    inStorage: 'സ്റ്റോറേജിലെ കണക്കുകൾ',
+    incomeCountLabel: 'വരവ് ഇടപാടുകൾ:',
+    expenseCountLabel: 'ചിലവ് ഇടപാടുകൾ:',
+    activePeriodLabelDaily: 'ഇന്നത്തെ കണക്ക്',
+    activePeriodLabelWeekly: 'ഈ ആഴ്ചയിലെ കണക്ക്',
+    activePeriodLabelMonthly: 'ഈ മാസത്തെ കണക്ക്',
+    activePeriodLabelYearly: 'ഈ വർഷത്തെ കണക്ക്',
+    activePeriodLabelAll: 'ആകെ കണക്ക്',
 
-    // Transaction Modal
-    modalAddTitle: 'പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക',
-    modalEditTitle: 'ഇടപാട് തിരുത്തുക',
-    typeIncome: 'വരവ് (Income)',
-    typeExpense: 'ചിലവ് (Expense)',
-    labelAmount: 'തുക (₹)',
-    labelCategory: 'കാറ്റഗറി തിരഞ്ഞെടുക്കുക',
-    btnAddCategory: '+ പുതിയ കാറ്റഗറി',
-    labelDate: 'തീയതി & സമയം',
-    labelPartyExpense: 'ആർക്ക് നൽകി (Paid To)',
-    labelPartyIncome: 'ആരിൽ നിന്ന് ലഭിച്ചു (Received From)',
-    labelBillNo: 'ബിൽ / ഇൻവോയ്സ് / വൗച്ചർ നമ്പർ (ഓപ്ഷണൽ)',
-    labelNotes: 'കുറിപ്പുകൾ / വിവരണം (ഓപ്ഷണൽ)',
-    labelAttachment: 'ബിൽ / രസീത് ഫോട്ടോ (ഓപ്ഷണൽ)',
-    btnTakePhoto: 'ക്യാമറ / ഫോട്ടോ തിരഞ്ഞെടുക്കുക',
-    btnRemovePhoto: 'ഫോട്ടോ മാറ്റുക',
-    btnSave: 'സേവ് ചെയ്യുക',
-    btnCancel: 'റദ്ദാക്കുക',
-    btnDelete: 'ഡിലീറ്റ് ചെയ്യുക',
+    // Active Filter & Exports Banner
+    filterLabel: 'ഫിൽട്ടർ:',
+    filterAll: 'എല്ലാം (All)',
+    filterExpense: 'ചിലവ് (Expense)',
+    filterIncome: 'വരവ് (Income)',
+    searchEntryPlaceholder: 'തിരയുക...',
+    btnPrint: 'പ്രിന്റ്',
 
-    // Custom Category Modal
-    catModalTitle: 'പുതിയ കാറ്റഗറി ചേർക്കുക',
-    catTypeLabel: 'കാറ്റഗറിയുടെ തരം',
-    catNameMl: 'മലയാളം പേര്',
-    catNameEn: 'English പേര്',
-    catColorLabel: 'നിറം തിരഞ്ഞെടുക്കുക',
-    btnSaveCat: 'കാറ്റഗറി ചേർക്കുക',
+    // Finnova Navy Split Board
+    recentTransactions: 'സമീപകാല ഇടപാടുകൾ (Transactions)',
+    invoiceDetails: 'ഇൻവോയ്സ് / വൗച്ചർ വിവരങ്ങൾ',
+    verified: 'പരിശോധിച്ചത്',
+    amountCol: 'തുക (AMOUNT)',
+    categoryCol: 'വിഭാഗം (CATEGORY)',
+    dateCol: 'തീയതി (DATE)',
+    partyDetailsLabel: 'ആർക്ക് നൽകി / ലഭിച്ചത്:',
+    noNotes: 'കുറിപ്പുകൾ ലഭ്യമല്ല',
+    totalBalanceLabel: 'മൊത്തം തുക (Total Balance)',
+    btnPrintVoucher: 'വൗച്ചർ PDF',
+    noTxSelected: 'ഈ കാറ്റഗറിയിൽ ഇടപാടുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല',
 
-    // Reports & Exports
-    reportsTitle: 'റിപ്പോർട്ടുകളും സ്റ്റേറ്റ്‌മെന്റുകളും',
-    reportsSubtitle: 'ഓഫീസ് കണക്കുകളുടെ ഔദ്യോഗിക PDF വൗച്ചറുകളും എക്സൽ ഫയലുകളും ഡൗൺലോഡ് ചെയ്യുക',
+    // Charts
+    financialFlow: 'Financial Flow (ഒഴുക്ക്)',
+    trendOverview: 'Trend Overview',
+    categoryBreakdown: 'Category Breakdown',
+
+    // Transactions Full View
+    searchLedgerPlaceholder: 'വ്യക്തി, കാറ്റഗറി, ബിൽ, വിവരണം തിരയുക...',
+    filterAllTypes: 'All Types (എല്ലാം)',
+    filterIncomeOnly: 'Income Only (വരവ്)',
+    filterExpenseOnly: 'Expense Only (ചിലവ്)',
+    filterAllCategories: 'All Categories',
+    foundEntries: 'കണ്ടെത്തിയവ:',
+    entriesUnit: 'ഇടപാടുകൾ',
+
+    // Reports View - 1-Click Cards
+    reportsTitle: 'റിപ്പോർട്ടുകളും ഡൗൺലോഡുകളും (Reports & Downloads)',
+    reportsSubtitle: 'Daily, Weekly, Monthly, Yearly സ്റ്റേറ്റ്‌മെന്റുകൾ PDF ആയോ Excel ആയോ ഒരൊറ്റ ക്ലിക്കിൽ ഡൗൺലോഡ് ചെയ്യാം',
+    dailyReportTitle: 'ഇന്നത്തെ കണക്ക്',
+    dailyReportSub: 'Daily Report (Today)',
+    dailyReportDesc: 'ഇന്നത്തെ എല്ലാ വരവ് ചിലവ് വിവരങ്ങളും അടങ്ങിയ റിപ്പോർട്ട്',
+    weeklyReportTitle: 'ഈ ആഴ്ചയിലെ കണക്ക്',
+    weeklyReportSub: 'Weekly Statement',
+    weeklyReportDesc: 'കഴിഞ്ഞ 7 ദിവസങ്ങളിലെ ഔദ്യോഗിക ഫിനാൻഷ്യൽ സ്റ്റേറ്റ്‌മെന്റ്',
+    monthlyReportTitle: 'ഈ മാസത്തെ കണക്ക്',
+    monthlyReportSub: 'Monthly Statement',
+    monthlyReportDesc: 'നടപ്പു മാസത്തെ കാറ്റഗറി തിരിച്ചുള്ള സമഗ്ര കണക്കുകൾ',
+    yearlyReportTitle: 'ഈ വർഷത്തെ കണക്ക്',
+    yearlyReportSub: 'Annual Financial Report',
+    yearlyReportDesc: 'മുഴുവൻ സാമ്പത്തിക വർഷത്തെ വരുമാന, ചിലവ് ഓഡിറ്റ് റിപ്പോർട്ട്',
+
+    customRangeTitle: 'കസ്റ്റം ഡേറ്റ് റേഞ്ച് റിപ്പോർട്ട് (Custom Period)',
     btnDownloadPDF: '📄 PDF സ്റ്റേറ്റ്‌മെന്റ് ഡൗൺലോഡ്',
     btnDownloadExcel: '📊 എക്സൽ (Excel / CSV) ഡൗൺലോഡ്',
     btnPrintStatement: '🖨️ പ്രിന്റ് ചെയ്യുക',
-    reportSummary: 'തിരഞ്ഞെടുത്ത കാലയളവിലെ സംഗ്രഹം',
-    reportTotalTx: 'ആകെ ഇടപാടുകൾ',
-    topExpenseCat: 'കൂടുതൽ ചിലവായ വിഭാഗം',
-    voucherTitle: 'ക്യാഷ് പേയ്‌മെന്റ് / റെസീറ്റ് വൗച്ചർ',
-    btnPrintVoucher: 'പ്രിന്റ് വൗച്ചർ',
 
-    // Settings
-    settingsTitle: 'ഓഫീസ് ക്രമീകരണങ്ങൾ',
-    profileSection: 'ഓഫീസ് പ്രൊഫൈൽ',
+    // Settings View
+    categoryManagement: 'കാറ്റഗറി മാനേജ്‌മെന്റ്',
+    categorySub: 'വരവ്, ചിലവ് വിഭാഗങ്ങൾ പരിശോധിക്കുകയോ പുതിയവ ചേർക്കുകയോ ചെയ്യാം',
+    btnAddCategory: '+ പുതിയ കാറ്റഗറി',
+    expenseCategories: 'ചിലവ് വിഭാഗങ്ങൾ (Expense Categories)',
+    incomeCategories: 'വരവ് വിഭാഗങ്ങൾ (Income Categories)',
+    officeProfile: 'ഓഫീസ് പ്രൊഫൈൽ',
+    officeProfileSub: 'PDF വൗച്ചറുകളിലും സ്റ്റേറ്റ്‌മെന്റുകളിലും വരുന്ന വിവരങ്ങൾ',
     profileName: 'സ്ഥാപനത്തിന്റെ പേര്',
-    profileTagline: 'ഉപശീർഷകം / വിവരണം',
+    profileTagline: 'ഉപശീർഷകം',
     profileAddress: 'വിലാസം',
     profilePhone: 'ഫോൺ നമ്പർ',
-    profileEmail: 'ഇമെയിൽ',
-    profileCurrency: 'കറൻസി ചിഹ്നം',
-    btnSaveProfile: 'പ്രൊഫൈൽ സേവ് ചെയ്യുക',
-    categorySection: 'കാറ്റഗറി മാനേജ്‌മെന്റ്',
-    backupSection: 'ഡാറ്റാ ബാക്കപ്പും സുരക്ഷയും',
-    btnBackupJSON: '📥 ബാക്കപ്പ് ഫയൽ ഡൗൺലോഡ് ചെയ്യുക (JSON)',
-    btnRestoreJSON: '📤 ബാക്കപ്പ് ഫയൽ റീസ്റ്റോർ ചെയ്യുക',
-    securitySection: 'ആപ്പ് സെക്യൂരിറ്റി PIN',
+    profileCurrency: 'കറൻസി',
+    btnSaveProfile: 'സേവ് ചെയ്യുക',
+    dataBackup: 'ഡാറ്റാ ബാക്കപ്പ്',
+    dataBackupSub: 'കണക്കുകൾ ബാക്കപ്പ് എടുക്കാനും തിരിച്ചെടുക്കാനും',
+    btnDownloadBackupJSON: '📥 ഡൗൺലോഡ് ബാക്കപ്പ് (JSON)',
+    btnRestoreJSON: '📤 ബാക്കപ്പ് റീസ്റ്റോർ ചെയ്യുക',
+    appSecurity: 'ആപ്പ് സെക്യൂരിറ്റി',
+    appSecuritySub: '4-അക്ക സുരക്ഷാ PIN ലോക്ക്',
     pinStatusActive: 'PIN സുരക്ഷ സജീവമാണ്',
     pinStatusInactive: 'PIN സുരക്ഷ ഓഫാണ്',
-    btnSetPin: '4-അക്ക PIN സെറ്റ് ചെയ്യുക',
-    btnRemovePin: 'PIN മാറ്റുക',
-    dangerZone: 'ഡാറ്റാ റീസെറ്റ്',
+    btnChangePin: 'PIN മാറ്റുക',
     btnClearAll: '⚠️ എല്ലാ ഇടപാടുകളും മായ്ക്കുക',
 
-    // Notifications & Prompts
+    // Modals
+    modalAddTitle: 'പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക',
+    modalEditTitle: 'ഇടപാട് തിരുത്തുക',
+    typeExpense: 'ചിലവ് (Expense)',
+    typeIncome: 'വരവ് (Income)',
+    amountLabel: 'തുക (₹ Amount)',
+    categoryLabel: 'വിഭാഗം / കാറ്റഗറി (Type or Select Category)',
+    categoryPlaceholder: 'കാറ്റഗറി ടൈപ്പ് ചെയ്യുക അല്ലെങ്കിൽ തിരഞ്ഞെടുക്കുക...',
+    dateLabel: 'തീയതി (Date)',
+    partyLabelExpense: 'ആർക്ക് നൽകി (Paid To)',
+    partyLabelIncome: 'ആരിൽ നിന്ന് ലഭിച്ചു (Received From)',
+    partyPlaceholder: 'വ്യക്തി അല്ലെങ്കിൽ സ്ഥാപനത്തിന്റെ പേര്',
+    billNoLabel: 'ബിൽ / ഇൻവോയ്സ് നമ്പർ (Bill / Invoice #)',
+    notesLabel: 'കുറിപ്പുകൾ / വിവരണം (Notes)',
+    attachmentLabel: 'ബിൽ / രസീത് ഫോട്ടോ (Attachment)',
+    btnTakePhoto: 'ഫോട്ടോ എടുക്കുക / അപ്‌ലോഡ് ചെയ്യുക',
+    photoAttached: 'ഫോട്ടോ അറ്റാച്ച് ചെയ്തു',
+    btnCancel: 'റദ്ദാക്കുക',
+    btnSave: 'സേവ് ചെയ്യുക',
+
+    // Toasts
     savedSuccess: 'ഇടപാട് വിജയകരമായി സേവ് ചെയ്തു!',
     updatedSuccess: 'ഇടപാട് അപ്ഡേറ്റ് ചെയ്തു!',
-    deletedSuccess: 'ഇടപാട് നീക്കം ചെയ്തു!',
-    categoryAdded: 'പുതിയ കാറ്റഗറി വിജയകരമായി ചേർത്തു!',
-    profileSaved: 'ഓഫീസ് പ്രൊഫൈൽ അപ്ഡേറ്റ് ചെയ്തു!',
-    backupDownloaded: 'ബാക്കപ്പ് ഫയൽ ഡൗൺലോഡ് ചെയ്തു!',
-    backupSuccess: 'ബാക്കപ്പ് വിജയകരമായി റീസ്റ്റോർ ചെയ്തു!',
-    backupError: 'ബാക്കപ്പ് ഫയൽ തെറ്റാണ്!',
-    confirmDelete: 'ഈ ഇടപാട് തീർച്ചയായും ഒഴിവാക്കണമോ?',
-    confirmClearAll: 'ശ്രദ്ധിക്കുക: എല്ലാ കണക്കുകളും സ്ഥിരമായി മായ്ക്കപ്പെടും! തുടരണമോ?',
-    enterPinPrompt: 'തുടരാൻ നിങ്ങളുടെ 4-അക്ക PIN നൽകുക:',
-    wrongPin: 'നൽകിയ PIN തെറ്റാണ്!',
-    pinSetSuccess: 'സുരക്ഷാ PIN വിജയകരമായി സെറ്റ് ചെയ്തു!'
+    deletedSuccess: 'ഇടപാട് മായ്ച്ചു!',
+    categoryAdded: 'പുതിയ കാറ്റഗറി ചേർത്തു!',
+    profileSaved: 'ഓഫീസ് പ്രൊഫൈൽ സേവ് ചെയ്തു!',
+    backupDownloaded: 'ബാക്കപ്പ് ഡൗൺലോഡ് പൂർത്തിയായി!',
+    confirmDelete: 'ഈ ഇടപാട് ഡിലീറ്റ് ചെയ്യണമെന്ന് ഉറപ്പാണോ?',
+    confirmClearAll: 'ശ്രദ്ധിക്കുക: എല്ലാ വരവ് ചിലവ് ഇടപാടുകളും പൂർണ്ണമായും മായ്ക്കപ്പെടും. തുടരണമോ?'
   },
 
   en: {
     // Top Bar & App Info
     appTitle: 'OFFICE FINANCE TRACKER',
-    appSubtitle: 'Income & Expense Management System',
+    appSubtitle: 'Smart Finances, Better Business',
     langToggle: 'മലയാളം',
     themeToggle: 'Toggle Theme',
+    dark: 'Dark',
+    light: 'Light',
     installApp: 'Install App',
 
     // Navigation
-    navDashboard: 'Dashboard',
-    navTransactions: 'Transactions',
-    navAdd: 'Add Entry',
+    navOverview: 'Overview',
+    navFinances: 'Finances',
     navReports: 'Reports',
     navSettings: 'Settings',
 
-    // Dashboard Cards
+    // Page Title & Period Tabs
+    pageTitle: 'Invoices & Finances',
+    pageSub: 'Manage and track all your office income and expenses in one place.',
+    periodDaily: 'Daily (Today)',
+    periodWeekly: 'Weekly (This Week)',
+    periodMonthly: 'Monthly (This Month)',
+    periodYearly: 'Yearly (This Year)',
+    periodAll: 'All Time',
+    btnCreateTx: '+ Create Transaction',
+
+    // The 4 Stat Cards
     netBalance: 'Net Balance',
     totalIncome: 'Total Income',
     totalExpense: 'Total Expense',
-    thisMonthNet: 'This Month Net',
-    todayIncome: "Today's Income",
-    todayExpense: "Today's Expense",
-    quickActions: 'Quick Actions',
-    btnNewIncome: '+ Add Income',
-    btnNewExpense: '+ Add Expense',
-    monthlyTrend: 'Monthly Income vs Expense Trend',
-    expenseBreakdown: 'Expense Breakdown by Category',
-    recentTransactions: 'Recent Transactions',
-    viewAll: 'View All',
-    noTransactionsYet: 'No transactions recorded yet. Click "+ Add Income" or "+ Add Expense" to start!',
+    inStorage: 'Available In Storage',
+    incomeCountLabel: 'Income Entries:',
+    expenseCountLabel: 'Expense Entries:',
+    activePeriodLabelDaily: "Today's Ledger",
+    activePeriodLabelWeekly: 'This Week',
+    activePeriodLabelMonthly: 'This Month',
+    activePeriodLabelYearly: 'This Year',
+    activePeriodLabelAll: 'All Time Total',
 
-    // Transactions Ledger
-    ledgerTitle: 'Transactions Ledger',
-    searchPlaceholder: 'Search party, bill no, description...',
+    // Active Filter & Exports Banner
+    filterLabel: 'Filter:',
     filterAll: 'All',
-    filterIncome: 'Income Only',
-    filterExpense: 'Expense Only',
-    filterCategory: 'Category',
+    filterExpense: 'Expense',
+    filterIncome: 'Income',
+    searchEntryPlaceholder: 'Search entry...',
+    btnPrint: 'Print',
+
+    // Finnova Navy Split Board
+    recentTransactions: 'Recent Transactions',
+    invoiceDetails: 'Invoice / Voucher Details',
+    verified: 'Verified',
+    amountCol: 'AMOUNT',
+    categoryCol: 'CATEGORY',
+    dateCol: 'DATE',
+    partyDetailsLabel: 'Paid To / Received From:',
+    noNotes: 'No remarks provided',
+    totalBalanceLabel: 'Total Balance',
+    btnPrintVoucher: 'Voucher PDF',
+    noTxSelected: 'No transactions found in this category',
+
+    // Charts
+    financialFlow: 'Financial Flow',
+    trendOverview: 'Trend Overview',
+    categoryBreakdown: 'Category Breakdown',
+
+    // Transactions Full View
+    searchLedgerPlaceholder: 'Search party, category, bill, notes...',
+    filterAllTypes: 'All Types',
+    filterIncomeOnly: 'Income Only',
+    filterExpenseOnly: 'Expense Only',
     filterAllCategories: 'All Categories',
-    filterDateRange: 'Date Range',
-    rangeAllTime: 'All Time',
-    rangeToday: 'Today',
-    rangeYesterday: 'Yesterday',
-    rangeThisWeek: 'This Week',
-    rangeThisMonth: 'This Month',
-    rangeCustom: 'Custom Range',
-    fromDate: 'From Date',
-    toDate: 'To Date',
-    colDate: 'Date',
-    colCategory: 'Category',
-    colParty: 'Paid To / Received From',
-    colNotes: 'Notes / Bill No',
-    colAmount: 'Amount',
-    colActions: 'Actions',
+    foundEntries: 'Found:',
+    entriesUnit: 'entries',
 
-    // Transaction Modal
-    modalAddTitle: 'Record New Transaction',
-    modalEditTitle: 'Edit Transaction',
-    typeIncome: 'Income',
-    typeExpense: 'Expense',
-    labelAmount: 'Amount (₹)',
-    labelCategory: 'Select Category',
-    btnAddCategory: '+ New Category',
-    labelDate: 'Date & Time',
-    labelPartyExpense: 'Paid To',
-    labelPartyIncome: 'Received From',
-    labelBillNo: 'Bill / Invoice / Voucher No (Optional)',
-    labelNotes: 'Notes / Remarks (Optional)',
-    labelAttachment: 'Bill / Receipt Photo (Optional)',
-    btnTakePhoto: 'Take / Upload Photo',
-    btnRemovePhoto: 'Remove Photo',
-    btnSave: 'Save Entry',
-    btnCancel: 'Cancel',
-    btnDelete: 'Delete',
+    // Reports View - 1-Click Cards
+    reportsTitle: 'Reports & Downloads',
+    reportsSubtitle: 'Download official Daily, Weekly, Monthly, and Yearly statements in PDF or Excel with 1-click',
+    dailyReportTitle: "Today's Accounts",
+    dailyReportSub: 'Daily Report (Today)',
+    dailyReportDesc: "Complete itemized statement of today's income & expenses",
+    weeklyReportTitle: "This Week's Accounts",
+    weeklyReportSub: 'Weekly Statement',
+    weeklyReportDesc: 'Official financial statement of transactions over the last 7 days',
+    monthlyReportTitle: "This Month's Accounts",
+    monthlyReportSub: 'Monthly Statement',
+    monthlyReportDesc: 'Comprehensive monthly category breakdown of all operations',
+    yearlyReportTitle: "This Year's Accounts",
+    yearlyReportSub: 'Annual Financial Report',
+    yearlyReportDesc: 'Complete financial statement and audit summary for the current year',
 
-    // Custom Category Modal
-    catModalTitle: 'Add New Category',
-    catTypeLabel: 'Category Type',
-    catNameMl: 'Malayalam Name',
-    catNameEn: 'English Name',
-    catColorLabel: 'Select Color',
-    btnSaveCat: 'Save Category',
-
-    // Reports & Exports
-    reportsTitle: 'Reports & Statements',
-    reportsSubtitle: 'Download official PDF statements, vouchers, and Excel spreadsheets',
+    customRangeTitle: 'Custom Date Range Report',
     btnDownloadPDF: '📄 Download PDF Statement',
     btnDownloadExcel: '📊 Download Excel (CSV)',
     btnPrintStatement: '🖨️ Print Statement',
-    reportSummary: 'Summary of Selected Period',
-    reportTotalTx: 'Total Transactions',
-    topExpenseCat: 'Top Expense Category',
-    voucherTitle: 'Payment / Receipt Voucher',
-    btnPrintVoucher: 'Print Voucher',
 
-    // Settings
-    settingsTitle: 'Office Settings',
-    profileSection: 'Office Profile',
+    // Settings View
+    categoryManagement: 'Category Management',
+    categorySub: 'Review or add custom income and expense categories',
+    btnAddCategory: '+ New Category',
+    expenseCategories: 'Expense Categories',
+    incomeCategories: 'Income Categories',
+    officeProfile: 'Office Profile',
+    officeProfileSub: 'Information displayed on PDF vouchers and financial statements',
     profileName: 'Office / Business Name',
-    profileTagline: 'Subtitle / Tagline',
+    profileTagline: 'Tagline / Subtitle',
     profileAddress: 'Address',
     profilePhone: 'Phone Number',
-    profileEmail: 'Email',
-    profileCurrency: 'Currency Symbol',
+    profileCurrency: 'Currency',
     btnSaveProfile: 'Save Profile',
-    categorySection: 'Category Management',
-    backupSection: 'Data Backup & Security',
-    btnBackupJSON: '📥 Download Backup (JSON)',
+    dataBackup: 'Data Backup',
+    dataBackupSub: 'Backup and restore financial records',
+    btnDownloadBackupJSON: '📥 Download Backup (JSON)',
     btnRestoreJSON: '📤 Restore Backup File',
-    securitySection: 'App Security PIN',
+    appSecurity: 'App Security',
+    appSecuritySub: '4-digit security PIN lock',
     pinStatusActive: 'PIN Security is Active',
     pinStatusInactive: 'PIN Security is Disabled',
-    btnSetPin: 'Set 4-Digit PIN',
-    btnRemovePin: 'Remove PIN',
-    dangerZone: 'Data Reset',
+    btnChangePin: 'Change PIN',
     btnClearAll: '⚠️ Clear All Transactions',
 
-    // Notifications & Prompts
+    // Modals
+    modalAddTitle: 'Record New Transaction',
+    modalEditTitle: 'Edit Transaction',
+    typeExpense: 'Expense',
+    typeIncome: 'Income',
+    amountLabel: 'Amount (₹)',
+    categoryLabel: 'Category (Type or Select)',
+    categoryPlaceholder: 'Type category or pick from list...',
+    dateLabel: 'Date',
+    partyLabelExpense: 'Paid To',
+    partyLabelIncome: 'Received From',
+    partyPlaceholder: 'Person or Company Name',
+    billNoLabel: 'Bill / Invoice # (Optional)',
+    notesLabel: 'Notes / Description (Optional)',
+    attachmentLabel: 'Bill / Receipt Photo (Optional)',
+    btnTakePhoto: 'Take / Upload Photo',
+    photoAttached: 'Photo Attached',
+    btnCancel: 'Cancel',
+    btnSave: 'Save Entry',
+
+    // Toasts
     savedSuccess: 'Transaction saved successfully!',
     updatedSuccess: 'Transaction updated successfully!',
     deletedSuccess: 'Transaction deleted successfully!',
     categoryAdded: 'New category added successfully!',
-    profileSaved: 'Office profile updated!',
-    backupDownloaded: 'Backup file downloaded!',
-    backupSuccess: 'Backup restored successfully!',
-    backupError: 'Invalid backup file!',
+    profileSaved: 'Office profile saved successfully!',
+    backupDownloaded: 'Backup download completed!',
     confirmDelete: 'Are you sure you want to delete this transaction?',
-    confirmClearAll: 'Warning: All records will be permanently erased! Continue?',
-    enterPinPrompt: 'Enter your 4-digit PIN to continue:',
-    wrongPin: 'Incorrect PIN entered!',
-    pinSetSuccess: 'Security PIN set successfully!'
+    confirmClearAll: 'Warning: All transactions will be permanently deleted. Continue?'
   }
 };
 
 class I18nEngine {
   constructor() {
-    this.currentLang = 'ml'; // Default to Malayalam
+    this.currentLang = 'en'; // default or restored
   }
 
   async init() {
+    let savedLang = 'en';
     if (window.dbEngine) {
-      const savedLang = await window.dbEngine.getSetting('language', 'ml');
-      this.currentLang = savedLang;
+      savedLang = await window.dbEngine.getSetting('appLanguage', 'en');
     }
+    this.currentLang = savedLang;
     this.applyTranslations();
+    this.updateLanguageUI();
   }
 
   t(key) {
-    const dict = translations[this.currentLang] || translations.ml;
-    return dict[key] || translations.en[key] || key;
+    const dict = translations[this.currentLang] || translations.en;
+    return dict[key] || (translations.en && translations.en[key]) || key;
   }
 
   async setLanguage(lang) {
     if (translations[lang]) {
       this.currentLang = lang;
       if (window.dbEngine) {
-        await window.dbEngine.setSetting('language', lang);
+        await window.dbEngine.setSetting('appLanguage', lang);
       }
       this.applyTranslations();
+      this.updateLanguageUI();
+
       if (window.appEngine) {
-        window.appEngine.renderCurrentView();
+        window.appEngine.onLanguageChanged();
+      }
+    }
+  }
+
+  updateLanguageUI() {
+    const btnMl = document.getElementById('btnSetLangMl');
+    const btnEn = document.getElementById('btnSetLangEn');
+
+    if (btnMl && btnEn) {
+      if (this.currentLang === 'ml') {
+        btnMl.classList.add('active');
+        btnEn.classList.remove('active');
+      } else {
+        btnEn.classList.add('active');
+        btnMl.classList.remove('active');
       }
     }
   }
@@ -331,7 +386,6 @@ class I18nEngine {
       }
     });
 
-    // Update document title
     document.title = `${this.t('appTitle')} | ${this.t('appSubtitle')}`;
   }
 }

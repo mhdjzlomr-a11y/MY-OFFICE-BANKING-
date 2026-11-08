@@ -39,31 +39,31 @@
       <!-- Center: Dark Pill Navigation (Finnova Style) -->
       <nav class="finnova-center-pill-nav">
         <button class="finnova-nav-btn nav-item active" data-target="dashboard">
-          <i data-lucide="layout-dashboard"></i> Overview
+          <i data-lucide="layout-dashboard"></i> <span data-i18n="navOverview">Overview</span>
         </button>
         <button class="finnova-nav-btn nav-item" data-target="transactions">
-          <i data-lucide="receipt"></i> Finances
+          <i data-lucide="receipt"></i> <span data-i18n="navFinances">Finances</span>
         </button>
         <button class="finnova-nav-btn nav-item" data-target="reports">
-          <i data-lucide="bar-chart-3"></i> Reports
+          <i data-lucide="bar-chart-3"></i> <span data-i18n="navReports">Reports</span>
         </button>
         <button class="finnova-nav-btn nav-item" data-target="settings">
-          <i data-lucide="settings"></i> Settings
+          <i data-lucide="settings"></i> <span data-i18n="navSettings">Settings</span>
         </button>
       </nav>
 
       <!-- Right: Action Buttons (Theme Toggle, Lang, Lock, Install) -->
       <div class="finnova-top-actions">
+        <!-- Language Switcher Option (English & Malayalam) -->
+        <div class="lang-pill-switcher" role="group" aria-label="Language Selector">
+          <button type="button" id="btnSetLangMl" class="lang-pill-btn" title="മലയാളത്തിലേക്ക് മാറ്റുക">മലയാളം</button>
+          <button type="button" id="btnSetLangEn" class="lang-pill-btn active" title="Switch to English">English</button>
+        </div>
+
         <!-- Dark Theme Toggle Pill -->
         <button id="btnDarkToggle" class="theme-switch-btn" title="Dark / Light Theme Toggle">
           <span id="darkToggleIcon">🌙</span>
-          <span id="darkToggleLabel">Dark</span>
-        </button>
-
-        <!-- Language Pill -->
-        <button id="btnLangToggle" class="theme-switch-btn" title="Change Language">
-          <i data-lucide="globe"></i>
-          <span id="langLabelText">മലയാളം</span>
+          <span id="darkToggleLabel" data-i18n="dark">Dark</span>
         </button>
 
         <!-- Quick PIN Lock -->
@@ -87,42 +87,42 @@
         <!-- Title Row with Heading & Period Tabs -->
         <div class="finnova-title-row">
           <div class="page-heading-block">
-            <h2 class="page-title">Invoices & Finances</h2>
-            <p class="page-sub">Manage and track all your office income and expenses in one place.</p>
+            <h2 class="page-title" data-i18n="pageTitle">Invoices & Finances</h2>
+            <p class="page-sub" data-i18n="pageSub">Manage and track all your office income and expenses in one place.</p>
           </div>
 
           <!-- Period Filter Tabs (Daily, Weekly, Monthly, Yearly, All) -->
           <div class="period-tabs-wrapper">
-            <button class="period-tab-btn active" data-period="daily">Daily (ഇന്ന്)</button>
-            <button class="period-tab-btn" data-period="weekly">Weekly (ഈ ആഴ്ച)</button>
-            <button class="period-tab-btn" data-period="monthly">Monthly (ഈ മാസം)</button>
-            <button class="period-tab-btn" data-period="yearly">Yearly (ഈ വർഷം)</button>
-            <button class="period-tab-btn" data-period="all">All Time (മുഴുവൻ)</button>
+            <button class="period-tab-btn active" data-period="daily" data-i18n="periodDaily">Daily (ഇന്ന്)</button>
+            <button class="period-tab-btn" data-period="weekly" data-i18n="periodWeekly">Weekly (ഈ ആഴ്ച)</button>
+            <button class="period-tab-btn" data-period="monthly" data-i18n="periodMonthly">Monthly (ഈ മാസം)</button>
+            <button class="period-tab-btn" data-period="yearly" data-i18n="periodYearly">Yearly (ഈ വർഷം)</button>
+            <button class="period-tab-btn" data-period="all" data-i18n="periodAll">All Time (മുഴുവൻ)</button>
           </div>
 
           <!-- Create Transaction Button -->
           <button id="btnOpenAddTxModal" class="btn-create-entry">
             <i data-lucide="plus"></i>
-            <span>+ Create Transaction</span>
+            <span data-i18n="btnCreateTx">+ Create Transaction</span>
           </button>
         </div>
 
-        <!-- ================= THE 4 FINNOVA STAT CARDS ================= -->
+        <!-- ================= THE 4 VIBRANT GRADIENT STAT CARDS (FROM IMAGE THEME) ================= -->
         <div class="finnova-stat-grid">
 
-          <!-- Card 1: Special Light Blue Accent (Net Balance) -->
-          <div class="finnova-stat-card accent-light-blue">
+          <!-- Card 1: Vibrant Rose Pink Gradient (Net Balance) -->
+          <div class="finnova-stat-card card-gradient-pink">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text">Net Balance (മിച്ചം)</span>
-                <div class="card-indicator-bubble bubble-light-blue">
+                <span class="card-label-text" data-i18n="netBalance">Net Balance (മിച്ചം)</span>
+                <div class="card-indicator-bubble">
                   <i data-lucide="scale"></i>
                 </div>
               </div>
-              <div id="statNetBalance" class="card-amount-val light-blue">₹0.00</div>
+              <div id="statNetBalance" class="card-amount-val">₹0.00</div>
             </div>
             <div class="card-footer-mini">
-              <span class="trend-pill up" id="statPeriodNetPill">
+              <span class="trend-pill" id="statPeriodNetPill">
                 <i data-lucide="trending-up"></i>
                 <span id="statPeriodNetText">Active Period</span>
               </span>
@@ -130,72 +130,72 @@
             </div>
           </div>
 
-          <!-- Card 2: Total Income with Mini Bars -->
-          <div class="finnova-stat-card">
+          <!-- Card 2: Deep Violet / Indigo Gradient (Total Income) -->
+          <div class="finnova-stat-card card-gradient-purple">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text">Total Income (വരവ്)</span>
-                <div class="card-indicator-bubble bubble-green">
+                <span class="card-label-text" data-i18n="totalIncome">Total Income (വരവ്)</span>
+                <div class="card-indicator-bubble">
                   <i data-lucide="arrow-down-left"></i>
                 </div>
               </div>
-              <div id="statTotalIncome" class="card-amount-val emerald">₹0.00</div>
+              <div id="statTotalIncome" class="card-amount-val">₹0.00</div>
             </div>
             <div>
               <div class="mini-graphic-holder">
-                <div class="mini-bar blue" style="height: 35%;"></div>
-                <div class="mini-bar blue" style="height: 55%;"></div>
-                <div class="mini-bar blue" style="height: 40%;"></div>
-                <div class="mini-bar blue" style="height: 75%;"></div>
-                <div class="mini-bar blue active" style="height: 100%;"></div>
-                <div class="mini-bar blue" style="height: 60%;"></div>
+                <div class="mini-bar" style="height: 35%;"></div>
+                <div class="mini-bar" style="height: 55%;"></div>
+                <div class="mini-bar" style="height: 40%;"></div>
+                <div class="mini-bar" style="height: 75%;"></div>
+                <div class="mini-bar active" style="height: 100%;"></div>
+                <div class="mini-bar" style="height: 60%;"></div>
               </div>
               <div class="card-footer-mini" style="margin-top: 6px;">
-                <span>വരവ് ഇടപാടുകൾ:</span>
-                <strong id="statIncomeCount" style="color: var(--emerald-green);">0</strong>
+                <span data-i18n="incomeCountLabel">വരവ് ഇടപാടുകൾ:</span>
+                <strong id="statIncomeCount" style="color: #ffffff;">0</strong>
               </div>
             </div>
           </div>
 
-          <!-- Card 3: Total Expense with Mini Trend Curve -->
-          <div class="finnova-stat-card">
+          <!-- Card 3: Sky / Light Blue Gradient (Total Expense) -->
+          <div class="finnova-stat-card card-gradient-blue">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text">Total Expense (ചിലവ്)</span>
-                <div class="card-indicator-bubble bubble-rose">
+                <span class="card-label-text" data-i18n="totalExpense">Total Expense (ചിലവ്)</span>
+                <div class="card-indicator-bubble">
                   <i data-lucide="arrow-up-right"></i>
                 </div>
               </div>
-              <div id="statTotalExpense" class="card-amount-val rose">₹0.00</div>
+              <div id="statTotalExpense" class="card-amount-val">₹0.00</div>
             </div>
             <div>
               <div class="mini-graphic-holder">
-                <div class="mini-bar" style="height: 45%; background: var(--coral-light);"></div>
-                <div class="mini-bar" style="height: 70%; background: var(--coral-light);"></div>
-                <div class="mini-bar" style="height: 30%; background: var(--coral-light);"></div>
-                <div class="mini-bar" style="height: 85%; background: var(--coral-rose);"></div>
-                <div class="mini-bar" style="height: 50%; background: var(--coral-light);"></div>
+                <div class="mini-bar" style="height: 45%;"></div>
+                <div class="mini-bar" style="height: 70%;"></div>
+                <div class="mini-bar" style="height: 30%;"></div>
+                <div class="mini-bar active" style="height: 85%;"></div>
+                <div class="mini-bar" style="height: 50%;"></div>
               </div>
               <div class="card-footer-mini" style="margin-top: 6px;">
-                <span>ചിലവ് ഇടപാടുകൾ:</span>
-                <strong id="statExpenseCount" style="color: var(--coral-rose);">0</strong>
+                <span data-i18n="expenseCountLabel">ചിലവ് ഇടപാടുകൾ:</span>
+                <strong id="statExpenseCount" style="color: #ffffff;">0</strong>
               </div>
             </div>
           </div>
 
-          <!-- Card 4: Ledger & Offline Storage -->
-          <div class="finnova-stat-card">
+          <!-- Card 4: Warm Orange / Amber Gradient (Available in Storage) -->
+          <div class="finnova-stat-card card-gradient-orange">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text">Available In Storage</span>
-                <div class="card-indicator-bubble bubble-purple">
+                <span class="card-label-text" data-i18n="inStorage">Available In Storage</span>
+                <div class="card-indicator-bubble">
                   <i data-lucide="wallet"></i>
                 </div>
               </div>
               <div id="statTotalTxCount" class="card-amount-val">0 Active</div>
             </div>
             <div class="card-footer-mini">
-              <span class="trend-pill" style="background: var(--finnova-purple-light); color: var(--finnova-purple);">
+              <span class="trend-pill">
                 <i data-lucide="shield-check"></i> 100% Offline
               </span>
               <span>IndexedDB Safe</span>
@@ -207,13 +207,13 @@
         <!-- ================= ACTIVE FILTER & 1-CLICK EXPORTS BANNER ================= -->
         <div class="finnova-filter-row">
           <div class="filter-pills-left">
-            <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">ഫിൽട്ടർ:</span>
-            <button class="filter-chip-btn active" data-subfilter="all">എല്ലാം (All)</button>
-            <button class="filter-chip-btn" data-subfilter="expense">ചിലവ് (Expense)</button>
-            <button class="filter-chip-btn" data-subfilter="income">വരവ് (Income)</button>
+            <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;" data-i18n="filterLabel">ഫിൽട്ടർ:</span>
+            <button class="filter-chip-btn active" data-subfilter="all" data-i18n="filterAll">എല്ലാം (All)</button>
+            <button class="filter-chip-btn" data-subfilter="expense" data-i18n="filterExpense">ചിലവ് (Expense)</button>
+            <button class="filter-chip-btn" data-subfilter="income" data-i18n="filterIncome">വരവ് (Income)</button>
 
             <!-- Quick Search Input -->
-            <input id="dashQuickSearch" type="text" class="form-input" style="width: 180px; padding: 6px 12px; font-size: 0.8rem; border-radius: var(--radius-pill);" placeholder="Search entry..." />
+            <input id="dashQuickSearch" type="text" class="form-input" style="width: 180px; padding: 6px 12px; font-size: 0.8rem; border-radius: var(--radius-pill);" placeholder="Search entry..." data-i18n-placeholder="searchEntryPlaceholder" />
           </div>
 
           <!-- 1-Click PDF & Excel Period Exports -->
@@ -412,8 +412,8 @@
         <!-- ================= 1-CLICK PERIOD DOWNLOAD CARDS ================= -->
         <div class="box-header" style="margin-bottom: 8px;">
           <div>
-            <h3 class="box-title">റിപ്പോർട്ടുകളും ഡൗൺലോഡുകളും (Reports & Downloads)</h3>
-            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+            <h3 class="box-title" data-i18n="reportsTitle">റിപ്പോർട്ടുകളും ഡൗൺലോഡുകളും (Reports & Downloads)</h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="reportsSubtitle">
               Daily, Weekly, Monthly, Yearly സ്റ്റേറ്റ്‌മെന്റുകൾ PDF ആയോ Excel ആയോ ഒരൊറ്റ ക്ലിക്കിൽ ഡൗൺലോഡ് ചെയ്യാം
             </p>
           </div>
@@ -426,11 +426,11 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-light-blue">📅</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);">ഇന്നത്തെ കണക്ക്</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">Daily Report (Today)</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="dailyReportTitle">ഇന്നത്തെ കണക്ക്</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="dailyReportSub">Daily Report (Today)</div>
                 </div>
               </div>
-              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="dailyReportDesc">
                 ഇന്നത്തെ എല്ലാ വരവ് ചിലവ് വിവരങ്ങളും അടങ്ങിയ റിപ്പോർട്ട്
               </div>
             </div>
@@ -450,11 +450,11 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-purple">🗓️</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);">ഈ ആഴ്ചയിലെ കണക്ക്</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">Weekly Statement</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="weeklyReportTitle">ഈ ആഴ്ചയിലെ കണക്ക്</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="weeklyReportSub">Weekly Statement</div>
                 </div>
               </div>
-              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="weeklyReportDesc">
                 കഴിഞ്ഞ 7 ദിവസങ്ങളിലെ ഔദ്യോഗിക ഫിനാൻഷ്യൽ സ്റ്റേറ്റ്‌മെന്റ്
               </div>
             </div>
@@ -474,11 +474,11 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-green">📊</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);">ഈ മാസത്തെ കണക്ക്</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">Monthly Statement</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="monthlyReportTitle">ഈ മാസത്തെ കണക്ക്</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="monthlyReportSub">Monthly Statement</div>
                 </div>
               </div>
-              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="monthlyReportDesc">
                 നടപ്പു മാസത്തെ കാറ്റഗറി തിരിച്ചുള്ള സമഗ്ര കണക്കുകൾ
               </div>
             </div>
@@ -498,11 +498,11 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-rose">📈</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);">ഈ വർഷത്തെ കണക്ക്</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted);">Annual Financial Report</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="yearlyReportTitle">ഈ വർഷത്തെ കണക്ക്</div>
+                  <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="yearlyReportSub">Annual Financial Report</div>
                 </div>
               </div>
-              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">
+              <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="yearlyReportDesc">
                 മുഴുവൻ സാമ്പത്തിക വർഷത്തെ വരുമാന, ചിലവ് ഓഡിറ്റ് റിപ്പോർട്ട്
               </div>
             </div>
@@ -718,12 +718,12 @@
   <nav class="finnova-mobile-nav">
     <button class="m-finnova-item nav-item active" data-target="dashboard">
       <i data-lucide="layout-dashboard"></i>
-      <span>Overview</span>
+      <span data-i18n="navOverview">Overview</span>
     </button>
 
     <button class="m-finnova-item nav-item" data-target="transactions">
       <i data-lucide="receipt"></i>
-      <span>Finances</span>
+      <span data-i18n="navFinances">Finances</span>
     </button>
 
     <button id="mobileFabAdd" class="m-center-create-fab" title="Create Transaction">
@@ -732,12 +732,12 @@
 
     <button class="m-finnova-item nav-item" data-target="reports">
       <i data-lucide="bar-chart-3"></i>
-      <span>Reports</span>
+      <span data-i18n="navReports">Reports</span>
     </button>
 
     <button class="m-finnova-item nav-item" data-target="settings">
       <i data-lucide="settings"></i>
-      <span>Settings</span>
+      <span data-i18n="navSettings">Settings</span>
     </button>
   </nav>
 

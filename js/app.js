@@ -276,16 +276,17 @@ class OfficeFinanceApp {
     const periodPill = document.getElementById('statPeriodNetPill');
     const activePeriodLabel = document.getElementById('statActivePeriodLabel');
 
-    const periodNamesMl = {
-      daily: 'ഇന്നത്തെ കണക്ക്',
-      weekly: 'ഈ ആഴ്ചയിലെ കണക്ക്',
-      monthly: 'ഈ മാസത്തെ കണക്ക്',
-      yearly: 'ഈ വർഷത്തെ കണക്ക്',
-      all: 'ആകെ കണക്ക്'
+    const activePeriodLabelKey = {
+      daily: 'activePeriodLabelDaily',
+      weekly: 'activePeriodLabelWeekly',
+      monthly: 'activePeriodLabelMonthly',
+      yearly: 'activePeriodLabelYearly',
+      all: 'activePeriodLabelAll'
     };
 
     if (activePeriodLabel) {
-      activePeriodLabel.textContent = periodNamesMl[this.activePeriod] || 'കണക്ക്';
+      const key = activePeriodLabelKey[this.activePeriod] || 'activePeriodLabelDaily';
+      activePeriodLabel.textContent = window.i18n ? window.i18n.t(key) : 'Active Period';
     }
 
     if (periodNetText) {
@@ -936,10 +937,12 @@ class OfficeFinanceApp {
       this.toggleTheme();
     });
 
-    // 3. Language Toggle
-    document.getElementById('btnLangToggle')?.addEventListener('click', () => {
-      window.i18n.toggleLanguage();
-      this.refreshData();
+    // 3. Language Switcher (English & Malayalam)
+    document.getElementById('btnSetLangMl')?.addEventListener('click', () => {
+      window.i18n.setLanguage('ml');
+    });
+    document.getElementById('btnSetLangEn')?.addEventListener('click', () => {
+      window.i18n.setLanguage('en');
     });
 
     // 4. Quick PIN Lock
@@ -1129,6 +1132,17 @@ class OfficeFinanceApp {
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
+    }
+  }
+
+  onLanguageChanged() {
+    this.renderDashboard();
+    this.renderTransactionsList();
+    this.renderReports();
+    this.populateCategoryDatalist();
+    this.renderSettingsCategoryChips();
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
