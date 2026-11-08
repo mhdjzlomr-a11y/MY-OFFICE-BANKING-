@@ -709,7 +709,7 @@
         </div>
 
         <!-- ================= AUTOMATED WHATSAPP GATEWAY SETTINGS ================= -->
-        <div class="white-box" style="margin-bottom: 20px; border-left: 4px solid #25d366;">
+        <div class="white-box" id="waGatewaySection" style="margin-bottom: 20px; border-left: 4px solid #25d366;">
           <div class="box-header">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -720,18 +720,38 @@
                 Send messages automatically in the background without opening the WhatsApp web/app
               </p>
             </div>
-            <span style="font-size: 0.72rem; padding: 4px 10px; border-radius: 999px; background: rgba(37, 211, 102, 0.15); color: #15803d; font-weight: 800;">
+            <span id="waGatewayStatusBadge" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 999px; background: rgba(37, 211, 102, 0.15); color: #15803d; font-weight: 800;">
               ⚡ Auto Dispatch Active
             </span>
+          </div>
+
+          <!-- Quick 10-Second Free Setup Helper Callout -->
+          <div id="waCallmebotHelperCard" style="background: rgba(37, 211, 102, 0.08); border: 1px dashed #25d366; border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.15rem;">🤖</span>
+                <strong style="font-size: 0.82rem; color: #15803d;" data-i18n="waCallmebotGuideTitle">10 സെക്കൻഡിൽ സൗജന്യ ഓട്ടോമാറ്റിക് വാട്സാപ്പ് സെറ്റ് ചെയ്യാം (100% Free):</strong>
+              </div>
+              <a href="https://wa.me/3464444444?text=I%20allow%20callmebot%20to%20send%20me%20messages" target="_blank" rel="noopener noreferrer" class="action-btn-pill btn-pill-green" style="font-size: 0.72rem; padding: 5px 12px; text-decoration: none; background: #25d366; color: white;">
+                <i data-lucide="external-link"></i>
+                <span data-i18n="waBtnGetFreeKey">സൗജന്യ കീ ലഭിക്കാൻ ഇവിടെ ക്ലിക്ക് ചെയ്യുക (Get Key)</span>
+              </a>
+            </div>
+            <p style="font-size: 0.74rem; color: var(--text-dark); margin: 8px 0 2px 0; line-height: 1.45;" data-i18n="waCallmebotGuideSteps">
+              1. മുകളിലെ ബട്ടൺ ക്ലിക്ക് ചെയ്ത് വാട്സാപ്പിൽ <strong>"I allow callmebot to send me messages"</strong> എന്ന് അയക്കുക.<br>
+              2. ഉടൻ തിരികെ ലഭിക്കുന്ന <strong>API Key</strong> താഴെ നൽകി Save ചെയ്യുക. ഇനി മുതൽ വാട്സാപ്പ് തുറക്കാതെ സന്ദേശങ്ങൾ തനിയെ പോകും!
+            </p>
           </div>
 
           <form id="waGatewayForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
             <div class="form-group">
               <label class="form-label" data-i18n="waGatewayModeLabel">Gateway Delivery Mode</label>
               <select id="waSettingMode" class="form-input">
-                <option value="direct" data-i18n="waModeDirect">⚡ Automated Background API (Silent delivery)</option>
-                <option value="callmebot" data-i18n="waModeCallmebot">🤖 CallMeBot Free WhatsApp API</option>
-                <option value="webhook" data-i18n="waModeWebhook">🔗 Custom Webhook / API URL</option>
+                <option value="callmebot" data-i18n="waModeCallmebot">🤖 CallMeBot Free WhatsApp API (100% സൗജന്യം)</option>
+                <option value="ultramsg" data-i18n="waModeUltramsg">⚡ UltraMsg WhatsApp API (ഓഫീസ് വാട്സാപ്പ്)</option>
+                <option value="greenapi" data-i18n="waModeGreenapi">🌐 Green-API Gateway</option>
+                <option value="webhook" data-i18n="waModeWebhook">🔗 Custom Webhook / Zapier / Make / n8n</option>
+                <option value="direct" data-i18n="waModeDirect">📲 WhatsApp ആപ്പ് തുറന്ന് അയക്കുക (Direct Fallback)</option>
               </select>
             </div>
 
@@ -744,22 +764,27 @@
               </select>
             </div>
 
-            <div class="form-group" style="grid-column: 1 / -1;">
+            <div class="form-group" id="groupWaApiKey">
+              <label id="lblWaApiKey" class="form-label" data-i18n="waApiKeyLabel">CallMeBot API Key / Token</label>
+              <input id="waSettingApiKey" type="password" class="form-input" placeholder="Enter API Key from WhatsApp" />
+            </div>
+
+            <div class="form-group" id="groupWaPhoneId">
+              <label id="lblWaPhoneId" class="form-label" data-i18n="waPhoneIdLabel">Instance ID / Phone Number (Optional)</label>
+              <input id="waSettingPhoneId" type="text" class="form-input" placeholder="e.g. instance12345 or Phone Number" />
+            </div>
+
+            <div class="form-group" id="groupWaWebhookUrl" style="grid-column: 1 / -1;">
               <label class="form-label" data-i18n="waWebhookUrlLabel">Webhook URL / Endpoint</label>
               <input id="waSettingWebhookUrl" type="url" class="form-input" placeholder="https://your-webhook-or-api-gateway.com/send" />
-              <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">
-                Works with Zapier, Make, n8n, CallMeBot, Green-API, UltraMsg, or any HTTP endpoint.
-              </p>
             </div>
 
-            <div class="form-group">
-              <label class="form-label" data-i18n="waApiKeyLabel">API Key / Token</label>
-              <input id="waSettingApiKey" type="password" class="form-input" placeholder="Optional API Token or CallMeBot Key" />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" data-i18n="waPhoneIdLabel">Phone Number ID / Instance (Optional)</label>
-              <input id="waSettingPhoneId" type="text" class="form-input" placeholder="e.g. 109843920198" />
+            <!-- Auto send toggle on save -->
+            <div style="grid-column: 1 / -1; background: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                <input type="checkbox" id="waSettingAutoSendOnSave" style="width: 16px; height: 16px; accent-color: #25d366; cursor: pointer;" checked />
+                <span data-i18n="waSettingAutoSendLabel">എല്ലാ ഇടപാടുകളിലും WhatsApp രസീത് തുറക്കാതെ സ്വയം അയക്കുക (Always auto-send silently on save)</span>
+              </label>
             </div>
 
             <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 6px;">
@@ -1028,18 +1053,56 @@
         <!-- Hidden direct link fallback to bypass popup blockers -->
         <a id="waDirectAnchor" href="#" target="_blank" rel="noopener noreferrer" style="display: none;"></a>
 
-        <!-- Action Buttons: 1) Send WhatsApp Message, 2) Background API -->
+        <!-- Action Buttons: 1) Automatic Background Send (Primary), 2) Direct WhatsApp (Fallback) -->
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
-          <button type="button" id="btnExecuteManualWa" class="action-btn-pill btn-pill-green" style="justify-content: center; font-size: 0.95rem; padding: 12px; background: #25d366; color: white;">
-            <i data-lucide="message-circle"></i>
-            <span data-i18n="btnSendWhatsApp">🚀 വാട്സാപ്പിൽ അയക്കുക (Send WhatsApp Message)</span>
+          <button type="button" id="btnExecuteAutoWa" class="action-btn-pill btn-pill-green" style="justify-content: center; font-size: 0.95rem; padding: 12px; background: #25d366; color: white;">
+            <i data-lucide="zap"></i>
+            <span data-i18n="btnSendAutoWa">⚡ ഓട്ടോമാറ്റിക് ആയി അയക്കുക (Send Automatically)</span>
           </button>
 
-          <button type="button" id="btnExecuteAutoWa" class="action-btn-pill btn-pill-white" style="justify-content: center; font-size: 0.78rem; color: var(--text-dark);">
-            <i data-lucide="zap"></i>
-            <span data-i18n="btnSendAutoWa">⚡ ബാക്ക്ഗ്രൗണ്ട് API വഴി അയക്കുക (CallMeBot / Webhook)</span>
+          <button type="button" id="btnExecuteManualWa" class="action-btn-pill btn-pill-white" style="justify-content: center; font-size: 0.8rem; color: var(--text-dark);">
+            <i data-lucide="message-circle"></i>
+            <span data-i18n="btnSendManualWa">📲 വാട്സാപ്പ് തുറന്ന് നേരിട്ട് അയക്കുക (Open in WhatsApp)</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: WHATSAPP SETUP GUIDANCE ================= -->
+  <div id="waSetupGuideModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">⚡</span>
+          <div>
+            <h3 class="modal-heading-text" data-i18n="waSetupTitle">Automatic WhatsApp Setup</h3>
+            <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;" data-i18n="waSetupSub">
+              Send messages silently without opening WhatsApp
+            </p>
+          </div>
+        </div>
+        <button id="btnCloseWaSetupGuideModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div style="margin: 12px 0; background: rgba(37, 211, 102, 0.08); padding: 12px; border-radius: var(--radius-md); border: 1px dashed #25d366;">
+        <p style="font-size: 0.78rem; line-height: 1.5; color: var(--text-dark); margin: 0;" data-i18n="waSetupBody">
+          വാട്സാപ്പ് തുറക്കാതെ സന്ദേശങ്ങൾ 100% ഓട്ടോമാറ്റിക് ആയി ബാക്ക്ഗ്രൗണ്ടിൽ അയക്കാൻ Settings-ൽ ഒരു സൗജന്യ API Key (CallMeBot) നൽകുക. 10 സെക്കൻഡിൽ ഇത് സൗജന്യമായി ആക്റ്റീവ് ചെയ്യാം.
+        </p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" id="btnGoToWaSettings" class="action-btn-pill btn-pill-green" style="justify-content: center; padding: 10px; font-size: 0.88rem; background: #25d366; color: white;">
+          <i data-lucide="settings"></i>
+          <span data-i18n="btnOpenWaSettings">⚙️ ഓട്ടോമാറ്റിക് API സെറ്റ് ചെയ്യുക (Open Settings)</span>
+        </button>
+
+        <button type="button" id="btnSendDirectFallback" class="action-btn-pill btn-pill-white" style="justify-content: center; padding: 9px; font-size: 0.8rem; color: var(--text-dark);">
+          <i data-lucide="message-circle"></i>
+          <span data-i18n="btnSendDirectOnce">📲 ഇത്തവണ നേരിട്ട് വാട്സാപ്പിൽ അയക്കുക (Send Direct)</span>
+        </button>
       </div>
     </div>
   </div>

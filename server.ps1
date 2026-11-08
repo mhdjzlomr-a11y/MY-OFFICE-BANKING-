@@ -61,7 +61,54 @@ while ($true) {
             $firstLine = $requestText.Split("`n")[0].Trim()
             $parts = $firstLine.Split(" ")
 
-            if ($parts.Length -ge 2 -and $parts[0] -eq "GET") {
+            if ($parts.Length -ge 2 -and $parts[0] -eq "OPTIONS") {
+                $corsHeaders = "HTTP/1.1 200 OK`r`nAccess-Control-Allow-Origin: *`r`nAccess-Control-Allow-Methods: GET, POST, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type, Authorization`r`nContent-Length: 0`r`nConnection: close`r`n`r`n"
+                $corsBytes = [System.Text.Encoding]::ASCII.GetBytes($corsHeaders)
+                $stream.Write($corsBytes, 0, $corsBytes.Length)
+            } elseif ($parts.Length -ge 2 -and $parts[0] -eq "POST" -and $parts[1].StartsWith("/api/send-whatsapp")) {
+                $headerEnd = $requestText.IndexOf("`r`n`r`n")
+                $body = ""
+                if ($headerEnd -ge 0) {
+                    $body = $requestText.Substring($headerEnd + 4)
+                }
+                
+                $resultObj = @{ success = $false; message = "No valid gateway configured" }
+                try {
+                    $data = $body | ConvertFrom-Json
+                    $phone = $data.phone
+                    $msg = $data.message
+                    $mode = $data.mode
+                    $apiKey = $data.apiKey
+                    $phoneId = $data.phoneId
+                    $webhookUrl = $data.webhookUrl
+
+                    if ($mode -eq "callmebot" -and $apiKey) {
+                        $encMsg = [System.Net.WebUtility]::UrlEncode($msg)
+                        $callUrl = "https://api.callmebot.com/whatsapp.php?phone=$phone&text=$encMsg&apikey=$apiKey"
+                        $null = Invoke-RestMethod -Uri $callUrl -Method Get -TimeoutSec 10 -ErrorAction SilentlyContinue
+                        $resultObj = @{ success = $true; message = "CallMeBot message dispatched automatically" }
+                    } elseif ($mode -eq "ultramsg" -and $apiKey -and $phoneId) {
+                        $ultraUrl = "https://api.ultramsg.com/$phoneId/messages/chat"
+                        $ultraBody = @{ token = $apiKey; to = $phone; body = $msg }
+                        $null = Invoke-RestMethod -Uri $ultraUrl -Method Post -Body $ultraBody -TimeoutSec 10 -ErrorAction SilentlyContinue
+                        $resultObj = @{ success = $true; message = "UltraMsg message dispatched automatically" }
+                    } elseif ($mode -eq "webhook" -and $webhookUrl) {
+                        $hdr = @{ "Content-Type" = "application/json" }
+                        if ($apiKey) { $hdr["Authorization"] = "Bearer $apiKey" }
+                        $null = Invoke-RestMethod -Uri $webhookUrl -Method Post -Body $body -Headers $hdr -TimeoutSec 10 -ErrorAction SilentlyContinue
+                        $resultObj = @{ success = $true; message = "Webhook dispatched automatically" }
+                    }
+                } catch {
+                    $resultObj = @{ success = $false; error = $_.Exception.Message }
+                }
+
+                $jsonText = $resultObj | ConvertTo-Json -Compress
+                $jsonBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonText)
+                $respHeaders = "HTTP/1.1 200 OK`r`nContent-Type: application/json; charset=utf-8`r`nContent-Length: $($jsonBytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nAccess-Control-Allow-Methods: GET, POST, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type, Authorization`r`nConnection: close`r`n`r`n"
+                $rhBytes = [System.Text.Encoding]::ASCII.GetBytes($respHeaders)
+                $stream.Write($rhBytes, 0, $rhBytes.Length)
+                $stream.Write($jsonBytes, 0, $jsonBytes.Length)
+            } elseif ($parts.Length -ge 2 -and $parts[0] -eq "GET") {
                 $rawPath = $parts[1].Split("?")[0]
                 if ($rawPath -eq "/" -or $rawPath -eq "") { $rawPath = "/index.html" }
                 

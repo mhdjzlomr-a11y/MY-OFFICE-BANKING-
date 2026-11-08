@@ -27,15 +27,17 @@ class OfficeFinanceApp {
 
     // WhatsApp Gateway and Dispatch State
     this.waGateway = {
-      mode: 'direct', // 'direct' (direct WhatsApp) | 'callmebot' | 'webhook'
+      mode: 'callmebot', // 'callmebot' | 'ultramsg' | 'greenapi' | 'webhook' | 'direct'
       defaultLang: 'app', // 'app' | 'ml' | 'en'
       webhookUrl: '',
       apiKey: '',
-      phoneId: ''
+      phoneId: '',
+      autoSendOnSave: true
     };
     this.currentTxWaLang = 'en'; // in transaction modal
     this.waDispatchTx = null;    // currently active tx in WhatsApp dispatch modal
     this.waDispatchLang = 'en';  // currently active language in WhatsApp modal
+    this.pendingDirectWaData = null;
   }
 
   async init() {
@@ -140,23 +142,90 @@ class OfficeFinanceApp {
     const urlInput = document.getElementById('waSettingWebhookUrl');
     const keyInput = document.getElementById('waSettingApiKey');
     const phoneIdInput = document.getElementById('waSettingPhoneId');
+    const autoSendChk = document.getElementById('waSettingAutoSendOnSave');
 
-    if (modeSelect) modeSelect.value = this.waGateway.mode || 'direct';
+    if (modeSelect) modeSelect.value = this.waGateway.mode || 'callmebot';
     if (langSelect) langSelect.value = this.waGateway.defaultLang || 'app';
     if (urlInput) urlInput.value = this.waGateway.webhookUrl || '';
     if (keyInput) keyInput.value = this.waGateway.apiKey || '';
     if (phoneIdInput) phoneIdInput.value = this.waGateway.phoneId || '';
+    if (autoSendChk) autoSendChk.checked = (this.waGateway.autoSendOnSave !== false);
+
+    this.updateWaGatewayUIState();
+  }
+
+  updateWaGatewayUIState() {
+    const mode = document.getElementById('waSettingMode')?.value || this.waGateway.mode || 'callmebot';
+    const helperCard = document.getElementById('waCallmebotHelperCard');
+    const groupKey = document.getElementById('groupWaApiKey');
+    const groupPhone = document.getElementById('groupWaPhoneId');
+    const groupUrl = document.getElementById('groupWaWebhookUrl');
+    const lblKey = document.getElementById('lblWaApiKey');
+    const lblPhone = document.getElementById('lblWaPhoneId');
+    const badge = document.getElementById('waGatewayStatusBadge');
+
+    if (helperCard) {
+      helperCard.style.display = (mode === 'callmebot') ? 'block' : 'none';
+    }
+
+    if (mode === 'callmebot') {
+      if (groupKey) groupKey.style.display = 'block';
+      if (groupPhone) groupPhone.style.display = 'none';
+      if (groupUrl) groupUrl.style.display = 'none';
+      if (lblKey) lblKey.textContent = 'CallMeBot API Key';
+    } else if (mode === 'ultramsg') {
+      if (groupKey) groupKey.style.display = 'block';
+      if (groupPhone) groupPhone.style.display = 'block';
+      if (groupUrl) groupUrl.style.display = 'none';
+      if (lblKey) lblKey.textContent = 'UltraMsg Token';
+      if (lblPhone) lblPhone.textContent = 'Instance ID (e.g. instance12345)';
+    } else if (mode === 'greenapi') {
+      if (groupKey) groupKey.style.display = 'block';
+      if (groupPhone) groupPhone.style.display = 'block';
+      if (groupUrl) groupUrl.style.display = 'none';
+      if (lblKey) lblKey.textContent = 'apiTokenInstance';
+      if (lblPhone) lblPhone.textContent = 'idInstance';
+    } else if (mode === 'webhook') {
+      if (groupKey) groupKey.style.display = 'block';
+      if (groupPhone) groupPhone.style.display = 'none';
+      if (groupUrl) groupUrl.style.display = 'block';
+      if (lblKey) lblKey.textContent = 'Bearer Auth Token (Optional)';
+    } else {
+      if (groupKey) groupKey.style.display = 'none';
+      if (groupPhone) groupPhone.style.display = 'none';
+      if (groupUrl) groupUrl.style.display = 'none';
+    }
+
+    const isReady = (mode === 'callmebot' && this.waGateway.apiKey) ||
+                    (mode === 'ultramsg' && this.waGateway.apiKey && this.waGateway.phoneId) ||
+                    (mode === 'greenapi' && this.waGateway.apiKey && this.waGateway.phoneId) ||
+                    (mode === 'webhook' && this.waGateway.webhookUrl) ||
+                    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    if (badge) {
+      if (isReady) {
+        badge.textContent = window.i18n.t('waStatusActive') || '🟢 Silent Auto-Send Active';
+        badge.style.background = 'rgba(37, 211, 102, 0.15)';
+        badge.style.color = '#15803d';
+      } else {
+        badge.textContent = window.i18n.t('waStatusRequired') || '🟡 Setup Required';
+        badge.style.background = 'rgba(245, 158, 11, 0.15)';
+        badge.style.color = '#b45309';
+      }
+    }
   }
 
   async handleSaveWaGateway(e) {
     if (e) e.preventDefault();
-    this.waGateway.mode = document.getElementById('waSettingMode')?.value || 'direct';
+    this.waGateway.mode = document.getElementById('waSettingMode')?.value || 'callmebot';
     this.waGateway.defaultLang = document.getElementById('waSettingDefaultLang')?.value || 'app';
     this.waGateway.webhookUrl = document.getElementById('waSettingWebhookUrl')?.value.trim() || '';
     this.waGateway.apiKey = document.getElementById('waSettingApiKey')?.value.trim() || '';
     this.waGateway.phoneId = document.getElementById('waSettingPhoneId')?.value.trim() || '';
+    this.waGateway.autoSendOnSave = document.getElementById('waSettingAutoSendOnSave')?.checked !== false;
 
     await window.dbEngine.setSetting('whatsappGateway', this.waGateway);
+    this.updateWaGatewayUIState();
     this.showToast(window.i18n.t('waGatewaySaved'), 'success');
   }
 
@@ -973,7 +1042,7 @@ class OfficeFinanceApp {
     document.getElementById('txParty').value = '';
     document.getElementById('txPhone').value = '';
     const chkAdd = document.getElementById('txSendWhatsapp');
-    if (chkAdd) chkAdd.checked = false;
+    if (chkAdd) chkAdd.checked = (this.waGateway.autoSendOnSave !== false);
     document.getElementById('txBillNo').value = '';
     document.getElementById('txNotes').value = '';
 
@@ -1157,11 +1226,10 @@ class OfficeFinanceApp {
 
     this.closeTxModal();
 
-    // Immediate Direct WhatsApp Send on Save if checked (no popup blocker blockage!)
+    // Immediate Automated WhatsApp Send on Save if checked (Silent background delivery!)
     if (sendWhatsapp && phone) {
       const fullTx = { ...txData, id: savedId };
-      const msg = this.generateWhatsAppReceiptMessage(fullTx, this.currentTxWaLang);
-      this.sendWhatsAppDirect(phone, msg);
+      await this.dispatchAutomatedWhatsApp(fullTx, this.currentTxWaLang);
     }
 
     await this.refreshData();
@@ -1260,9 +1328,9 @@ Thank you!`;
     return true;
   }
 
-  // --- Automatic WhatsApp Background Dispatcher (CallMeBot / Webhook) ---
+  // --- Automatic WhatsApp Background Dispatcher (CallMeBot / UltraMsg / GreenAPI / Webhook / Local Bridge) ---
   async dispatchAutomatedWhatsApp(tx, targetLang = null) {
-    if (!tx) return;
+    if (!tx) return false;
 
     let phone = tx.phone ? tx.phone.trim() : '';
     if (!phone) {
@@ -1272,7 +1340,7 @@ Thank you!`;
           : 'Enter recipient WhatsApp mobile number (10 digits):',
         ''
       );
-      if (!phone) return;
+      if (!phone) return false;
       tx.phone = phone.trim();
       if (tx.id) {
         await window.dbEngine.updateTransaction(tx);
@@ -1283,38 +1351,88 @@ Thank you!`;
     const cleaned = this.sanitizePhone(phone);
     if (!cleaned || cleaned.length < 10) {
       alert(window.i18n.t('waMissingPhone'));
-      return;
+      return false;
     }
 
     const lang = targetLang || (this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang) || 'en';
     const message = this.generateWhatsAppReceiptMessage(tx, lang);
-    const mode = this.waGateway.mode || 'direct';
+    const mode = this.waGateway.mode || 'callmebot';
 
+    // 1. Check if running on localhost with server.ps1 bridge
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal) {
+      try {
+        const localResp = await fetch('/api/send-whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleaned,
+            message: message,
+            mode: mode,
+            apiKey: this.waGateway.apiKey,
+            phoneId: this.waGateway.phoneId,
+            webhookUrl: this.waGateway.webhookUrl,
+            party: tx.party || '',
+            amount: tx.amount,
+            type: tx.type,
+            date: tx.date
+          })
+        });
+        if (localResp.ok) {
+          const res = await localResp.json();
+          if (res.success) {
+            this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+            return true;
+          }
+        }
+      } catch (err) {
+        console.warn('Local server bridge attempt finished, checking web endpoints:', err);
+      }
+    }
+
+    // 2. Direct Web API Dispatches (silent background delivery without opening WhatsApp)
     try {
       if (mode === 'callmebot' && this.waGateway.apiKey) {
         const callmeUrl = `https://api.callmebot.com/whatsapp.php?phone=${cleaned}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(this.waGateway.apiKey)}`;
         fetch(callmeUrl, { method: 'GET', mode: 'no-cors' }).catch(err => console.warn('CallMeBot:', err));
         this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+        return true;
+      } else if (mode === 'ultramsg' && this.waGateway.apiKey && this.waGateway.phoneId) {
+        const ultraUrl = `https://api.ultramsg.com/${this.waGateway.phoneId}/messages/chat`;
+        const bodyParams = new URLSearchParams({
+          token: this.waGateway.apiKey,
+          to: cleaned,
+          body: message
+        });
+        fetch(ultraUrl, { method: 'POST', body: bodyParams, mode: 'no-cors' }).catch(err => console.warn('UltraMsg:', err));
+        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+        return true;
+      } else if (mode === 'greenapi' && this.waGateway.apiKey && this.waGateway.phoneId) {
+        const greenUrl = `https://api.green-api.com/waInstance${this.waGateway.phoneId}/sendMessage/${this.waGateway.apiKey}`;
+        fetch(greenUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatId: `${cleaned}@c.us`, message: message }),
+          mode: 'no-cors'
+        }).catch(err => console.warn('Green-API:', err));
+        this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+        return true;
       } else if (mode === 'webhook' && this.waGateway.webhookUrl) {
         const payload = {
           to: cleaned,
           party: tx.party || '',
           amount: tx.amount,
-          currency: (this.officeProfile && this.officeProfile.currency) || '₹',
           type: tx.type,
           category: tx.category,
           date: tx.date,
-          voucherNo: tx.billNo || ('TX-' + tx.id),
           language: lang,
           message: message,
           timestamp: new Date().toISOString()
         };
-
         const headers = { 'Content-Type': 'application/json' };
         if (this.waGateway.apiKey) {
           headers['Authorization'] = `Bearer ${this.waGateway.apiKey}`;
         }
-
         fetch(this.waGateway.webhookUrl, {
           method: 'POST',
           headers,
@@ -1322,13 +1440,42 @@ Thank you!`;
           mode: 'no-cors'
         }).catch(err => console.warn('Webhook:', err));
         this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
-      } else {
-        // Direct WhatsApp Send (guaranteed delivery)
+        return true;
+      } else if (mode === 'direct') {
         this.sendWhatsAppDirect(phone, message);
+        return true;
+      } else {
+        // No gateway configured yet - guide the user!
+        this.promptConfigureWaGateway(tx, message, cleaned);
+        return false;
       }
     } catch (err) {
       console.error('WhatsApp dispatch error:', err);
-      this.sendWhatsAppDirect(phone, message);
+      this.promptConfigureWaGateway(tx, message, cleaned);
+      return false;
+    }
+  }
+
+  promptConfigureWaGateway(tx, message, phone) {
+    this.pendingDirectWaData = { phone, message, tx };
+    const modal = document.getElementById('waSetupGuideModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    } else {
+      const isMl = window.i18n.currentLang === 'ml';
+      const wantSettings = confirm(
+        isMl
+          ? '⚡ വാട്സാപ്പ് തുറക്കാതെ സന്ദേശങ്ങൾ 100% ഓട്ടോമാറ്റിക് ആയി അയക്കാൻ Settings-ൽ നിങ്ങളുടെ Free API Key (CallMeBot) നൽകുക.\n\nSettings തുറക്കണോ?'
+          : '⚡ To send WhatsApp messages 100% automatically without opening WhatsApp, please enter your Free API Key (CallMeBot) in Settings.\n\nOpen Settings now?'
+      );
+      if (wantSettings) {
+        this.switchView('settings');
+        setTimeout(() => {
+          document.getElementById('waGatewaySection')?.scrollIntoView({ behavior: 'smooth' });
+        }, 200);
+      } else {
+        this.sendWhatsAppDirect(phone, message);
+      }
     }
   }
 
@@ -1346,7 +1493,16 @@ Thank you!`;
     const phoneInput = document.getElementById('waDispatchPhone');
 
     if (partyInput) partyInput.value = tx.party || '';
-    if (phoneInput) phoneInput.value = tx.phone || '';
+    if (phoneInput) {
+      if (tx.phone) {
+        phoneInput.value = tx.phone;
+      } else if (tx.party) {
+        const matched = this.contacts.find(c => (c.name || '').trim().toLowerCase() === tx.party.trim().toLowerCase());
+        phoneInput.value = matched ? matched.phone : '';
+      } else {
+        phoneInput.value = '';
+      }
+    }
 
     this.setWaDispatchModalLang(this.waDispatchLang);
 
@@ -1462,8 +1618,8 @@ Thank you!`;
       notes: 'Test Confirmation'
     };
 
-    const msg = this.generateWhatsAppReceiptMessage(testTx, this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang);
-    this.sendWhatsAppDirect(testPhone, msg);
+    const targetLang = this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang;
+    await this.dispatchAutomatedWhatsApp(testTx, targetLang);
   }
 
   sanitizePhone(phone) {
@@ -1596,6 +1752,10 @@ Thank you!`;
         if (phoneField && !phoneField.value) {
           phoneField.value = matchedContact.phone;
         }
+        const chkWa = document.getElementById('txSendWhatsapp');
+        if (chkWa && this.waGateway.autoSendOnSave !== false) {
+          chkWa.checked = true;
+        }
       }
     });
 
@@ -1638,6 +1798,25 @@ Thank you!`;
     // 20. WhatsApp Gateway Settings Form
     document.getElementById('waGatewayForm')?.addEventListener('submit', (e) => this.handleSaveWaGateway(e));
     document.getElementById('btnTestWaDelivery')?.addEventListener('click', () => this.sendTestWaDelivery());
+    document.getElementById('waSettingMode')?.addEventListener('change', () => this.updateWaGatewayUIState());
+
+    // 20b. WhatsApp Setup Guidance Modal
+    document.getElementById('btnCloseWaSetupGuideModal')?.addEventListener('click', () => {
+      document.getElementById('waSetupGuideModal')?.classList.add('hidden');
+    });
+    document.getElementById('btnGoToWaSettings')?.addEventListener('click', () => {
+      document.getElementById('waSetupGuideModal')?.classList.add('hidden');
+      this.switchView('settings');
+      setTimeout(() => {
+        document.getElementById('waGatewaySection')?.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
+    });
+    document.getElementById('btnSendDirectFallback')?.addEventListener('click', () => {
+      document.getElementById('waSetupGuideModal')?.classList.add('hidden');
+      if (this.pendingDirectWaData) {
+        this.sendWhatsAppDirect(this.pendingDirectWaData.phone, this.pendingDirectWaData.message);
+      }
+    });
 
     // 21. Ledger Filters
     ['txSearchInput', 'filterTypeSelect', 'filterCategorySelect', 'filterDateRangeSelect', 'customStartDate', 'customEndDate'].forEach(id => {
