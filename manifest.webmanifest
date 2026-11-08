@@ -1,6 +1,6 @@
 {
-  "name": "ഓഫീസ് ഫിനാൻസ് | Office Finance",
-  "short_name": "OfficeFinance",
+  "name": "OFFICE FINANCE TRACKER",
+  "short_name": "FinanceTracker",
   "description": "ഓഫീസ് വരവ് ചിലവ് കണക്കുകൾ രേഖപ്പെടുത്താനുള്ള മൊബൈൽ & വെബ് ആപ്പ്",
   "start_url": "./index.html",
   "scope": "./",

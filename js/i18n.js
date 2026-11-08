@@ -5,7 +5,7 @@
 const translations = {
   ml: {
     // Top Bar & App Info
-    appTitle: 'ഓഫീസ് ഫിനാൻസ്',
+    appTitle: 'OFFICE FINANCE TRACKER',
     appSubtitle: 'വരവ്-ചിലവ് മാനേജ്‌മെന്റ് സിസ്റ്റം',
     langToggle: 'English',
     themeToggle: 'തീം മാറ്റുക',
@@ -138,7 +138,7 @@ const translations = {
 
   en: {
     // Top Bar & App Info
-    appTitle: 'Office Finance',
+    appTitle: 'OFFICE FINANCE TRACKER',
     appSubtitle: 'Income & Expense Management System',
     langToggle: 'മലയാളം',
     themeToggle: 'Toggle Theme',

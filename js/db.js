@@ -38,7 +38,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const DEFAULT_OFFICE_PROFILE = {
-  name: 'എന്റെ ഓഫീസ് (My Office)',
+  name: 'OFFICE FINANCE TRACKER',
   tagline: 'ഫിനാൻസ് & അക്കൗണ്ട്സ് ഡിവിഷൻ',
   address: 'ഓഫീസ് വിലാസം, കേരളം',
   phone: '+91 9876543210',
@@ -111,6 +111,9 @@ class FinanceDB {
     const profile = await this.getSetting('officeProfile');
     if (!profile) {
       await this.setSetting('officeProfile', DEFAULT_OFFICE_PROFILE);
+    } else if (!profile.name || profile.name.includes('My Office') || profile.name.includes('എന്റെ ഓഫീസ്')) {
+      profile.name = 'OFFICE FINANCE TRACKER';
+      await this.setSetting('officeProfile', profile);
     }
 
     const lang = await this.getSetting('language');
