@@ -164,13 +164,13 @@
         </button>
       </nav>
 
-      <!-- Right: Action Buttons (Install App, Theme Toggle, Lang, Lock) -->
+      <!-- Right: Action Buttons (User, Lang, Theme) -->
       <div class="finnova-top-actions">
         <!-- Active User Profile Badge & Lock Trigger (Owner / Staff / Viewer) -->
-        <button type="button" id="btnHeaderUserBadge" class="action-btn-pill" style="background: var(--bg-surface); border: 1.5px solid var(--finnova-purple); color: var(--finnova-purple); padding: 6px 14px; font-size: 0.8rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; box-shadow: var(--shadow-sm);" title="Current User / Lock Session">
+        <button type="button" id="btnHeaderUserBadge" class="action-btn-pill header-user-badge-btn" style="background: var(--bg-surface); border: 1.5px solid var(--finnova-purple); color: var(--finnova-purple); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; box-shadow: var(--shadow-sm);" title="Current User / Lock Session">
           <span id="headerUserAvatar">👑</span>
-          <span id="headerUserName">Owner (Admin)</span>
-          <i data-lucide="lock" style="width: 14px; height: 14px; margin-left: 2px;"></i>
+          <span id="headerUserName">Owner</span>
+          <i data-lucide="lock" style="width: 13px; height: 13px; margin-left: 2px;"></i>
         </button>
 
         <!-- Language Switcher Option (English & Malayalam) -->
@@ -183,11 +183,6 @@
         <button id="btnDarkToggle" class="theme-switch-btn" title="Dark / Light Theme Toggle">
           <span id="darkToggleIcon">🌙</span>
           <span id="darkToggleLabel" data-i18n="dark">Dark</span>
-        </button>
-
-        <!-- Quick PIN Lock -->
-        <button id="btnQuickLock" class="sq-pill-btn" title="PIN Lock" data-i18n-title="pinLockTooltip">
-          <i data-lucide="lock"></i>
         </button>
       </div>
     </header>

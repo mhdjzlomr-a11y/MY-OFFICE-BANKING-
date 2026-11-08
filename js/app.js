@@ -385,7 +385,9 @@ class OfficeFinanceApp {
       headerAvatar.textContent = this.currentUser.role === 'admin' ? '👑' : this.currentUser.role === 'staff' ? '💼' : '👁️';
     }
     if (headerName) {
-      headerName.textContent = `${this.currentUser.name}`;
+      const rawName = this.currentUser.name || 'Owner';
+      const cleanName = rawName.replace(/\s*\(.*?\)/, '').trim();
+      headerName.textContent = cleanName;
     }
 
     // Role-based visibility
