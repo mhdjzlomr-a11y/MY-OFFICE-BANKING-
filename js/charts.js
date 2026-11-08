@@ -238,7 +238,7 @@ class FinanceCharts {
     if (sortedCats.length > 5) {
       const otherTotal = sortedCats.slice(5).reduce((s, cid) => s + catTotals[cid], 0);
       slices.push({
-        label: 'Others',
+        label: (window.i18n ? window.i18n.t('othersLabel') : 'Others'),
         amount: otherTotal,
         color: '#94a3b8',
         pct: totalExpense > 0 ? Math.round((otherTotal / totalExpense) * 100) : 0

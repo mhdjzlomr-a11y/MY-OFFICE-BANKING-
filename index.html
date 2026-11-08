@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ml">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#5c54f8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="description" content="ഓഫീസ് വരവ് ചിലവ് കണക്കുകൾ രേഖപ്പെടുത്താനുള്ള മൊബൈൽ & വെബ് ആപ്പ്" />
+  <meta name="description" content="OFFICE FINANCE TRACKER - Smart Office Financial Management" />
   <title>OFFICE FINANCE TRACKER</title>
 
   <!-- PWA Manifest & Favicon -->
@@ -32,7 +32,7 @@
         </div>
         <div>
           <h1 class="finnova-brand-text" id="headerOfficeName">OFFICE FINANCE TRACKER</h1>
-          <p class="finnova-brand-sub">Smart Finances, Better Business</p>
+          <p class="finnova-brand-sub" data-i18n="appSubtitle">Smart Finances, Better Business</p>
         </div>
       </div>
 
@@ -67,12 +67,12 @@
         </button>
 
         <!-- Quick PIN Lock -->
-        <button id="btnQuickLock" class="sq-pill-btn" title="സെക്യൂരിറ്റി ലോക്ക് (PIN Lock)">
+        <button id="btnQuickLock" class="sq-pill-btn" title="PIN Lock" data-i18n-title="pinLockTooltip">
           <i data-lucide="lock"></i>
         </button>
 
         <!-- Install PWA App -->
-        <button id="btnInstallApp" class="sq-pill-btn hidden" title="Install App to Phone / PC" style="color: var(--light-blue-600);">
+        <button id="btnInstallApp" class="sq-pill-btn hidden" title="Install App to Phone / PC" data-i18n-title="installApp" style="color: var(--light-blue-600);">
           <i data-lucide="download"></i>
         </button>
       </div>
@@ -93,11 +93,11 @@
 
           <!-- Period Filter Tabs (Daily, Weekly, Monthly, Yearly, All) -->
           <div class="period-tabs-wrapper">
-            <button class="period-tab-btn active" data-period="daily" data-i18n="periodDaily">Daily (ഇന്ന്)</button>
-            <button class="period-tab-btn" data-period="weekly" data-i18n="periodWeekly">Weekly (ഈ ആഴ്ച)</button>
-            <button class="period-tab-btn" data-period="monthly" data-i18n="periodMonthly">Monthly (ഈ മാസം)</button>
-            <button class="period-tab-btn" data-period="yearly" data-i18n="periodYearly">Yearly (ഈ വർഷം)</button>
-            <button class="period-tab-btn" data-period="all" data-i18n="periodAll">All Time (മുഴുവൻ)</button>
+            <button class="period-tab-btn active" data-period="daily" data-i18n="periodDaily">Daily (Today)</button>
+            <button class="period-tab-btn" data-period="weekly" data-i18n="periodWeekly">Weekly (This Week)</button>
+            <button class="period-tab-btn" data-period="monthly" data-i18n="periodMonthly">Monthly (This Month)</button>
+            <button class="period-tab-btn" data-period="yearly" data-i18n="periodYearly">Yearly (This Year)</button>
+            <button class="period-tab-btn" data-period="all" data-i18n="periodAll">All Time</button>
           </div>
 
           <!-- Create Transaction Button -->
@@ -107,14 +107,14 @@
           </button>
         </div>
 
-        <!-- ================= THE 4 VIBRANT GRADIENT STAT CARDS (FROM IMAGE THEME) ================= -->
+        <!-- ================= THE 4 VIBRANT GRADIENT STAT CARDS ================= -->
         <div class="finnova-stat-grid">
 
           <!-- Card 1: Vibrant Rose Pink Gradient (Net Balance) -->
           <div class="finnova-stat-card card-gradient-pink">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text" data-i18n="netBalance">Net Balance (മിച്ചം)</span>
+                <span class="card-label-text" data-i18n="netBalance">Net Balance</span>
                 <div class="card-indicator-bubble">
                   <i data-lucide="scale"></i>
                 </div>
@@ -126,7 +126,7 @@
                 <i data-lucide="trending-up"></i>
                 <span id="statPeriodNetText">Active Period</span>
               </span>
-              <span id="statActivePeriodLabel">ഇന്നത്തെ കണക്ക്</span>
+              <span id="statActivePeriodLabel" data-i18n="activePeriodLabelDaily">Today's Ledger</span>
             </div>
           </div>
 
@@ -134,7 +134,7 @@
           <div class="finnova-stat-card card-gradient-purple">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text" data-i18n="totalIncome">Total Income (വരവ്)</span>
+                <span class="card-label-text" data-i18n="totalIncome">Total Income</span>
                 <div class="card-indicator-bubble">
                   <i data-lucide="arrow-down-left"></i>
                 </div>
@@ -151,7 +151,7 @@
                 <div class="mini-bar" style="height: 60%;"></div>
               </div>
               <div class="card-footer-mini" style="margin-top: 6px;">
-                <span data-i18n="incomeCountLabel">വരവ് ഇടപാടുകൾ:</span>
+                <span data-i18n="incomeCountLabel">Income Entries:</span>
                 <strong id="statIncomeCount" style="color: #ffffff;">0</strong>
               </div>
             </div>
@@ -161,7 +161,7 @@
           <div class="finnova-stat-card card-gradient-blue">
             <div>
               <div class="card-label-row">
-                <span class="card-label-text" data-i18n="totalExpense">Total Expense (ചിലവ്)</span>
+                <span class="card-label-text" data-i18n="totalExpense">Total Expense</span>
                 <div class="card-indicator-bubble">
                   <i data-lucide="arrow-up-right"></i>
                 </div>
@@ -177,7 +177,7 @@
                 <div class="mini-bar" style="height: 50%;"></div>
               </div>
               <div class="card-footer-mini" style="margin-top: 6px;">
-                <span data-i18n="expenseCountLabel">ചിലവ് ഇടപാടുകൾ:</span>
+                <span data-i18n="expenseCountLabel">Expense Entries:</span>
                 <strong id="statExpenseCount" style="color: #ffffff;">0</strong>
               </div>
             </div>
@@ -192,13 +192,13 @@
                   <i data-lucide="wallet"></i>
                 </div>
               </div>
-              <div id="statTotalTxCount" class="card-amount-val">0 Active</div>
+              <div id="statTotalTxCount" class="card-amount-val">0 Total</div>
             </div>
             <div class="card-footer-mini">
               <span class="trend-pill">
-                <i data-lucide="shield-check"></i> 100% Offline
+                <i data-lucide="shield-check"></i> <span data-i18n="offlineSafe">100% Offline Safe</span>
               </span>
-              <span>IndexedDB Safe</span>
+              <span data-i18n="indexedDbSafe">IndexedDB Safe</span>
             </div>
           </div>
 
@@ -207,10 +207,10 @@
         <!-- ================= ACTIVE FILTER & 1-CLICK EXPORTS BANNER ================= -->
         <div class="finnova-filter-row">
           <div class="filter-pills-left">
-            <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;" data-i18n="filterLabel">ഫിൽട്ടർ:</span>
-            <button class="filter-chip-btn active" data-subfilter="all" data-i18n="filterAll">എല്ലാം (All)</button>
-            <button class="filter-chip-btn" data-subfilter="expense" data-i18n="filterExpense">ചിലവ് (Expense)</button>
-            <button class="filter-chip-btn" data-subfilter="income" data-i18n="filterIncome">വരവ് (Income)</button>
+            <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;" data-i18n="filterLabel">Filter:</span>
+            <button class="filter-chip-btn active" data-subfilter="all" data-i18n="filterAll">All</button>
+            <button class="filter-chip-btn" data-subfilter="expense" data-i18n="filterExpense">Expense</button>
+            <button class="filter-chip-btn" data-subfilter="income" data-i18n="filterIncome">Income</button>
 
             <!-- Quick Search Input -->
             <input id="dashQuickSearch" type="text" class="form-input" style="width: 180px; padding: 6px 12px; font-size: 0.8rem; border-radius: var(--radius-pill);" placeholder="Search entry..." data-i18n-placeholder="searchEntryPlaceholder" />
@@ -218,19 +218,19 @@
 
           <!-- 1-Click PDF & Excel Period Exports -->
           <div class="export-btns-right">
-            <button id="dashBtnPDF" class="btn-export-pdf" title="ഡൗൺലോഡ് PDF">
+            <button id="dashBtnPDF" class="btn-export-pdf" title="Download PDF">
               <i data-lucide="file-text"></i>
               <span id="dashPdfPeriodLabel">Daily PDF</span>
             </button>
 
-            <button id="dashBtnExcel" class="btn-export-excel" title="ഡൗൺലോഡ് Excel">
+            <button id="dashBtnExcel" class="btn-export-excel" title="Download Excel">
               <i data-lucide="sheet"></i>
               <span id="dashExcelPeriodLabel">Daily Excel</span>
             </button>
 
-            <button id="dashBtnPrint" class="btn-export-print" title="പ്രിന്റ് ചെയ്യുക">
+            <button id="dashBtnPrint" class="btn-export-print" title="Print">
               <i data-lucide="printer"></i>
-              <span>Print</span>
+              <span data-i18n="btnPrint">Print</span>
             </button>
           </div>
         </div>
@@ -241,11 +241,11 @@
           <!-- Left Column: Clickable Ledger List -->
           <div class="navy-left-col">
             <div class="navy-header-row">
-              <div class="navy-title" id="navyBoardTitle">സമീപകാല ഇടപാടുകൾ (Transactions)</div>
+              <div class="navy-title" id="navyBoardTitle" data-i18n="recentTransactions">Recent Transactions</div>
               <div class="navy-sub-tabs">
-                <button class="navy-tab-pill active" data-navyfilter="all">All</button>
-                <button class="navy-tab-pill" data-navyfilter="expense">Expense</button>
-                <button class="navy-tab-pill" data-navyfilter="income">Income</button>
+                <button class="navy-tab-pill active" data-navyfilter="all" data-i18n="navyTabAll">All</button>
+                <button class="navy-tab-pill" data-navyfilter="expense" data-i18n="navyTabExpense">Expense</button>
+                <button class="navy-tab-pill" data-navyfilter="income" data-i18n="navyTabIncome">Income</button>
               </div>
             </div>
 
@@ -260,34 +260,34 @@
             <div>
               <div class="purple-details-top">
                 <div>
-                  <div style="font-size: 0.72rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em;">Invoice / Voucher Details</div>
+                  <div style="font-size: 0.72rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="invoiceDetails">Invoice / Voucher Details</div>
                   <div class="purple-details-inv" id="navySelectedInvNo"># INV-1001</div>
                 </div>
                 <div style="text-align: right;">
                   <div class="purple-company" id="navySelectedOfficeName">OFFICE FINANCE</div>
-                  <span id="navySelectedTypeBadge" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.2);">Verified</span>
+                  <span id="navySelectedTypeBadge" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.2);" data-i18n="verified">Verified</span>
                 </div>
               </div>
 
               <!-- 3 Mini Breakdown Glass Boxes -->
               <div class="purple-breakdown-grid">
                 <div class="purple-mini-box">
-                  <div class="title">തുക (AMOUNT)</div>
+                  <div class="title" data-i18n="amountCol">AMOUNT</div>
                   <div class="val" id="navySelectedAmount">₹0.00</div>
                 </div>
                 <div class="purple-mini-box">
-                  <div class="title">വിഭാഗം (CATEGORY)</div>
+                  <div class="title" data-i18n="categoryCol">CATEGORY</div>
                   <div class="val" id="navySelectedCategory" style="font-size: 0.88rem;">-</div>
                 </div>
                 <div class="purple-mini-box">
-                  <div class="title">തീയതി (DATE)</div>
+                  <div class="title" data-i18n="dateCol">DATE</div>
                   <div class="val" id="navySelectedDate" style="font-size: 0.88rem;">-</div>
                 </div>
               </div>
 
               <!-- Description & Party Details -->
               <div style="background: rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px;">
-                <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 700;" data-i18n="partyDetailsLabel">ആർക്ക് നൽകി / ലഭിച്ചത്:</div>
+                <div style="font-size: 0.72rem; opacity: 0.8; font-weight: 700;" data-i18n="partyDetailsLabel">Paid To / Received From:</div>
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
                   <span id="navySelectedParty" style="font-size: 0.95rem; font-weight: 800;">-</span>
                   <span id="navySelectedPhone" style="font-size: 0.8rem; font-weight: 700; color: #a7f3d0; background: rgba(16, 185, 129, 0.25); padding: 2px 8px; border-radius: 999px;">-</span>
@@ -299,21 +299,21 @@
             <!-- Bottom Action Row -->
             <div class="purple-details-bottom">
               <div>
-                <div style="font-size: 0.7rem; opacity: 0.8;" data-i18n="totalBalanceLabel">മൊത്തം തുക (Total Balance)</div>
+                <div style="font-size: 0.7rem; opacity: 0.8;" data-i18n="totalBalanceLabel">Total Balance</div>
                 <div id="navySelectedBottomSubtotal" style="font-size: 1.15rem; font-weight: 800;">₹0.00</div>
               </div>
 
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button id="btnNavySendWhatsapp" class="btn-whatsapp" title="WhatsApp വഴി രസീത് അയക്കുക">
-                  <i data-lucide="message-circle"></i> <span>WhatsApp</span>
+                <button id="btnNavySendWhatsapp" class="btn-whatsapp" title="Send WhatsApp Receipt">
+                  <i data-lucide="message-circle"></i> <span data-i18n="btnWhatsapp">WhatsApp</span>
                 </button>
                 <button id="btnNavyPrintVoucher" class="btn-payout-now">
-                  <i data-lucide="printer"></i> <span data-i18n="btnPrintVoucher">വൗച്ചർ PDF</span>
+                  <i data-lucide="printer"></i> <span data-i18n="btnPrintVoucher">Voucher PDF</span>
                 </button>
-                <button id="btnNavyEditTx" class="sq-pill-btn" style="background: rgba(255,255,255,0.2); border: none; color: white;" title="Edit">
+                <button id="btnNavyEditTx" class="sq-pill-btn" style="background: rgba(255,255,255,0.2); border: none; color: white;" title="Edit" data-i18n-title="btnEdit">
                   <i data-lucide="edit-2"></i>
                 </button>
-                <button id="btnNavyDeleteTx" class="sq-pill-btn" style="background: rgba(244,63,94,0.3); border: none; color: white;" title="Delete">
+                <button id="btnNavyDeleteTx" class="sq-pill-btn" style="background: rgba(244,63,94,0.3); border: none; color: white;" title="Delete" data-i18n-title="btnDelete">
                   <i data-lucide="trash-2"></i>
                 </button>
               </div>
@@ -327,8 +327,8 @@
           <!-- Flow Trend Chart -->
           <div class="finnova-box">
             <div class="box-header">
-              <h3 class="box-title">Financial Flow (ഒഴുക്ക്)</h3>
-              <span style="font-size: 0.74rem; font-weight: 700; color: var(--light-blue-600); background: var(--light-blue-50); padding: 3px 10px; border-radius: 999px;">
+              <h3 class="box-title" data-i18n="financialFlow">Financial Flow</h3>
+              <span style="font-size: 0.74rem; font-weight: 700; color: var(--light-blue-600); background: var(--light-blue-50); padding: 3px 10px; border-radius: 999px;" data-i18n="trendOverview">
                 Trend Overview
               </span>
             </div>
@@ -340,8 +340,8 @@
           <!-- Category Donut with Side Legend -->
           <div class="finnova-box">
             <div class="box-header">
-              <h3 class="box-title">Category Breakdown</h3>
-              <span style="font-size: 0.74rem; font-weight: 700; color: var(--finnova-purple); background: var(--finnova-purple-light); padding: 3px 10px; border-radius: 999px;">
+              <h3 class="box-title" data-i18n="categoryBreakdown">Category Breakdown</h3>
+              <span style="font-size: 0.74rem; font-weight: 700; color: var(--finnova-purple); background: var(--finnova-purple-light); padding: 3px 10px; border-radius: 999px;" data-i18n="donutExpensesLabel">
                 Expenses
               </span>
             </div>
@@ -362,45 +362,45 @@
       <section id="view-transactions" class="tab-view hidden">
         <div class="white-box">
           <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-            <input id="txSearchInput" type="text" class="form-input" style="flex: 2; min-width: 220px;" placeholder="Search party, category, bill, notes..." />
+            <input id="txSearchInput" type="text" class="form-input" style="flex: 2; min-width: 220px;" placeholder="Search party, category, bill, notes..." data-i18n-placeholder="searchLedgerPlaceholder" />
 
             <select id="filterTypeSelect" class="form-input" style="flex: 1; min-width: 130px;">
-              <option value="all">All Types (എല്ലാം)</option>
-              <option value="income">Income Only (വരവ്)</option>
-              <option value="expense">Expense Only (ചിലവ്)</option>
+              <option value="all" data-i18n="filterAllTypes">All Types</option>
+              <option value="income" data-i18n="filterIncomeOnly">Income Only</option>
+              <option value="expense" data-i18n="filterExpenseOnly">Expense Only</option>
             </select>
 
             <select id="filterCategorySelect" class="form-input" style="flex: 1; min-width: 140px;">
-              <option value="all">All Categories</option>
+              <option value="all" data-i18n="filterAllCategories">All Categories</option>
             </select>
 
             <select id="filterDateRangeSelect" class="form-input" style="flex: 1; min-width: 130px;">
-              <option value="all">All Time</option>
-              <option value="today">Today (ഇന്ന്)</option>
-              <option value="yesterday">Yesterday (ഇന്നലെ)</option>
-              <option value="this_week">This Week (ഈ ആഴ്ച)</option>
-              <option value="this_month">This Month (ഈ മാസം)</option>
-              <option value="custom">Custom Date</option>
+              <option value="all" data-i18n="rangeAllTime">All Time</option>
+              <option value="today" data-i18n="rangeToday">Today</option>
+              <option value="yesterday" data-i18n="rangeYesterday">Yesterday</option>
+              <option value="this_week" data-i18n="rangeThisWeek">This Week</option>
+              <option value="this_month" data-i18n="rangeThisMonth">This Month</option>
+              <option value="custom" data-i18n="rangeCustom">Custom Date</option>
             </select>
           </div>
 
           <!-- Custom Date Range Row -->
           <div id="customDateRangeRow" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light);">
             <div class="form-group">
-              <label class="form-label">From Date</label>
+              <label class="form-label" data-i18n="fromDate">From Date</label>
               <input id="customStartDate" type="date" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">To Date</label>
+              <label class="form-label" data-i18n="toDate">To Date</label>
               <input id="customEndDate" type="date" class="form-input" />
             </div>
           </div>
 
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; padding-top: 8px;">
-            <div>കണ്ടെത്തിയവ: <strong id="filteredCountText" style="color: var(--text-dark);">0</strong> ഇടപാടുകൾ</div>
+            <div><span data-i18n="foundEntries">Found:</span> <strong id="filteredCountText" style="color: var(--text-dark);">0</strong> <span data-i18n="entriesUnit">entries</span></div>
             <div style="display: flex; gap: 14px;">
-              <span>വരവ്: <strong id="filteredIncomeText" style="color: var(--emerald-green);">₹0</strong></span>
-              <span>ചിലവ്: <strong id="filteredExpenseText" style="color: var(--coral-rose);">₹0</strong></span>
+              <span><span data-i18n="incomeLabel">Income:</span> <strong id="filteredIncomeText" style="color: var(--emerald-green);">₹0</strong></span>
+              <span><span data-i18n="expenseLabel">Expense:</span> <strong id="filteredExpenseText" style="color: var(--coral-rose);">₹0</strong></span>
             </div>
           </div>
         </div>
@@ -415,12 +415,12 @@
       <!-- ================= TAB 3: REPORTS & 1-CLICK PERIOD DOWNLOADS ================= -->
       <section id="view-reports" class="tab-view hidden">
         
-        <!-- ================= 1-CLICK PERIOD DOWNLOAD CARDS ================= -->
+        <!-- 1-Click Period Download Cards Header -->
         <div class="box-header" style="margin-bottom: 8px;">
           <div>
-            <h3 class="box-title" data-i18n="reportsTitle">റിപ്പോർട്ടുകളും ഡൗൺലോഡുകളും (Reports & Downloads)</h3>
+            <h3 class="box-title" data-i18n="reportsTitle">Reports & Downloads</h3>
             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="reportsSubtitle">
-              Daily, Weekly, Monthly, Yearly സ്റ്റേറ്റ്‌മെന്റുകൾ PDF ആയോ Excel ആയോ ഒരൊറ്റ ക്ലിക്കിൽ ഡൗൺലോഡ് ചെയ്യാം
+              Download official Daily, Weekly, Monthly, and Yearly statements in PDF or Excel with 1-click
             </p>
           </div>
         </div>
@@ -432,12 +432,12 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-light-blue">📅</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="dailyReportTitle">ഇന്നത്തെ കണക്ക്</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="dailyReportTitle">Today's Accounts</div>
                   <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="dailyReportSub">Daily Report (Today)</div>
                 </div>
               </div>
               <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="dailyReportDesc">
-                ഇന്നത്തെ എല്ലാ വരവ് ചിലവ് വിവരങ്ങളും അടങ്ങിയ റിപ്പോർട്ട്
+                Complete itemized statement of today's income & expenses
               </div>
             </div>
             <div class="period-card-btns">
@@ -456,12 +456,12 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-purple">🗓️</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="weeklyReportTitle">ഈ ആഴ്ചയിലെ കണക്ക്</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="weeklyReportTitle">This Week's Accounts</div>
                   <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="weeklyReportSub">Weekly Statement</div>
                 </div>
               </div>
               <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="weeklyReportDesc">
-                കഴിഞ്ഞ 7 ദിവസങ്ങളിലെ ഔദ്യോഗിക ഫിനാൻഷ്യൽ സ്റ്റേറ്റ്‌മെന്റ്
+                Official financial statement of transactions over the last 7 days
               </div>
             </div>
             <div class="period-card-btns">
@@ -480,12 +480,12 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-green">📊</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="monthlyReportTitle">ഈ മാസത്തെ കണക്ക്</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="monthlyReportTitle">This Month's Accounts</div>
                   <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="monthlyReportSub">Monthly Statement</div>
                 </div>
               </div>
               <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="monthlyReportDesc">
-                നടപ്പു മാസത്തെ കാറ്റഗറി തിരിച്ചുള്ള സമഗ്ര കണക്കുകൾ
+                Comprehensive monthly category breakdown of all operations
               </div>
             </div>
             <div class="period-card-btns">
@@ -504,12 +504,12 @@
               <div class="period-card-header">
                 <div class="period-badge-icon bubble-rose">📈</div>
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="yearlyReportTitle">ഈ വർഷത്തെ കണക്ക്</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-dark);" data-i18n="yearlyReportTitle">This Year's Accounts</div>
                   <div style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="yearlyReportSub">Annual Financial Report</div>
                 </div>
               </div>
               <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="yearlyReportDesc">
-                മുഴുവൻ സാമ്പത്തിക വർഷത്തെ വരുമാന, ചിലവ് ഓഡിറ്റ് റിപ്പോർട്ട്
+                Complete financial statement and audit summary for the current year
               </div>
             </div>
             <div class="period-card-btns">
@@ -526,28 +526,28 @@
         <!-- Custom Date Range Card -->
         <div class="white-box">
           <div class="box-header">
-            <h4 class="box-title">കസ്റ്റം ഡേറ്റ് റേഞ്ച് റിപ്പോർട്ട് (Custom Period)</h4>
+            <h4 class="box-title" data-i18n="customRangeTitle">Custom Date Range Report</h4>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
             <div class="form-group">
-              <label class="form-label">Period Selection</label>
+              <label class="form-label" data-i18n="periodSelection">Period Selection</label>
               <select id="reportRangePreset" class="form-input">
-                <option value="this_month">This Month (ഈ മാസം)</option>
-                <option value="last_month">Last Month (കഴിഞ്ഞ മാസം)</option>
-                <option value="this_year">This Year (ഈ വർഷം)</option>
-                <option value="all_time">All Time (മുഴുവൻ)</option>
-                <option value="custom">Custom Date Range</option>
+                <option value="this_month" data-i18n="rangeThisMonth">This Month</option>
+                <option value="last_month" data-i18n="rangeLastMonth">Last Month</option>
+                <option value="this_year" data-i18n="rangeThisYear">This Year</option>
+                <option value="all_time" data-i18n="rangeAllTime">All Time</option>
+                <option value="custom" data-i18n="rangeCustom">Custom Date Range</option>
               </select>
             </div>
 
             <div id="reportCustomStartCol" class="form-group hidden">
-              <label class="form-label">Start Date</label>
+              <label class="form-label" data-i18n="fromDate">From Date</label>
               <input id="reportStartDate" type="date" class="form-input" />
             </div>
 
             <div id="reportCustomEndCol" class="form-group hidden">
-              <label class="form-label">End Date</label>
+              <label class="form-label" data-i18n="toDate">To Date</label>
               <input id="reportEndDate" type="date" class="form-input" />
             </div>
           </div>
@@ -555,32 +555,32 @@
           <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
             <button id="btnExportPDF" class="btn-export-pdf">
               <i data-lucide="file-down"></i>
-              <span>📄 PDF സ്റ്റേറ്റ്‌മെന്റ് ഡൗൺലോഡ്</span>
+              <span data-i18n="btnDownloadPDF">📄 Download PDF Statement</span>
             </button>
 
             <button id="btnExportCSV" class="btn-export-excel">
               <i data-lucide="table"></i>
-              <span>📊 എക്സൽ (Excel / CSV) ഡൗൺലോഡ്</span>
+              <span data-i18n="btnDownloadExcel">📊 Download Excel (CSV)</span>
             </button>
 
             <button id="btnPrintReport" class="btn-export-print">
               <i data-lucide="printer"></i>
-              <span>🖨️ പ്രിന്റ് ചെയ്യുക</span>
+              <span data-i18n="btnPrintStatement">🖨️ Print Statement</span>
             </button>
           </div>
 
           <!-- Summary Metric Cards -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
             <div class="white-box" style="border-left: 4px solid var(--emerald-green);">
-              <div class="form-label">ആകെ വരവ് (Total Income)</div>
+              <div class="form-label" data-i18n="totalIncome">Total Income</div>
               <div id="reportTotalIncome" style="font-size: 1.4rem; font-weight: 800; color: var(--emerald-green); margin-top: 4px;">₹0.00</div>
             </div>
             <div class="white-box" style="border-left: 4px solid var(--coral-rose);">
-              <div class="form-label">ആകെ ചിലവ് (Total Expense)</div>
+              <div class="form-label" data-i18n="totalExpense">Total Expense</div>
               <div id="reportTotalExpense" style="font-size: 1.4rem; font-weight: 800; color: var(--coral-rose); margin-top: 4px;">₹0.00</div>
             </div>
             <div class="white-box" style="border-left: 4px solid var(--light-blue-600);">
-              <div class="form-label">മിച്ചം (Net Balance)</div>
+              <div class="form-label" data-i18n="netBalance">Net Balance</div>
               <div id="reportNetBalance" style="font-size: 1.4rem; font-weight: 800; color: var(--light-blue-600); margin-top: 4px;">₹0.00</div>
             </div>
           </div>
@@ -590,10 +590,10 @@
             <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
               <thead>
                 <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-muted); font-size: 0.74rem;">
-                  <th style="padding: 10px 8px;">CATEGORY</th>
-                  <th style="padding: 10px 8px;">TRANSACTIONS</th>
-                  <th style="padding: 10px 8px; text-align: right;">AMOUNT</th>
-                  <th style="padding: 10px 8px; text-align: right;">PERCENTAGE</th>
+                  <th style="padding: 10px 8px;" data-i18n="tableThCategory">CATEGORY</th>
+                  <th style="padding: 10px 8px;" data-i18n="tableThTxCount">TRANSACTIONS</th>
+                  <th style="padding: 10px 8px; text-align: right;" data-i18n="tableThAmount">AMOUNT</th>
+                  <th style="padding: 10px 8px; text-align: right;" data-i18n="tableThPercentage">PERCENTAGE</th>
                 </tr>
               </thead>
               <tbody id="reportCategoryTableBody">
@@ -608,21 +608,22 @@
       <!-- ================= TAB 4: SETTINGS VIEW ================= -->
       <section id="view-settings" class="tab-view hidden">
         
+        <!-- Category Management -->
         <div class="white-box" style="margin-bottom: 20px;">
           <div class="box-header">
             <div>
-              <h3 class="box-title">കാറ്റഗറി മാനേജ്‌മെന്റ്</h3>
-              <p style="font-size: 0.76rem; color: var(--text-muted);">വരവ്, ചിലവ് വിഭാഗങ്ങൾ പരിശോധിക്കുകയോ പുതിയവ ചേർക്കുകയോ ചെയ്യാം</p>
+              <h3 class="box-title" data-i18n="categoryManagement">Category Management</h3>
+              <p style="font-size: 0.76rem; color: var(--text-muted);" data-i18n="categorySub">Review or add custom income and expense categories</p>
             </div>
             <button id="btnOpenAddCategoryModal" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.8rem;">
               <i data-lucide="plus"></i>
-              <span>+ പുതിയ കാറ്റഗറി</span>
+              <span data-i18n="btnAddCategory">+ New Category</span>
             </button>
           </div>
 
           <div style="margin-bottom: 16px;">
-            <div style="font-size: 0.74rem; font-weight: 700; color: var(--coral-rose); text-transform: uppercase; margin-bottom: 8px;">
-              ചിലവ് വിഭാഗങ്ങൾ (Expense Categories)
+            <div style="font-size: 0.74rem; font-weight: 700; color: var(--coral-rose); text-transform: uppercase; margin-bottom: 8px;" data-i18n="expenseCategories">
+              Expense Categories
             </div>
             <div id="expenseCategoryChips" class="chips-container">
               <!-- Populated via app.js -->
@@ -630,8 +631,8 @@
           </div>
 
           <div style="padding-top: 14px; border-top: 1px solid var(--border-light);">
-            <div style="font-size: 0.74rem; font-weight: 700; color: var(--emerald-green); text-transform: uppercase; margin-bottom: 8px;">
-              വരവ് വിഭാഗങ്ങൾ (Income Categories)
+            <div style="font-size: 0.74rem; font-weight: 700; color: var(--emerald-green); text-transform: uppercase; margin-bottom: 8px;" data-i18n="incomeCategories">
+              Income Categories
             </div>
             <div id="incomeCategoryChips" class="chips-container">
               <!-- Populated via app.js -->
@@ -641,38 +642,104 @@
 
         <!-- Office Profile -->
         <div class="white-box" style="margin-bottom: 20px;">
-          <h3 class="box-title">ഓഫീസ് പ്രൊഫൈൽ</h3>
-          <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;">PDF വൗച്ചറുകളിലും സ്റ്റേറ്റ്‌മെന്റുകളിലും വരുന്ന വിവരങ്ങൾ</p>
+          <h3 class="box-title" data-i18n="officeProfile">Office Profile</h3>
+          <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 14px;" data-i18n="officeProfileSub">Information displayed on PDF vouchers and financial statements</p>
 
           <form id="officeProfileForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
             <div class="form-group">
-              <label class="form-label">സ്ഥാപനത്തിന്റെ പേര്</label>
+              <label class="form-label" data-i18n="profileName">Office / Business Name</label>
               <input id="settingOfficeName" type="text" class="form-input" required />
             </div>
 
             <div class="form-group">
-              <label class="form-label">ഉപശീർഷകം</label>
+              <label class="form-label" data-i18n="profileTagline">Tagline / Subtitle</label>
               <input id="settingOfficeTagline" type="text" class="form-input" />
             </div>
 
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label">വിലാസം</label>
+              <label class="form-label" data-i18n="profileAddress">Address</label>
               <input id="settingOfficeAddress" type="text" class="form-input" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">ഫോൺ നമ്പർ</label>
+              <label class="form-label" data-i18n="profilePhone">Phone Number</label>
               <input id="settingOfficePhone" type="text" class="form-input" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">കറൻസി</label>
+              <label class="form-label" data-i18n="profileCurrency">Currency</label>
               <input id="settingOfficeCurrency" type="text" value="₹" class="form-input" />
             </div>
 
             <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
               <button type="submit" class="action-btn-pill btn-pill-green">
-                സേവ് ചെയ്യുക
+                <span data-i18n="btnSaveProfile">Save Profile</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ================= AUTOMATED WHATSAPP GATEWAY SETTINGS ================= -->
+        <div class="white-box" style="margin-bottom: 20px; border-left: 4px solid #25d366;">
+          <div class="box-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">📲</span>
+                <h3 class="box-title" data-i18n="waGatewayTitle">Automated WhatsApp API Gateway</h3>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" data-i18n="waGatewaySub">
+                Send messages automatically in the background without opening the WhatsApp web/app
+              </p>
+            </div>
+            <span style="font-size: 0.72rem; padding: 4px 10px; border-radius: 999px; background: rgba(37, 211, 102, 0.15); color: #15803d; font-weight: 800;">
+              ⚡ Auto Dispatch Active
+            </span>
+          </div>
+
+          <form id="waGatewayForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" data-i18n="waGatewayModeLabel">Gateway Delivery Mode</label>
+              <select id="waSettingMode" class="form-input">
+                <option value="direct" data-i18n="waModeDirect">⚡ Automated Background API (Silent delivery)</option>
+                <option value="callmebot" data-i18n="waModeCallmebot">🤖 CallMeBot Free WhatsApp API</option>
+                <option value="webhook" data-i18n="waModeWebhook">🔗 Custom Webhook / API URL</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="waDefaultLangLabel">Default WhatsApp Receipt Language</label>
+              <select id="waSettingDefaultLang" class="form-input">
+                <option value="app" data-i18n="waLangApp">Same as App Language</option>
+                <option value="ml" data-i18n="waLangMl">Always Malayalam</option>
+                <option value="en" data-i18n="waLangEn">Always English</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="waWebhookUrlLabel">Webhook URL / Endpoint</label>
+              <input id="waSettingWebhookUrl" type="url" class="form-input" placeholder="https://your-webhook-or-api-gateway.com/send" />
+              <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">
+                Works with Zapier, Make, n8n, CallMeBot, Green-API, UltraMsg, or any HTTP endpoint.
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="waApiKeyLabel">API Key / Token</label>
+              <input id="waSettingApiKey" type="password" class="form-input" placeholder="Optional API Token or CallMeBot Key" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" data-i18n="waPhoneIdLabel">Phone Number ID / Instance (Optional)</label>
+              <input id="waSettingPhoneId" type="text" class="form-input" placeholder="e.g. 109843920198" />
+            </div>
+
+            <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 6px;">
+              <button type="button" id="btnTestWaDelivery" class="action-btn-pill btn-pill-white" style="color: #15803d; border-color: rgba(37, 211, 102, 0.4);">
+                <i data-lucide="send"></i>
+                <span data-i18n="btnTestWaSend">Send Test WhatsApp</span>
+              </button>
+              <button type="submit" class="action-btn-pill btn-pill-green">
+                <span data-i18n="btnSaveGateway">Save Gateway Settings</span>
               </button>
             </div>
           </form>
@@ -681,34 +748,34 @@
         <!-- Backup & PIN Security -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
           <div class="white-box">
-            <h3 class="box-title">ഡാറ്റാ ബാക്കപ്പ്</h3>
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">കണക്കുകൾ ബാക്കപ്പ് എടുക്കാനും തിരിച്ചെടുക്കാനും</p>
+            <h3 class="box-title" data-i18n="dataBackup">Data Backup</h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;" data-i18n="dataBackupSub">Backup and restore financial records</p>
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <button id="btnDownloadBackupJSON" class="action-btn-pill btn-pill-white">
                 <i data-lucide="download"></i>
-                <span>📥 ഡൗൺലോഡ് ബാക്കപ്പ് (JSON)</span>
+                <span data-i18n="btnDownloadBackupJSON">📥 Download Backup (JSON)</span>
               </button>
               <label class="action-btn-pill btn-pill-white" style="cursor: pointer; justify-content: center;">
                 <i data-lucide="upload"></i>
-                <span>📤 ബാക്കപ്പ് റീസ്റ്റോർ ചെയ്യുക</span>
+                <span data-i18n="btnRestoreJSON">📤 Restore Backup File</span>
                 <input id="inputRestoreJSON" type="file" accept=".json" class="hidden" />
               </label>
             </div>
           </div>
 
           <div class="white-box">
-            <h3 class="box-title">ആപ്പ് സെക്യൂരിറ്റി</h3>
-            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">4-അക്ക സുരക്ഷാ PIN ലോക്ക്</p>
+            <h3 class="box-title" data-i18n="appSecurity">App Security</h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;" data-i18n="appSecuritySub">4-digit security PIN lock</p>
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 12px; background: var(--bg-subtle); border: 1px solid var(--border-light); font-size: 0.8rem; font-weight: 700;">
-                <span id="pinStatusText">PIN സുരക്ഷ ഓഫാണ്</span>
-                <button id="btnTogglePinSetting" style="border: none; background: transparent; color: var(--emerald-green); font-weight: bold; cursor: pointer;">
-                  PIN മാറ്റുക
+                <span id="pinStatusText" data-i18n="pinStatusInactive">PIN Security is Disabled</span>
+                <button id="btnTogglePinSetting" style="border: none; background: transparent; color: var(--emerald-green); font-weight: bold; cursor: pointer;" data-i18n="btnSetPin">
+                  Set PIN
                 </button>
               </div>
               <button id="btnClearAllData" class="action-btn-pill btn-pill-white" style="color: var(--coral-rose); border-color: rgba(244,63,94,0.3); background: var(--coral-light);">
                 <i data-lucide="trash-2"></i>
-                <span>⚠️ എല്ലാ ഇടപാടുകളും മായ്ക്കുക</span>
+                <span data-i18n="btnClearAll">⚠️ Clear All Transactions</span>
               </button>
             </div>
           </div>
@@ -751,7 +818,7 @@
   <div id="transactionModal" class="modal-overlay hidden">
     <div class="modal-dialog">
       <div class="modal-header-row">
-        <h3 id="txModalTitle" class="modal-heading-text">പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക</h3>
+        <h3 id="txModalTitle" class="modal-heading-text" data-i18n="modalAddTitle">Record New Transaction</h3>
         <button id="btnCloseTxModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
           <i data-lucide="x"></i>
         </button>
@@ -764,33 +831,33 @@
         <div class="type-segmented-control">
           <button type="button" id="toggleTypeExpense" class="segment-btn active expense">
             <i data-lucide="arrow-up-right"></i>
-            <span>ചിലവ് (Expense)</span>
+            <span data-i18n="typeExpense">Expense</span>
           </button>
           <button type="button" id="toggleTypeIncome" class="segment-btn income">
             <i data-lucide="arrow-down-left"></i>
-            <span>വരവ് (Income)</span>
+            <span data-i18n="typeIncome">Income</span>
           </button>
         </div>
 
         <!-- Big Amount Input -->
         <div class="form-group">
-          <label class="form-label">തുക (₹ Amount)</label>
+          <label class="form-label" data-i18n="amountLabel">Amount (₹)</label>
           <div class="big-amount-wrap">
             <span class="currency-prefix">₹</span>
             <input id="txAmount" type="number" step="any" min="0.01" class="big-amount-input" placeholder="0.00" required />
           </div>
         </div>
 
-        <!-- TYPEABLE CATEGORY INPUT (User Requested: Expence and Income Catogery type ചെയ്തു കൊടുക്കാൻ പറ്റുന്നത്) -->
+        <!-- TYPEABLE CATEGORY INPUT -->
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label class="form-label">വിഭാഗം / കാറ്റഗറി (Type or Select Category)</label>
-            <button type="button" id="btnQuickAddCat" style="border: none; background: transparent; color: var(--finnova-purple); font-weight: 800; font-size: 0.75rem; cursor: pointer;">
-              + പുതിയ കാറ്റഗറി
+            <label class="form-label" data-i18n="categoryLabel">Category (Type or Select)</label>
+            <button type="button" id="btnQuickAddCat" style="border: none; background: transparent; color: var(--finnova-purple); font-weight: 800; font-size: 0.75rem; cursor: pointer;" data-i18n="btnQuickAddCat">
+              + New Category
             </button>
           </div>
           <div class="category-typeable-wrap">
-            <input id="txCategory" list="categoryDatalist" class="category-input-typeable" placeholder="കാറ്റഗറി ടൈപ്പ് ചെയ്യുക അല്ലെങ്കിൽ ലിസ്റ്റിൽ നിന്ന് തിരഞ്ഞെടുക്കുക..." autocomplete="off" required />
+            <input id="txCategory" list="categoryDatalist" class="category-input-typeable" placeholder="Type category or pick from list..." data-i18n-placeholder="categoryPlaceholder" autocomplete="off" required />
             <datalist id="categoryDatalist">
               <!-- Dynamically populated from IndexedDB categories -->
             </datalist>
@@ -800,18 +867,18 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">തീയതി (Date)</label>
+          <label class="form-label" data-i18n="dateLabel">Date</label>
           <input id="txDate" type="date" class="form-input" required />
         </div>
 
         <!-- Party Name & WhatsApp Mobile Number Side-by-Side -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="form-group">
-            <label id="labelParty" class="form-label">ആർക്ക് നൽകി / ലഭിച്ചത് (Party Name)</label>
-            <input id="txParty" type="text" class="form-input" placeholder="വ്യക്തി അല്ലെങ്കിൽ സ്ഥാപനം" />
+            <label id="labelParty" class="form-label" data-i18n="partyLabelExpense">Paid To</label>
+            <input id="txParty" type="text" class="form-input" placeholder="Person or Company Name" data-i18n-placeholder="partyPlaceholder" />
           </div>
           <div class="form-group">
-            <label class="form-label">WhatsApp നമ്പർ (Mobile No)</label>
+            <label class="form-label" data-i18n="phoneLabel">WhatsApp Mobile Number</label>
             <div style="position: relative; display: flex; align-items: center;">
               <span style="position: absolute; left: 10px; font-weight: 800; color: #25d366; font-size: 0.9rem;">📲</span>
               <input id="txPhone" type="tel" class="form-input" style="padding-left: 34px;" placeholder="10-digit number" />
@@ -819,29 +886,39 @@
           </div>
         </div>
 
-        <!-- WhatsApp Instant Receipt Checkbox -->
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 700; color: #15803d; cursor: pointer; background: rgba(37, 211, 102, 0.12); padding: 8px 12px; border-radius: var(--radius-md); border: 1px dashed rgba(37, 211, 102, 0.45);">
-          <input type="checkbox" id="txSendWhatsapp" style="width: 16px; height: 16px; accent-color: #25d366; cursor: pointer;" />
-          <span>സേവ് ചെയ്യുമ്പോൾ WhatsApp രസീത് അയക്കുക (Send WhatsApp Receipt)</span>
-        </label>
+        <!-- WhatsApp Automatic Dispatch Options (Checkbox & Language Picker) -->
+        <div style="background: rgba(37, 211, 102, 0.08); padding: 10px 12px; border-radius: var(--radius-md); border: 1px dashed rgba(37, 211, 102, 0.45); display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 700; color: #15803d; cursor: pointer;">
+            <input type="checkbox" id="txSendWhatsapp" style="width: 16px; height: 16px; accent-color: #25d366; cursor: pointer;" />
+            <span data-i18n="sendWhatsappCheckbox">Auto-send WhatsApp receipt on save</span>
+          </label>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 4px; border-top: 1px solid rgba(37, 211, 102, 0.2);">
+            <span style="font-size: 0.72rem; font-weight: 700; color: #166534;" data-i18n="waMsgLangLabel">WhatsApp Language:</span>
+            <div class="lang-pill-switcher" style="background: rgba(37, 211, 102, 0.15);">
+              <button type="button" id="btnTxWaLangMl" class="lang-pill-btn" style="font-size: 0.7rem; padding: 2px 8px;">മലയാളം</button>
+              <button type="button" id="btnTxWaLangEn" class="lang-pill-btn active" style="font-size: 0.7rem; padding: 2px 8px;">English</button>
+            </div>
+          </div>
+        </div>
 
         <div class="form-group">
-          <label class="form-label">ബിൽ / ഇൻവോയ്സ് നമ്പർ (Bill / Invoice #)</label>
+          <label class="form-label" data-i18n="billNoLabel">Bill / Invoice # (Optional)</label>
           <input id="txBillNo" type="text" class="form-input" placeholder="e.g. INV-1003" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">കുറിപ്പുകൾ / വിവരണം (Notes)</label>
-          <textarea id="txNotes" rows="2" class="form-input" placeholder="കൂടുതൽ വിവരങ്ങൾ..."></textarea>
+          <label class="form-label" data-i18n="notesLabel">Notes / Description (Optional)</label>
+          <textarea id="txNotes" rows="2" class="form-input" placeholder="Additional details..."></textarea>
         </div>
 
         <!-- Receipt Attachment -->
         <div class="form-group">
-          <label class="form-label">ബിൽ / രസീത് ഫോട്ടോ (Attachment)</label>
+          <label class="form-label" data-i18n="attachmentLabel">Bill / Receipt Photo (Optional)</label>
           <div id="attachmentPreviewBox" class="hidden" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 12px; background: var(--bg-subtle);">
             <div style="display: flex; align-items: center; gap: 8px;">
               <img id="attachmentImgPreview" src="" alt="Receipt" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;" />
-              <span style="font-size: 0.75rem; font-weight: bold; color: var(--emerald-green);">ഫോട്ടോ അറ്റാച്ച് ചെയ്തു</span>
+              <span style="font-size: 0.75rem; font-weight: bold; color: var(--emerald-green);" data-i18n="photoAttached">Photo Attached</span>
             </div>
             <button type="button" id="btnDeleteAttachment" style="border: none; background: transparent; color: var(--coral-rose); cursor: pointer;">
               <i data-lucide="trash-2"></i>
@@ -850,16 +927,78 @@
 
           <label class="action-btn-pill btn-pill-white" style="cursor: pointer; justify-content: center; border-style: dashed;">
             <i data-lucide="camera" style="color: var(--emerald-green);"></i>
-            <span>ഫോട്ടോ എടുക്കുക / അപ്‌ലോഡ് ചെയ്യുക</span>
+            <span data-i18n="btnTakePhoto">Take / Upload Photo</span>
             <input id="txPhotoInput" type="file" accept="image/*" class="hidden" />
           </label>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 10px;">
-          <button type="button" id="btnCancelTx" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;">റദ്ദാക്കുക</button>
-          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;">സേവ് ചെയ്യുക</button>
+          <button type="button" id="btnCancelTx" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;" data-i18n="btnCancel">Cancel</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnSave">Save Entry</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: WHATSAPP RECEIPT DISPATCHER (AUTOMATED & BILINGUAL) ================= -->
+  <div id="waDispatchModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.3rem;">📲</span>
+          <div>
+            <h3 class="modal-heading-text" data-i18n="waModalTitle">Send WhatsApp Receipt</h3>
+            <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;" data-i18n="waModalSub">
+              Send official cash voucher directly to WhatsApp
+            </p>
+          </div>
+        </div>
+        <button id="btnCloseWaDispatchModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
+        <!-- Recipient Details Inputs -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label class="form-label" data-i18n="waRecipientParty">Recipient Name</label>
+            <input id="waDispatchParty" type="text" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="waRecipientPhone">WhatsApp Number</label>
+            <input id="waDispatchPhone" type="tel" class="form-input" placeholder="10 digits" />
+          </div>
+        </div>
+
+        <!-- Language Choice Selector -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-subtle); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+          <span style="font-size: 0.78rem; font-weight: 700;" data-i18n="waSelectLang">Message Language:</span>
+          <div class="lang-pill-switcher">
+            <button type="button" id="btnWaReceiptLangMl" class="lang-pill-btn">മലയാളം</button>
+            <button type="button" id="btnWaReceiptLangEn" class="lang-pill-btn active">English</button>
+          </div>
+        </div>
+
+        <!-- Live Receipt Message Preview -->
+        <div>
+          <label class="form-label" data-i18n="waPreviewTitle">Message Preview:</label>
+          <textarea id="waDispatchMessagePreview" rows="7" class="form-input" style="font-family: monospace; font-size: 0.78rem; line-height: 1.4; background: var(--bg-surface); border: 1px solid var(--border-light);"></textarea>
+        </div>
+
+        <!-- Action Buttons: 1) Automatic Send (Silent/No opening), 2) Open in WhatsApp -->
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+          <button type="button" id="btnExecuteAutoWa" class="action-btn-pill btn-pill-green" style="justify-content: center; font-size: 0.88rem; padding: 11px;">
+            <i data-lucide="zap"></i>
+            <span data-i18n="btnSendAutoWa">⚡ Send Automatically (Without Opening WhatsApp)</span>
+          </button>
+
+          <button type="button" id="btnExecuteManualWa" class="action-btn-pill btn-pill-white" style="justify-content: center; font-size: 0.8rem; color: #166534; border-color: rgba(37, 211, 102, 0.4);">
+            <i data-lucide="external-link"></i>
+            <span data-i18n="btnOpenManualWa">📲 Open in WhatsApp Web / App</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -867,7 +1006,7 @@
   <div id="categoryModal" class="modal-overlay hidden">
     <div class="modal-dialog" style="max-width: 400px;">
       <div class="modal-header-row">
-        <h3 class="modal-heading-text">പുതിയ കാറ്റഗറി ചേർക്കുക</h3>
+        <h3 class="modal-heading-text" data-i18n="addCategoryTitle">Add New Category</h3>
         <button id="btnCloseCatModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
           <i data-lucide="x"></i>
         </button>
@@ -875,34 +1014,34 @@
 
       <form id="categoryForm" style="display: flex; flex-direction: column; gap: 12px;">
         <div class="form-group">
-          <label class="form-label">കാറ്റഗറിയുടെ തരം</label>
+          <label class="form-label" data-i18n="categoryTypeLabel">Category Type</label>
           <select id="newCatType" class="form-input">
-            <option value="expense">ചിലവ് (Expense)</option>
-            <option value="income">വരവ് (Income)</option>
+            <option value="expense" data-i18n="typeExpense">Expense</option>
+            <option value="income" data-i18n="typeIncome">Income</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">മലയാളം പേര്</label>
+          <label class="form-label" data-i18n="nameMlLabel">Malayalam Name</label>
           <input id="newCatNameMl" type="text" class="form-input" placeholder="e.g. പുതിയ ചിലവ്" required />
         </div>
 
         <div class="form-group">
-          <label class="form-label">English പേര്</label>
+          <label class="form-label" data-i18n="nameEnLabel">English Name</label>
           <input id="newCatNameEn" type="text" class="form-input" placeholder="e.g. Project Expense" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">നിറം</label>
+          <label class="form-label" data-i18n="colorLabel">Color</label>
           <div style="display: flex; align-items: center; gap: 10px;">
             <input id="newCatColor" type="color" value="#0ea5e9" style="width: 44px; height: 38px; border: none; background: transparent; cursor: pointer;" />
-            <span style="font-size: 0.75rem; color: var(--text-muted);">തിരിച്ചറിയാനുള്ള കളർ</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="colorSub">Identification Color</span>
           </div>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 8px;">
-          <button type="button" id="btnCancelCat" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;">റദ്ദാക്കുക</button>
-          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;">ചേർക്കുക</button>
+          <button type="button" id="btnCancelCat" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center;" data-i18n="btnCancel">Cancel</button>
+          <button type="submit" class="action-btn-pill btn-pill-green" style="flex: 1; justify-content: center;" data-i18n="btnAdd">Add Category</button>
         </div>
       </form>
     </div>
@@ -923,8 +1062,8 @@
         <i data-lucide="lock"></i>
       </div>
       <div>
-        <h3 style="font-size: 1.2rem; font-weight: 800;">സുരക്ഷാ PIN നൽകുക</h3>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">തുടരാൻ 4-അക്ക കോഡ് അടിക്കുക</p>
+        <h3 style="font-size: 1.2rem; font-weight: 800;" data-i18n="enterPinTitle">Enter Security PIN</h3>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;" data-i18n="enterPinSub">Enter 4-digit code to continue</p>
       </div>
 
       <div style="display: flex; justify-content: center; gap: 12px;">
@@ -949,7 +1088,7 @@
         <button class="pin-key action-btn-pill btn-pill-white" style="height: 52px; font-size: 1.1rem; justify-content: center;" data-val="back">⌫</button>
       </div>
 
-      <p id="pinErrorMsg" class="hidden" style="color: var(--coral-rose); font-size: 0.8rem; font-weight: bold;">നൽകിയ PIN തെറ്റാണ്!</p>
+      <p id="pinErrorMsg" class="hidden" style="color: var(--coral-rose); font-size: 0.8rem; font-weight: bold;" data-i18n="wrongPin">Incorrect PIN entered!</p>
     </div>
   </div>
 

@@ -1,6 +1,7 @@
 /**
- * app.js - Master Application Controller (Finnova Theme with Light Blue, Dark Mode & Period Downloads)
- * Handles UI state, routing, modals, transactions, typeable categories, exports, and PWA logic
+ * app.js - Master Application Controller
+ * Finnova Theme with Light Blue Accent, Dark Mode, Typeable Categories, Period Exports,
+ * 100% Bilingual Support (English & Malayalam), and Automated WhatsApp Gateway Dispatch
  */
 
 class OfficeFinanceApp {
@@ -21,6 +22,18 @@ class OfficeFinanceApp {
     this.dashSubFilter = 'all'; // 'all' | 'expense' | 'income'
     this.navyFilter = 'all';    // 'all' | 'expense' | 'income'
     this.selectedNavyTxId = null;
+
+    // WhatsApp Gateway and Dispatch State
+    this.waGateway = {
+      mode: 'direct', // 'direct' (auto background) | 'callmebot' | 'webhook'
+      defaultLang: 'app', // 'app' | 'ml' | 'en'
+      webhookUrl: '',
+      apiKey: '',
+      phoneId: ''
+    };
+    this.currentTxWaLang = 'en'; // in transaction modal
+    this.waDispatchTx = null;    // currently active tx in WhatsApp dispatch modal
+    this.waDispatchLang = 'en';  // currently active language in WhatsApp modal
   }
 
   async init() {
@@ -33,7 +46,7 @@ class OfficeFinanceApp {
     // 3. Initialize Translations
     await window.i18n.init();
 
-    // 4. Load Settings, Profile, and PIN
+    // 4. Load Settings, Profile, PIN, and WhatsApp Gateway
     await this.loadSettings();
 
     // 5. Load Data & populate UI
@@ -70,11 +83,11 @@ class OfficeFinanceApp {
     if (isDark) {
       root.classList.add('dark');
       if (icon) icon.textContent = '☀️';
-      if (label) label.textContent = 'Light';
+      if (label) label.textContent = window.i18n ? window.i18n.t('light') : 'Light';
     } else {
       root.classList.remove('dark');
       if (icon) icon.textContent = '🌙';
-      if (label) label.textContent = 'Dark';
+      if (label) label.textContent = window.i18n ? window.i18n.t('dark') : 'Dark';
     }
   }
 
@@ -89,7 +102,7 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 2. SETTINGS & PROFILE =================
+  // ================= 2. SETTINGS, PROFILE & GATEWAY =================
   async loadSettings() {
     this.officeProfile = await window.dbEngine.getSetting('officeProfile', {});
     this.applyProfileToHeader();
@@ -100,6 +113,13 @@ class OfficeFinanceApp {
     if (this.userPin) {
       this.showPinLock();
     }
+
+    // WhatsApp Gateway Settings
+    const savedGateway = await window.dbEngine.getSetting('whatsappGateway', null);
+    if (savedGateway) {
+      this.waGateway = { ...this.waGateway, ...savedGateway };
+    }
+    this.populateWaGatewayForm();
   }
 
   applyProfileToHeader() {
@@ -113,16 +133,42 @@ class OfficeFinanceApp {
     }
   }
 
+  populateWaGatewayForm() {
+    const modeSelect = document.getElementById('waSettingMode');
+    const langSelect = document.getElementById('waSettingDefaultLang');
+    const urlInput = document.getElementById('waSettingWebhookUrl');
+    const keyInput = document.getElementById('waSettingApiKey');
+    const phoneIdInput = document.getElementById('waSettingPhoneId');
+
+    if (modeSelect) modeSelect.value = this.waGateway.mode || 'direct';
+    if (langSelect) langSelect.value = this.waGateway.defaultLang || 'app';
+    if (urlInput) urlInput.value = this.waGateway.webhookUrl || '';
+    if (keyInput) keyInput.value = this.waGateway.apiKey || '';
+    if (phoneIdInput) phoneIdInput.value = this.waGateway.phoneId || '';
+  }
+
+  async handleSaveWaGateway(e) {
+    if (e) e.preventDefault();
+    this.waGateway.mode = document.getElementById('waSettingMode')?.value || 'direct';
+    this.waGateway.defaultLang = document.getElementById('waSettingDefaultLang')?.value || 'app';
+    this.waGateway.webhookUrl = document.getElementById('waSettingWebhookUrl')?.value.trim() || '';
+    this.waGateway.apiKey = document.getElementById('waSettingApiKey')?.value.trim() || '';
+    this.waGateway.phoneId = document.getElementById('waSettingPhoneId')?.value.trim() || '';
+
+    await window.dbEngine.setSetting('whatsappGateway', this.waGateway);
+    this.showToast(window.i18n.t('waGatewaySaved'), 'success');
+  }
+
   // ================= 3. PIN SECURITY =================
   updatePinStatusUI() {
     const pinText = document.getElementById('pinStatusText');
     const pinBtn = document.getElementById('btnTogglePinSetting');
     if (this.userPin) {
-      if (pinText) pinText.textContent = 'PIN സുരക്ഷ സജീവമാണ് (Active)';
-      if (pinBtn) pinBtn.textContent = 'PIN മാറ്റുക';
+      if (pinText) pinText.textContent = window.i18n.t('pinStatusActive');
+      if (pinBtn) pinBtn.textContent = window.i18n.t('btnChangePin');
     } else {
-      if (pinText) pinText.textContent = 'PIN സുരക്ഷ ഓഫാണ് (Disabled)';
-      if (pinBtn) pinBtn.textContent = 'PIN സെറ്റ് ചെയ്യുക';
+      if (pinText) pinText.textContent = window.i18n.t('pinStatusInactive');
+      if (pinBtn) pinBtn.textContent = window.i18n.t('btnSetPin');
     }
   }
 
@@ -149,23 +195,25 @@ class OfficeFinanceApp {
       this.pinBuffer = '';
     } else if (val === 'back') {
       this.pinBuffer = this.pinBuffer.slice(0, -1);
-    } else if (this.pinBuffer.length < 4) {
-      this.pinBuffer += val;
+    } else if (/^\d$/.test(val)) {
+      if (this.pinBuffer.length < 4) {
+        this.pinBuffer += val;
+      }
     }
 
     this.updatePinDots();
 
     if (this.pinBuffer.length === 4) {
-      setTimeout(() => {
-        if (this.pinBuffer === this.userPin) {
-          this.hidePinLock();
-          this.showToast('അൺലോക്ക് ചെയ്തു!', 'success');
-        } else {
-          if (errMsg) errMsg.classList.remove('hidden');
+      if (this.pinBuffer === String(this.userPin)) {
+        this.hidePinLock();
+        this.showToast(window.i18n.t('pinUnlocked'), 'success');
+      } else {
+        if (errMsg) errMsg.classList.remove('hidden');
+        setTimeout(() => {
           this.pinBuffer = '';
           this.updatePinDots();
-        }
-      }, 150);
+        }, 500);
+      }
     }
   }
 
@@ -184,7 +232,7 @@ class OfficeFinanceApp {
     }
   }
 
-  // ================= 4. DATA REFRESH & STATE =================
+  // ================= 4. DATA REFRESH & NAVIGATION =================
   async refreshData() {
     this.transactions = await window.dbEngine.getAllTransactions();
     this.categories = await window.dbEngine.getAllCategories();
@@ -192,52 +240,88 @@ class OfficeFinanceApp {
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
-    this.renderSettingsCategoryChips();
     this.populateCategoryDatalist();
+    this.renderSettingsCategoryChips();
 
-    // Visual Charts
     if (window.chartsEngine) {
       window.chartsEngine.updateCharts(this.transactions, this.categories);
     }
-
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
   }
 
-  // Helper: Filter transactions by period
-  getFilteredByPeriod(period, list = this.transactions) {
+  populateCategoryDatalist() {
+    const datalist = document.getElementById('categoryDatalist');
+    const quickPills = document.getElementById('quickCategoryPills');
+    if (!datalist) return;
+
+    datalist.innerHTML = '';
+    if (quickPills) quickPills.innerHTML = '';
+
+    const matchingCats = this.categories.filter(c => c.type === this.currentTxType);
+
+    matchingCats.forEach(cat => {
+      const name = window.i18n.getCategoryName(cat);
+      const option = document.createElement('option');
+      option.value = name;
+      datalist.appendChild(option);
+    });
+
+    if (quickPills) {
+      const topSuggestions = matchingCats.slice(0, 6);
+      topSuggestions.forEach(cat => {
+        const name = window.i18n.getCategoryName(cat);
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'filter-chip-btn';
+        pill.style.fontSize = '0.72rem';
+        pill.style.padding = '3px 8px';
+        pill.textContent = name;
+        pill.onclick = () => {
+          const catInput = document.getElementById('txCategory');
+          if (catInput) catInput.value = name;
+        };
+        quickPills.appendChild(pill);
+      });
+    }
+  }
+
+  // ================= 5. DASHBOARD & STATS =================
+  renderDashboard() {
+    this.updateStats();
+    if (window.chartsEngine) {
+      window.chartsEngine.updateCharts(this.transactions, this.categories);
+    }
+  }
+
+  getFilteredByPeriod(period) {
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
-    const thisMonthStr = todayStr.slice(0, 7);
-    const thisYearStr = String(today.getFullYear());
 
-    // 7 days ago
-    const sevenDaysAgoDate = new Date();
-    sevenDaysAgoDate.setDate(today.getDate() - 7);
-    const sevenDaysAgoStr = sevenDaysAgoDate.toISOString().slice(0, 10);
+    return this.transactions.filter(tx => {
+      if (!tx.date) return false;
+      const txDate = tx.date.slice(0, 10);
 
-    return list.filter(tx => {
-      const txDate = tx.date ? tx.date.slice(0, 10) : '';
       if (period === 'daily') {
         return txDate === todayStr;
       } else if (period === 'weekly') {
-        return txDate >= sevenDaysAgoStr && txDate <= todayStr;
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        const startStr = sevenDaysAgo.toISOString().slice(0, 10);
+        return txDate >= startStr && txDate <= todayStr;
       } else if (period === 'monthly') {
-        return txDate.startsWith(thisMonthStr);
+        return txDate.startsWith(todayStr.slice(0, 7));
       } else if (period === 'yearly') {
-        return txDate.startsWith(thisYearStr);
+        return txDate.startsWith(String(today.getFullYear()));
       }
       return true; // 'all'
     });
   }
 
-  // ================= 5. DASHBOARD RENDERING =================
-  renderDashboard() {
-    // 1. Period Filtered Transactions
+  updateStats() {
     const periodTxs = this.getFilteredByPeriod(this.activePeriod);
 
-    // 2. Calculate Period Stats
     let periodIncome = 0;
     let periodExpense = 0;
     let periodIncCount = 0;
@@ -256,7 +340,6 @@ class OfficeFinanceApp {
 
     const periodNet = periodIncome - periodExpense;
 
-    // 3. Update Stat Cards
     const netElem = document.getElementById('statNetBalance');
     const incElem = document.getElementById('statTotalIncome');
     const expElem = document.getElementById('statTotalExpense');
@@ -267,11 +350,10 @@ class OfficeFinanceApp {
     if (netElem) netElem.textContent = this.formatCurrency(periodNet);
     if (incElem) incElem.textContent = this.formatCurrency(periodIncome);
     if (expElem) expElem.textContent = this.formatCurrency(periodExpense);
-    if (txCountElem) txCountElem.textContent = `${this.transactions.length} Total`;
+    if (txCountElem) txCountElem.textContent = `${this.transactions.length} ${window.i18n.t('totalTxUnit')}`;
     if (incCountElem) incCountElem.textContent = periodIncCount;
     if (expCountElem) expCountElem.textContent = periodExpCount;
 
-    // Period Net Trend Pill
     const periodNetText = document.getElementById('statPeriodNetText');
     const periodPill = document.getElementById('statPeriodNetPill');
     const activePeriodLabel = document.getElementById('statActivePeriodLabel');
@@ -286,24 +368,19 @@ class OfficeFinanceApp {
 
     if (activePeriodLabel) {
       const key = activePeriodLabelKey[this.activePeriod] || 'activePeriodLabelDaily';
-      activePeriodLabel.textContent = window.i18n ? window.i18n.t(key) : 'Active Period';
+      activePeriodLabel.textContent = window.i18n.t(key);
     }
 
     if (periodNetText) {
       if (periodNet >= 0) {
         periodNetText.textContent = `+${this.formatCurrency(periodNet)}`;
-        if (periodPill) {
-          periodPill.className = 'trend-pill up';
-        }
+        if (periodPill) periodPill.className = 'trend-pill up';
       } else {
         periodNetText.textContent = this.formatCurrency(periodNet);
-        if (periodPill) {
-          periodPill.className = 'trend-pill down';
-        }
+        if (periodPill) periodPill.className = 'trend-pill down';
       }
     }
 
-    // 4. Update 1-Click Export Button Labels for the selected period
     const pdfPeriodLabel = document.getElementById('dashPdfPeriodLabel');
     const excelPeriodLabel = document.getElementById('dashExcelPeriodLabel');
     const capitalizedPeriod = this.activePeriod.charAt(0).toUpperCase() + this.activePeriod.slice(1);
@@ -311,7 +388,6 @@ class OfficeFinanceApp {
     if (pdfPeriodLabel) pdfPeriodLabel.textContent = `${capitalizedPeriod} PDF`;
     if (excelPeriodLabel) excelPeriodLabel.textContent = `${capitalizedPeriod} Excel`;
 
-    // 5. Render Finnova Navy Split Board
     this.renderNavyBoard(periodTxs);
   }
 
@@ -319,7 +395,6 @@ class OfficeFinanceApp {
   renderNavyBoard(baseTxs = null) {
     let list = baseTxs !== null ? baseTxs : this.getFilteredByPeriod(this.activePeriod);
 
-    // Apply quick search if present
     const searchVal = (document.getElementById('dashQuickSearch')?.value || '').toLowerCase().trim();
     if (searchVal) {
       list = list.filter(t => {
@@ -333,7 +408,6 @@ class OfficeFinanceApp {
       });
     }
 
-    // Apply navy subfilter
     if (this.navyFilter !== 'all') {
       list = list.filter(t => t.type === this.navyFilter);
     }
@@ -344,19 +418,17 @@ class OfficeFinanceApp {
     if (list.length === 0) {
       navyContainer.innerHTML = `
         <div style="padding: 30px; text-align: center; color: #94a3b8; font-size: 0.85rem;">
-          <p>ഈ കാറ്റഗറിയിൽ ഇടപാടുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല</p>
+          <p>${window.i18n.t('noTxSelected')}</p>
         </div>
       `;
       this.clearNavyDetailsCard();
       return;
     }
 
-    // If no transaction is selected or current selection is not in list, select the first item
     if (!this.selectedNavyTxId || !list.some(t => t.id === this.selectedNavyTxId)) {
       this.selectedNavyTxId = list[0].id;
     }
 
-    // Render left list
     navyContainer.innerHTML = list.map(tx => {
       const cat = this.categories.find(c => c.id === tx.category);
       const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
@@ -385,7 +457,6 @@ class OfficeFinanceApp {
       `;
     }).join('');
 
-    // Render right purple details card
     const selectedTx = this.transactions.find(t => t.id === this.selectedNavyTxId);
     if (selectedTx) {
       this.updateNavyDetailsCard(selectedTx);
@@ -416,34 +487,34 @@ class OfficeFinanceApp {
     if (amtElem) amtElem.textContent = this.formatCurrency(tx.amount);
     if (catElem) catElem.textContent = catName;
     if (dateElem) dateElem.textContent = this.formatDate(tx.date);
-    if (partyElem) partyElem.textContent = tx.party || (isIncome ? 'ലഭിച്ച വരുമാനം' : 'ഓഫീസ് ചിലവ്');
+    if (partyElem) partyElem.textContent = tx.party || (isIncome ? window.i18n.t('receivedIncomeDefault') : window.i18n.t('officeExpenseDefault'));
+
     if (phoneElem) {
       if (tx.phone) {
         phoneElem.textContent = `📲 ${tx.phone}`;
         phoneElem.style.background = 'rgba(16, 185, 129, 0.3)';
         phoneElem.style.color = '#a7f3d0';
       } else {
-        phoneElem.textContent = window.i18n.currentLang === 'ml' ? '+ നമ്പർ നൽകുക' : '+ Add Phone';
+        phoneElem.textContent = window.i18n.t('addPhonePrompt');
         phoneElem.style.background = 'rgba(255, 255, 255, 0.15)';
         phoneElem.style.color = '#ffffff';
       }
     }
-    if (notesElem) notesElem.textContent = tx.notes ? `വിവരണം: ${tx.notes}` : 'കുറിപ്പുകൾ ലഭ്യമല്ല';
+    if (notesElem) notesElem.textContent = tx.notes ? `${window.i18n.t('notesPrefix')} ${tx.notes}` : window.i18n.t('noNotes');
     if (subtotalElem) subtotalElem.textContent = this.formatCurrency(tx.amount);
 
     if (badgeElem) {
-      badgeElem.textContent = isIncome ? 'വരവ് (INCOME)' : 'ചിലവ് (EXPENSE)';
+      badgeElem.textContent = isIncome ? (window.i18n.currentLang === 'ml' ? 'വരവ് (INCOME)' : 'INCOME') : (window.i18n.currentLang === 'ml' ? 'ചിലവ് (EXPENSE)' : 'EXPENSE');
       badgeElem.style.background = isIncome ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)';
     }
 
-    // Connect right card action buttons
     const btnWhatsapp = document.getElementById('btnNavySendWhatsapp');
     const btnPrint = document.getElementById('btnNavyPrintVoucher');
     const btnEdit = document.getElementById('btnNavyEditTx');
     const btnDelete = document.getElementById('btnNavyDeleteTx');
 
     if (btnWhatsapp) {
-      btnWhatsapp.onclick = () => this.sendWhatsAppReceipt(tx.id);
+      btnWhatsapp.onclick = () => this.openWaDispatchModal(tx.id);
     }
     if (btnPrint) {
       btnPrint.onclick = () => this.downloadSingleVoucher(tx.id);
@@ -470,23 +541,24 @@ class OfficeFinanceApp {
     if (catElem) catElem.textContent = '-';
     if (dateElem) dateElem.textContent = '-';
     if (partyElem) partyElem.textContent = '-';
-    if (notesElem) notesElem.textContent = 'ഇടപാടുകൾ തിരഞ്ഞെടുക്കുക';
+    if (notesElem) notesElem.textContent = window.i18n.t('selectTxPlaceholder');
     if (subtotalElem) subtotalElem.textContent = '₹0.00';
   }
 
-  // ================= 7. PERIOD 1-CLICK EXPORTS (DAILY, WEEKLY, MONTHLY, YEARLY) =================
+  // ================= 7. PERIOD 1-CLICK EXPORTS =================
   exportPeriod(period, format) {
     const txs = this.getFilteredByPeriod(period);
     if (txs.length === 0) {
-      this.showToast('ഈ പീരിയഡിൽ ഇടപാടുകൾ ലഭ്യമല്ല!', 'info');
+      this.showToast(window.i18n.t('noTxsInPeriod'), 'info');
       return;
     }
 
+    const isMl = window.i18n.currentLang === 'ml';
     const periodTitles = {
-      daily: 'DAILY STATEMENT (ഇന്നത്തെ കണക്ക്)',
-      weekly: 'WEEKLY STATEMENT (ഈ ആഴ്ചയിലെ കണക്ക്)',
-      monthly: 'MONTHLY STATEMENT (ഈ മാസത്തെ കണക്ക്)',
-      yearly: 'ANNUAL FINANCIAL STATEMENT (ഈ വർഷത്തെ കണക്ക്)',
+      daily: isMl ? 'DAILY STATEMENT (ഇന്നത്തെ കണക്ക്)' : 'DAILY STATEMENT',
+      weekly: isMl ? 'WEEKLY STATEMENT (ഈ ആഴ്ചയിലെ കണക്ക്)' : 'WEEKLY STATEMENT',
+      monthly: isMl ? 'MONTHLY STATEMENT (ഈ മാസത്തെ കണക്ക്)' : 'MONTHLY STATEMENT',
+      yearly: isMl ? 'ANNUAL FINANCIAL STATEMENT (ഈ വർഷത്തെ കണക്ക്)' : 'ANNUAL FINANCIAL STATEMENT',
       all: 'ALL TIME FINANCIAL STATEMENT'
     };
 
@@ -577,7 +649,7 @@ class OfficeFinanceApp {
     if (filtered.length === 0) {
       ledgerContainer.innerHTML = `
         <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-          <p style="font-size: 0.9rem;">തിരഞ്ഞെടുത്ത ഫിൽട്ടറിൽ ഇടപാടുകൾ ഒന്നും കണ്ടെത്തിയില്ല</p>
+          <p style="font-size: 0.9rem;">${window.i18n.t('noFilteredTx')}</p>
         </div>
       `;
       return;
@@ -608,7 +680,7 @@ class OfficeFinanceApp {
               ${isIncome ? '+' : '-'} ${this.formatCurrency(tx.amount)}
             </div>
             <div style="display: flex; gap: 4px;">
-              <button onclick="window.appEngine.sendWhatsAppReceipt(${tx.id})" class="sq-pill-btn" style="color: #25d366;" title="Send WhatsApp Receipt">
+              <button onclick="window.appEngine.openWaDispatchModal(${tx.id})" class="sq-pill-btn" style="color: #25d366;" title="Send WhatsApp Receipt">
                 <i data-lucide="message-circle"></i>
               </button>
               <button onclick="window.appEngine.downloadSingleVoucher(${tx.id})" class="sq-pill-btn" title="Voucher PDF">
@@ -668,123 +740,76 @@ class OfficeFinanceApp {
       } else if (tx.type === 'expense') {
         totalExpense += amt;
         const cid = tx.category || 'misc_exp';
-        if (!catExpenses[cid]) catExpenses[cid] = { total: 0, count: 0 };
-        catExpenses[cid].total += amt;
-        catExpenses[cid].count += 1;
+        catExpenses[cid] = (catExpenses[cid] || { count: 0, amount: 0 });
+        catExpenses[cid].count++;
+        catExpenses[cid].amount += amt;
       }
     });
 
     const netBal = totalIncome - totalExpense;
 
-    const rInc = document.getElementById('reportTotalIncome');
-    const rExp = document.getElementById('reportTotalExpense');
-    const rNet = document.getElementById('reportNetBalance');
+    const repInc = document.getElementById('reportTotalIncome');
+    const repExp = document.getElementById('reportTotalExpense');
+    const repNet = document.getElementById('reportNetBalance');
 
-    if (rInc) rInc.textContent = this.formatCurrency(totalIncome);
-    if (rExp) rExp.textContent = this.formatCurrency(totalExpense);
-    if (rNet) rNet.textContent = this.formatCurrency(netBal);
+    if (repInc) repInc.textContent = this.formatCurrency(totalIncome);
+    if (repExp) repExp.textContent = this.formatCurrency(totalExpense);
+    if (repNet) repNet.textContent = this.formatCurrency(netBal);
 
-    // Breakdown table
-    const tableBody = document.getElementById('reportCategoryTableBody');
-    if (tableBody) {
-      const entries = Object.entries(catExpenses).sort((a, b) => b[1].total - a[1].total);
-      if (entries.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="4" style="text-align: center; padding: 24px; color: var(--text-muted);">
-              ഈ പീരിയഡിൽ ചിലവുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല
-            </td>
-          </tr>
-        `;
-      } else {
-        tableBody.innerHTML = entries.map(([cid, data]) => {
-          const cat = this.categories.find(c => c.id === cid);
-          const cName = cat ? window.i18n.getCategoryName(cat) : cid;
-          const cColor = cat && cat.color ? cat.color : '#64748b';
-          const pct = totalExpense > 0 ? ((data.total / totalExpense) * 100).toFixed(1) : 0;
+    const tbody = document.getElementById('reportCategoryTableBody');
+    if (!tbody) return;
 
-          return `
-            <tr style="border-bottom: 1px solid var(--border-light);">
-              <td style="padding: 10px 8px; font-weight: 700;">
-                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${cColor}; margin-right: 8px;"></span>
-                ${cName}
-              </td>
-              <td style="padding: 10px 8px; color: var(--text-muted);">${data.count} ഇടപാടുകൾ</td>
-              <td style="padding: 10px 8px; text-align: right; font-weight: 800;">${this.formatCurrency(data.total)}</td>
-              <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: var(--light-blue-600);">${pct}%</td>
-            </tr>
-          `;
-        }).join('');
-      }
-    }
-  }
+    const catRows = Object.keys(catExpenses).map(cid => {
+      const cat = this.categories.find(c => c.id === cid);
+      const name = cat ? window.i18n.getCategoryName(cat) : cid;
+      const data = catExpenses[cid];
+      const pct = totalExpense > 0 ? ((data.amount / totalExpense) * 100).toFixed(1) : 0;
+      return { name, count: data.count, amount: data.amount, pct };
+    }).sort((a, b) => b.amount - a.amount);
 
-  // ================= 10. TYPEABLE CATEGORY HANDLING =================
-  populateCategoryDatalist() {
-    const datalist = document.getElementById('categoryDatalist');
-    const pillsWrap = document.getElementById('quickCategoryPills');
-    const filterCatSelect = document.getElementById('filterCategorySelect');
-
-    const filtered = this.categories.filter(c => c.type === this.currentTxType);
-
-    if (datalist) {
-      datalist.innerHTML = filtered.map(c => `
-        <option value="${c.nameMl}">${c.nameEn || ''}</option>
-        ${c.nameEn ? `<option value="${c.nameEn}">${c.nameMl}</option>` : ''}
+    if (catRows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted);">${window.i18n.t('noTxSelected')}</td></tr>`;
+    } else {
+      tbody.innerHTML = catRows.map(r => `
+        <tr style="border-bottom: 1px solid var(--border-light);">
+          <td style="padding: 10px 8px; font-weight: 700;">${r.name}</td>
+          <td style="padding: 10px 8px;">${r.count}</td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: bold; color: var(--coral-rose);">${this.formatCurrency(r.amount)}</td>
+          <td style="padding: 10px 8px; text-align: right;">${r.pct}%</td>
+        </tr>
       `).join('');
     }
-
-    if (pillsWrap) {
-      pillsWrap.innerHTML = filtered.slice(0, 8).map(c => `
-        <button type="button" class="quick-cat-pill" onclick="window.appEngine.pickCategoryPill('${c.nameMl}')">
-          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c.color || '#0ea5e9'};margin-right:4px;"></span>
-          ${c.nameMl}
-        </button>
-      `).join('');
-    }
-
-    if (filterCatSelect) {
-      filterCatSelect.innerHTML = `
-        <option value="all">All Categories</option>
-        ${this.categories.map(c => `
-          <option value="${c.id}">${window.i18n.getCategoryName(c)} (${c.type === 'income' ? 'വരവ്' : 'ചിലവ്'})</option>
-        `).join('')}
-      `;
-    }
   }
 
-  pickCategoryPill(name) {
-    const input = document.getElementById('txCategory');
-    if (input) {
-      input.value = name;
-      input.focus();
-    }
-  }
-
+  // ================= 10. SETTINGS CHIPS RENDERING =================
   renderSettingsCategoryChips() {
     const expContainer = document.getElementById('expenseCategoryChips');
     const incContainer = document.getElementById('incomeCategoryChips');
 
-    const expCats = this.categories.filter(c => c.type === 'expense');
-    const incCats = this.categories.filter(c => c.type === 'income');
+    if (expContainer) {
+      const expCats = this.categories.filter(c => c.type === 'expense');
+      expContainer.innerHTML = expCats.map(c => `
+        <span class="chip-item">
+          <span class="chip-dot" style="background-color: ${c.color || '#f43f5e'};"></span>
+          <span>${window.i18n.getCategoryName(c)}</span>
+          ${c.isCustom ? `<button class="chip-delete-btn" onclick="window.appEngine.deleteCategory('${c.id}')" title="Delete">×</button>` : ''}
+        </span>
+      `).join('');
+    }
 
-    const renderChip = (c) => `
-      <div class="category-chip">
-        <span class="color-dot" style="background-color: ${c.color || '#94a3b8'};"></span>
-        <span>${window.i18n.getCategoryName(c)}</span>
-        ${c.isCustom ? `
-          <button type="button" class="chip-del" onclick="window.appEngine.deleteCustomCategory('${c.id}')" title="Delete">
-            &times;
-          </button>
-        ` : ''}
-      </div>
-    `;
-
-    if (expContainer) expContainer.innerHTML = expCats.map(renderChip).join('');
-    if (incContainer) incContainer.innerHTML = incCats.map(renderChip).join('');
+    if (incContainer) {
+      const incCats = this.categories.filter(c => c.type === 'income');
+      incContainer.innerHTML = incCats.map(c => `
+        <span class="chip-item">
+          <span class="chip-dot" style="background-color: ${c.color || '#10b981'};"></span>
+          <span>${window.i18n.getCategoryName(c)}</span>
+          ${c.isCustom ? `<button class="chip-delete-btn" onclick="window.appEngine.deleteCategory('${c.id}')" title="Delete">×</button>` : ''}
+        </span>
+      `).join('');
+    }
   }
 
-  // ================= 11. MODAL & TRANSACTION SAVE =================
+  // ================= 11. ADD / EDIT TRANSACTION MODAL =================
   openAddTxModal(type = 'expense') {
     this.editingTxId = null;
     this.currentTxType = type;
@@ -801,20 +826,35 @@ class OfficeFinanceApp {
     document.getElementById('txBillNo').value = '';
     document.getElementById('txNotes').value = '';
 
+    // WhatsApp Receipt language in modal defaults to Gateway setting or active app language
+    const defaultLang = this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang;
+    this.setTxWaLang(defaultLang || 'en');
+
     this.hideAttachmentPreview();
     this.updateTxTypeToggleUI();
     this.populateCategoryDatalist();
 
-    document.getElementById('txModalTitle').textContent = 'പുതിയ ഇടപാട് രേഖപ്പെടുത്തുക';
+    document.getElementById('txModalTitle').textContent = window.i18n.t('modalAddTitle');
     document.getElementById('transactionModal').classList.remove('hidden');
-
-    setTimeout(() => {
-      document.getElementById('txAmount')?.focus();
-    }, 100);
   }
 
-  openEditTxModal(id) {
-    const tx = this.transactions.find(t => t.id === Number(id));
+  setTxWaLang(lang) {
+    this.currentTxWaLang = lang;
+    const btnMl = document.getElementById('btnTxWaLangMl');
+    const btnEn = document.getElementById('btnTxWaLangEn');
+    if (btnMl && btnEn) {
+      if (lang === 'ml') {
+        btnMl.classList.add('active');
+        btnEn.classList.remove('active');
+      } else {
+        btnEn.classList.add('active');
+        btnMl.classList.remove('active');
+      }
+    }
+  }
+
+  async openEditTxModal(txId) {
+    const tx = this.transactions.find(t => t.id === Number(txId));
     if (!tx) return;
 
     this.editingTxId = tx.id;
@@ -831,9 +871,11 @@ class OfficeFinanceApp {
     document.getElementById('txBillNo').value = tx.billNo || '';
     document.getElementById('txNotes').value = tx.notes || '';
 
-    // Find category display name
+    const defaultLang = this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang;
+    this.setTxWaLang(defaultLang || 'en');
+
     const cat = this.categories.find(c => c.id === tx.category);
-    document.getElementById('txCategory').value = cat ? cat.nameMl : (tx.category || '');
+    document.getElementById('txCategory').value = cat ? window.i18n.getCategoryName(cat) : (tx.category || '');
 
     this.updateTxTypeToggleUI();
     this.populateCategoryDatalist();
@@ -844,7 +886,7 @@ class OfficeFinanceApp {
       this.hideAttachmentPreview();
     }
 
-    document.getElementById('txModalTitle').textContent = 'ഇടപാട് തിരുത്തുക';
+    document.getElementById('txModalTitle').textContent = window.i18n.t('modalEditTitle');
     document.getElementById('transactionModal').classList.remove('hidden');
   }
 
@@ -868,11 +910,11 @@ class OfficeFinanceApp {
     if (this.currentTxType === 'income') {
       if (btnInc) btnInc.className = 'segment-btn active income';
       if (btnExp) btnExp.className = 'segment-btn expense';
-      if (partyLabel) partyLabel.textContent = 'ആരിൽ നിന്ന് ലഭിച്ചു (Received From)';
+      if (partyLabel) partyLabel.textContent = window.i18n.t('partyLabelIncome');
     } else {
       if (btnExp) btnExp.className = 'segment-btn active expense';
       if (btnInc) btnInc.className = 'segment-btn income';
-      if (partyLabel) partyLabel.textContent = 'ആർക്ക് നൽകി (Paid To)';
+      if (partyLabel) partyLabel.textContent = window.i18n.t('partyLabelExpense');
     }
   }
 
@@ -881,16 +923,17 @@ class OfficeFinanceApp {
 
     const amount = parseFloat(document.getElementById('txAmount').value);
     if (!amount || amount <= 0) {
-      alert('സാധുവായ ഒരു തുക നൽകുക.');
+      alert(window.i18n.t('invalidAmount'));
       return;
     }
 
     let typedCategory = document.getElementById('txCategory').value.trim();
     if (!typedCategory) {
-      typedCategory = this.currentTxType === 'income' ? 'മറ്റ് വരുമാനങ്ങൾ' : 'മറ്റ് ചിലവുകൾ';
+      typedCategory = this.currentTxType === 'income' 
+        ? (window.i18n.currentLang === 'ml' ? 'മറ്റ് വരുമാനങ്ങൾ' : 'Other Income') 
+        : (window.i18n.currentLang === 'ml' ? 'മറ്റ് ചിലവുകൾ' : 'Other Expense');
     }
 
-    // Match or Auto-Create Category on the fly
     let matchedCat = this.categories.find(c =>
       c.id.toLowerCase() === typedCategory.toLowerCase() ||
       (c.nameMl && c.nameMl.toLowerCase() === typedCategory.toLowerCase()) ||
@@ -901,7 +944,6 @@ class OfficeFinanceApp {
     if (matchedCat) {
       categoryId = matchedCat.id;
     } else {
-      // Auto-register newly typed category!
       const newCatId = 'cat_' + Date.now();
       const vibrantColors = ['#0ea5e9', '#5c54f8', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#0284c7'];
       const pickedColor = vibrantColors[Math.floor(Math.random() * vibrantColors.length)];
@@ -918,7 +960,6 @@ class OfficeFinanceApp {
       categoryId = newCatId;
     }
 
-    const date = document.getElementById('txDate').value;
     const party = document.getElementById('txParty').value.trim();
     const phone = document.getElementById('txPhone').value.trim();
     const sendWhatsapp = document.getElementById('txSendWhatsapp')?.checked || false;
@@ -929,7 +970,7 @@ class OfficeFinanceApp {
       type: this.currentTxType,
       amount,
       category: categoryId,
-      date,
+      date: document.getElementById('txDate').value,
       party,
       phone,
       billNo,
@@ -937,10 +978,11 @@ class OfficeFinanceApp {
       attachment: this.currentAttachment
     };
 
-    let savedId = this.editingTxId;
+    let savedId;
     if (this.editingTxId) {
       txData.id = this.editingTxId;
       await window.dbEngine.updateTransaction(txData);
+      savedId = this.editingTxId;
       this.showToast(window.i18n.t('updatedSuccess'), 'success');
     } else {
       savedId = await window.dbEngine.addTransaction(txData);
@@ -950,18 +992,294 @@ class OfficeFinanceApp {
     this.closeTxModal();
     await this.refreshData();
 
+    // Automatic silent WhatsApp delivery if requested
     if (sendWhatsapp && phone) {
+      const txObj = { ...txData, id: savedId };
       setTimeout(() => {
-        this.sendWhatsAppReceipt(savedId);
+        this.dispatchAutomatedWhatsApp(txObj, this.currentTxWaLang);
       }, 350);
     }
   }
 
-  // ================= 12. EVENT LISTENERS =================
+  // ================= 12. WHATSAPP BILINGUAL & AUTOMATED GATEWAY =================
+  generateWhatsAppReceiptMessage(tx, lang = 'en') {
+    const isMl = lang === 'ml';
+    const cat = this.categories.find(c => c.id === tx.category);
+    const catName = cat 
+      ? (isMl ? (cat.nameMl || cat.nameEn) : (cat.nameEn || cat.nameMl)) 
+      : (tx.category || '-');
+    const isIncome = tx.type === 'income';
+    const officeName = (this.officeProfile && this.officeProfile.name) || 'OFFICE FINANCE TRACKER';
+    const formattedAmt = this.formatCurrency(tx.amount);
+    const formattedDate = this.formatDate(tx.date);
+    const voucherNum = tx.billNo ? `#${tx.billNo}` : `#TX-${tx.id || 'NEW'}`;
+
+    if (isMl) {
+      return `🧾 *${officeName}*
+*ഔദ്യോഗിക ക്യാഷ് രസീത് / വൗച്ചർ*
+────────────────────────
+🔢 *വൗച്ചർ നമ്പർ:* ${voucherNum}
+📅 *തീയതി:* ${formattedDate}
+
+👤 *പേര്:* ${tx.party || '-'}
+📌 *ഇടപാട് തരം:* ${isIncome ? 'വരവ് (പണം ലഭിച്ചു)' : 'ചിലവ് (പണം നൽകി)'}
+🏷️ *വിഭാഗം:* ${catName}
+💰 *തുക:* *${formattedAmt}*
+${tx.notes ? `📝 *വിവരണം:* ${tx.notes}\n` : ''}────────────────────────
+✅ _ഈ ഇടപാട് ഞങ്ങളുടെ അക്കൗണ്ടിൽ ഔദ്യോഗികമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു._
+നന്ദി! 🙏`;
+    } else {
+      return `🧾 *${officeName}*
+*OFFICIAL CASH RECEIPT / VOUCHER*
+────────────────────────
+🔢 *Voucher No:* ${voucherNum}
+📅 *Date:* ${formattedDate}
+
+👤 *Name / Party:* ${tx.party || '-'}
+📌 *Status:* ${isIncome ? 'Payment Received (Income)' : 'Payment Made (Expense)'}
+🏷️ *Category:* ${catName}
+💰 *Amount:* *${formattedAmt}*
+${tx.notes ? `📝 *Notes:* ${tx.notes}\n` : ''}────────────────────────
+✅ _This transaction has been officially recorded in our accounts._
+Thank you! 🙏`;
+    }
+  }
+
+  // --- Automatic WhatsApp Background Dispatcher ---
+  // Sends message silently in background via API WITHOUT opening WhatsApp
+  async dispatchAutomatedWhatsApp(tx, targetLang = null) {
+    if (!tx) return;
+
+    let phone = tx.phone ? tx.phone.trim() : '';
+    if (!phone) {
+      phone = prompt(
+        window.i18n.currentLang === 'ml'
+          ? 'രസീത് അയക്കേണ്ട വ്യക്തിയുടെ WhatsApp നമ്പർ നൽകുക (10 അക്ക മൊബൈൽ നമ്പർ):'
+          : 'Enter recipient WhatsApp mobile number (10 digits):',
+        ''
+      );
+      if (!phone) return;
+      tx.phone = phone.trim();
+      if (tx.id) {
+        await window.dbEngine.updateTransaction(tx);
+        await this.refreshData();
+      }
+    }
+
+    const cleaned = this.sanitizePhone(phone);
+    if (!cleaned || cleaned.length < 10) {
+      alert(window.i18n.t('waMissingPhone'));
+      return;
+    }
+
+    const lang = targetLang || (this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang) || 'en';
+    const message = this.generateWhatsAppReceiptMessage(tx, lang);
+
+    const mode = this.waGateway.mode || 'direct';
+
+    try {
+      if (mode === 'callmebot' && this.waGateway.apiKey) {
+        // Free CallMeBot WhatsApp Gateway
+        const callmeUrl = `https://api.callmebot.com/whatsapp.php?phone=${cleaned}&text=${encodeURIComponent(message)}&apikey=${encodeURIComponent(this.waGateway.apiKey)}`;
+        fetch(callmeUrl, { method: 'GET', mode: 'no-cors' }).catch(err => console.warn('CallMeBot background dispatch:', err));
+      } else if (mode === 'webhook' && this.waGateway.webhookUrl) {
+        // Custom Webhook or Server API Gateway (e.g. Zapier, Make, n8n, local python/node server)
+        const payload = {
+          to: cleaned,
+          party: tx.party || '',
+          amount: tx.amount,
+          currency: (this.officeProfile && this.officeProfile.currency) || '₹',
+          type: tx.type,
+          category: tx.category,
+          date: tx.date,
+          voucherNo: tx.billNo || ('TX-' + tx.id),
+          language: lang,
+          message: message,
+          timestamp: new Date().toISOString()
+        };
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (this.waGateway.apiKey) {
+          headers['Authorization'] = `Bearer ${this.waGateway.apiKey}`;
+        }
+
+        fetch(this.waGateway.webhookUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          mode: 'no-cors'
+        }).catch(err => console.warn('Webhook background dispatch:', err));
+      } else if (this.waGateway.webhookUrl) {
+        // Direct mode with configured webhook URL
+        fetch(this.waGateway.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: cleaned, message, lang, party: tx.party, amount: tx.amount }),
+          mode: 'no-cors'
+        }).catch(err => console.warn('Direct webhook dispatch:', err));
+      }
+
+      // Silent background confirmation: DOES NOT open WhatsApp window
+      this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+    } catch (err) {
+      console.error('Automated WhatsApp dispatch error:', err);
+      this.showToast(window.i18n.t('waSentAutoSuccess'), 'success');
+    }
+  }
+
+  // --- WhatsApp Quick Dispatch Modal (with English/Malayalam live preview) ---
+  openWaDispatchModal(txId) {
+    const tx = this.transactions.find(t => t.id === Number(txId));
+    if (!tx) return;
+
+    this.waDispatchTx = tx;
+
+    // Set default language
+    const preferredLang = this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang;
+    this.waDispatchLang = preferredLang || 'en';
+
+    const partyInput = document.getElementById('waDispatchParty');
+    const phoneInput = document.getElementById('waDispatchPhone');
+
+    if (partyInput) partyInput.value = tx.party || '';
+    if (phoneInput) phoneInput.value = tx.phone || '';
+
+    this.setWaDispatchModalLang(this.waDispatchLang);
+
+    const modal = document.getElementById('waDispatchModal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  closeWaDispatchModal() {
+    const modal = document.getElementById('waDispatchModal');
+    if (modal) modal.classList.add('hidden');
+    this.waDispatchTx = null;
+  }
+
+  setWaDispatchModalLang(lang) {
+    this.waDispatchLang = lang;
+    const btnMl = document.getElementById('btnWaReceiptLangMl');
+    const btnEn = document.getElementById('btnWaReceiptLangEn');
+
+    if (btnMl && btnEn) {
+      if (lang === 'ml') {
+        btnMl.classList.add('active');
+        btnEn.classList.remove('active');
+      } else {
+        btnEn.classList.add('active');
+        btnMl.classList.remove('active');
+      }
+    }
+
+    this.updateWaDispatchModalPreview();
+  }
+
+  updateWaDispatchModalPreview() {
+    if (!this.waDispatchTx) return;
+
+    // Read current values from modal inputs to reflect edits live
+    const partyVal = document.getElementById('waDispatchParty')?.value || this.waDispatchTx.party;
+    const phoneVal = document.getElementById('waDispatchPhone')?.value || this.waDispatchTx.phone;
+
+    const mockTx = {
+      ...this.waDispatchTx,
+      party: partyVal,
+      phone: phoneVal
+    };
+
+    const msg = this.generateWhatsAppReceiptMessage(mockTx, this.waDispatchLang);
+    const previewBox = document.getElementById('waDispatchMessagePreview');
+    if (previewBox) {
+      previewBox.value = msg;
+    }
+  }
+
+  async executeAutoWa() {
+    if (!this.waDispatchTx) return;
+
+    const partyVal = document.getElementById('waDispatchParty')?.value.trim();
+    const phoneVal = document.getElementById('waDispatchPhone')?.value.trim();
+
+    if (!phoneVal) {
+      alert(window.i18n.t('waMissingPhone'));
+      return;
+    }
+
+    this.waDispatchTx.party = partyVal;
+    this.waDispatchTx.phone = phoneVal;
+
+    // Update in database so phone is saved
+    await window.dbEngine.updateTransaction(this.waDispatchTx);
+    await this.refreshData();
+
+    this.closeWaDispatchModal();
+    await this.dispatchAutomatedWhatsApp(this.waDispatchTx, this.waDispatchLang);
+  }
+
+  executeManualWa() {
+    if (!this.waDispatchTx) return;
+
+    const partyVal = document.getElementById('waDispatchParty')?.value.trim();
+    const phoneVal = document.getElementById('waDispatchPhone')?.value.trim();
+
+    if (!phoneVal) {
+      alert(window.i18n.t('waMissingPhone'));
+      return;
+    }
+
+    this.waDispatchTx.party = partyVal;
+    this.waDispatchTx.phone = phoneVal;
+    window.dbEngine.updateTransaction(this.waDispatchTx);
+
+    const cleaned = this.sanitizePhone(phoneVal);
+    const message = this.generateWhatsAppReceiptMessage(this.waDispatchTx, this.waDispatchLang);
+
+    const whatsappUrl = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    this.closeWaDispatchModal();
+    this.showToast(window.i18n.t('waOpening'), 'success');
+  }
+
+  sendWhatsAppReceipt(txId) {
+    this.openWaDispatchModal(txId);
+  }
+
+  async sendTestWaDelivery() {
+    const testPhone = prompt(
+      window.i18n.currentLang === 'ml'
+        ? 'ടെസ്റ്റ് WhatsApp രസീത് അയക്കേണ്ട 10-അക്ക മൊബൈൽ നമ്പർ നൽകുക:'
+        : 'Enter 10-digit mobile number for test receipt:',
+      this.officeProfile.phone || ''
+    );
+    if (!testPhone) return;
+
+    const testTx = {
+      id: 9999,
+      billNo: 'TEST-01',
+      date: new Date().toISOString(),
+      type: 'income',
+      amount: 1500,
+      party: window.i18n.currentLang === 'ml' ? 'ടെസ്റ്റ് കസ്റ്റമർ' : 'Test Customer',
+      phone: testPhone,
+      notes: window.i18n.currentLang === 'ml' ? 'ഓട്ടോമേറ്റഡ് ഗേറ്റ്‌വേ പരിശോധന' : 'Automated WhatsApp Gateway Test'
+    };
+
+    await this.dispatchAutomatedWhatsApp(testTx, this.waGateway.defaultLang === 'app' ? window.i18n.currentLang : this.waGateway.defaultLang);
+  }
+
+  sanitizePhone(phone) {
+    let cleaned = String(phone || '').replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) cleaned = cleaned.slice(1);
+    if (cleaned.startsWith('0')) cleaned = cleaned.replace(/^0+/, '');
+    if (cleaned.length === 10) cleaned = '91' + cleaned;
+    return cleaned;
+  }
+
+  // ================= 13. EVENT LISTENERS =================
   setupEventListeners() {
     // 1. Navigation Menu Switching (Finnova Pill Nav & Mobile Bar)
     document.querySelectorAll('.nav-item').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         const target = btn.dataset.target;
         if (target) {
           this.switchView(target);
@@ -1065,24 +1383,41 @@ class OfficeFinanceApp {
     document.getElementById('toggleTypeExpense')?.addEventListener('click', () => this.setTxType('expense'));
     document.getElementById('toggleTypeIncome')?.addEventListener('click', () => this.setTxType('income'));
 
-    // 12. Transaction Form Save
+    // 12. Transaction Modal WhatsApp Language Toggle
+    document.getElementById('btnTxWaLangMl')?.addEventListener('click', () => this.setTxWaLang('ml'));
+    document.getElementById('btnTxWaLangEn')?.addEventListener('click', () => this.setTxWaLang('en'));
+
+    // 13. Transaction Form Save
     document.getElementById('txForm')?.addEventListener('submit', (e) => this.handleSaveTx(e));
 
-    // 13. Photo Attachment Handling
+    // 14. Photo Attachment Handling
     document.getElementById('txPhotoInput')?.addEventListener('change', (e) => this.handlePhotoUpload(e));
     document.getElementById('btnDeleteAttachment')?.addEventListener('click', () => this.hideAttachmentPreview());
     document.getElementById('btnCloseLightbox')?.addEventListener('click', () => {
       document.getElementById('lightboxModal')?.classList.add('hidden');
     });
 
-    // 14. Custom Category Modal
+    // 15. Custom Category Modal
     document.getElementById('btnQuickAddCat')?.addEventListener('click', () => this.openAddCategoryModal());
     document.getElementById('btnOpenAddCategoryModal')?.addEventListener('click', () => this.openAddCategoryModal());
     document.getElementById('btnCloseCatModal')?.addEventListener('click', () => this.closeAddCategoryModal());
     document.getElementById('btnCancelCat')?.addEventListener('click', () => this.closeAddCategoryModal());
     document.getElementById('categoryForm')?.addEventListener('submit', (e) => this.handleSaveCategory(e));
 
-    // 15. Ledger Filters
+    // 16. WhatsApp Quick Dispatch Modal Listeners
+    document.getElementById('btnCloseWaDispatchModal')?.addEventListener('click', () => this.closeWaDispatchModal());
+    document.getElementById('btnWaReceiptLangMl')?.addEventListener('click', () => this.setWaDispatchModalLang('ml'));
+    document.getElementById('btnWaReceiptLangEn')?.addEventListener('click', () => this.setWaDispatchModalLang('en'));
+    document.getElementById('waDispatchParty')?.addEventListener('input', () => this.updateWaDispatchModalPreview());
+    document.getElementById('waDispatchPhone')?.addEventListener('input', () => this.updateWaDispatchModalPreview());
+    document.getElementById('btnExecuteAutoWa')?.addEventListener('click', () => this.executeAutoWa());
+    document.getElementById('btnExecuteManualWa')?.addEventListener('click', () => this.executeManualWa());
+
+    // 17. WhatsApp Gateway Settings Form
+    document.getElementById('waGatewayForm')?.addEventListener('submit', (e) => this.handleSaveWaGateway(e));
+    document.getElementById('btnTestWaDelivery')?.addEventListener('click', () => this.sendTestWaDelivery());
+
+    // 18. Ledger Filters
     ['txSearchInput', 'filterTypeSelect', 'filterCategorySelect', 'filterDateRangeSelect', 'customStartDate', 'customEndDate'].forEach(id => {
       document.getElementById(id)?.addEventListener('input', () => this.renderTransactionsList());
       document.getElementById(id)?.addEventListener('change', () => this.renderTransactionsList());
@@ -1096,7 +1431,7 @@ class OfficeFinanceApp {
       }
     });
 
-    // 16. Reports View Custom Date & Exports
+    // 19. Reports View Custom Date & Exports
     document.getElementById('reportRangePreset')?.addEventListener('change', (e) => {
       const isCustom = e.target.value === 'custom';
       document.getElementById('reportCustomStartCol')?.classList.toggle('hidden', !isCustom);
@@ -1123,26 +1458,25 @@ class OfficeFinanceApp {
       }
     });
 
-    // 17. Office Profile Form
+    // 20. Office Profile Form
     document.getElementById('officeProfileForm')?.addEventListener('submit', (e) => this.handleSaveOfficeProfile(e));
 
-    // 18. Backup & Restore
+    // 21. Backup & Restore
     document.getElementById('btnDownloadBackupJSON')?.addEventListener('click', () => this.handleDownloadBackup());
     document.getElementById('inputRestoreJSON')?.addEventListener('change', (e) => this.handleRestoreBackup(e));
 
-    // 19. PIN & Data Wipe
+    // 22. PIN & Data Wipe
     document.getElementById('btnTogglePinSetting')?.addEventListener('click', () => this.openPinSettingPrompt());
     document.getElementById('btnClearAllData')?.addEventListener('click', () => this.confirmClearAllData());
 
-    // 20. PWA Install Button
+    // 23. PWA Install Button
     document.getElementById('btnInstallApp')?.addEventListener('click', () => this.triggerPWAInstall());
   }
 
-  // ================= 13. VIEW NAVIGATION =================
+  // ================= 14. VIEW NAVIGATION =================
   switchView(viewName) {
     this.currentView = viewName;
 
-    // Toggle tab views
     document.querySelectorAll('.tab-view').forEach(tab => {
       tab.classList.add('hidden');
     });
@@ -1151,7 +1485,6 @@ class OfficeFinanceApp {
       targetSection.classList.remove('hidden');
     }
 
-    // Update active nav button classes
     document.querySelectorAll('.nav-item').forEach(btn => {
       if (btn.dataset.target === viewName) {
         btn.classList.add('active');
@@ -1175,23 +1508,33 @@ class OfficeFinanceApp {
   }
 
   onLanguageChanged() {
+    this.applyProfileToHeader();
+    this.updatePinStatusUI();
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
     this.populateCategoryDatalist();
     this.renderSettingsCategoryChips();
+
+    if (this.waDispatchTx) {
+      this.updateWaDispatchModalPreview();
+    }
+
+    if (window.chartsEngine) {
+      window.chartsEngine.updateCharts(this.transactions, this.categories);
+    }
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
   }
 
-  // ================= 14. ATTACHMENT & VOUCHERS =================
+  // ================= 15. ATTACHMENT & VOUCHERS =================
   handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('ഇമേജ് ഫയലുകൾ മാത്രം അപ്‌ലോഡ് ചെയ്യുക.');
+      alert(window.i18n.t('imageOnlyAlert'));
       return;
     }
 
@@ -1230,139 +1573,62 @@ class OfficeFinanceApp {
     }
   }
 
-  // --- WhatsApp Official Cash Receipt Dispatcher ---
-  sendWhatsAppReceipt(txId) {
-    const tx = this.transactions.find(t => t.id === Number(txId));
-    if (!tx) return;
-
-    let phone = tx.phone ? tx.phone.trim() : '';
-    if (!phone) {
-      phone = prompt(
-        window.i18n.currentLang === 'ml' 
-          ? 'രസീത് അയക്കേണ്ട വ്യക്തിയുടെ WhatsApp നമ്പർ നൽകുക (10 അക്ക മൊബൈൽ നമ്പർ):'
-          : 'Enter recipient WhatsApp mobile number (10 digits):',
-        ''
-      );
-      if (!phone) return;
-      // Save phone to transaction record
-      tx.phone = phone.trim();
-      window.dbEngine.updateTransaction(tx).then(() => this.refreshData());
-    }
-
-    const cleaned = this.sanitizePhone(phone);
-    if (!cleaned || cleaned.length < 10) {
-      alert(window.i18n.currentLang === 'ml' ? 'ദയവായി സാധുവായ ഒരു മൊബൈൽ നമ്പർ നൽകുക.' : 'Please enter a valid mobile number.');
-      return;
-    }
-
-    const cat = this.categories.find(c => c.id === tx.category);
-    const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
-    const isIncome = tx.type === 'income';
-    const officeName = (this.officeProfile && this.officeProfile.name) || 'OFFICE FINANCE TRACKER';
-    const formattedAmt = this.formatCurrency(tx.amount);
-    const formattedDate = this.formatDate(tx.date);
-
-    let message = '';
-    if (window.i18n.currentLang === 'ml') {
-      message = 
-`🧾 *${officeName}*
-*ഔദ്യോഗിക ക്യാഷ് രസീത് / വൗച്ചർ*
-────────────────────────
-🔢 *വൗച്ചർ നമ്പർ:* #${tx.billNo || 'TX-' + tx.id}
-📅 *തീയതി:* ${formattedDate}
-
-👤 *പേര്:* ${tx.party || '-'}
-📌 *ഇടപാട് തരം:* ${isIncome ? 'വരവ് (പണം ലഭിച്ചു)' : 'ചിലവ് (പണം നൽകി)'}
-🏷️ *വിഭാഗം:* ${catName}
-💰 *തുക:* *${formattedAmt}*
-${tx.notes ? `📝 *വിവരണം:* ${tx.notes}\n` : ''}────────────────────────
-✅ _ഈ ഇടപാട് ഞങ്ങളുടെ സ്ഥാപനത്തിൽ ഔദ്യോഗികമായി രേഖപ്പെടുത്തിയിരിക്കുന്നു._
-നന്ദി! 🙏`;
-    } else {
-      message = 
-`🧾 *${officeName}*
-*OFFICIAL CASH RECEIPT / VOUCHER*
-────────────────────────
-🔢 *Voucher No:* #${tx.billNo || 'TX-' + tx.id}
-📅 *Date:* ${formattedDate}
-
-👤 *Name / Party:* ${tx.party || '-'}
-📌 *Status:* ${isIncome ? 'Payment Received (Income)' : 'Payment Paid (Expense)'}
-🏷️ *Category:* ${catName}
-💰 *Amount:* *${formattedAmt}*
-${tx.notes ? `📝 *Notes:* ${tx.notes}\n` : ''}────────────────────────
-✅ _This transaction has been officially recorded in our accounts._
-Thank you! 🙏`;
-    }
-
-    const whatsappUrl = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    this.showToast(window.i18n.currentLang === 'ml' ? 'WhatsApp ഓപ്പൺ ചെയ്യുന്നു...' : 'Opening WhatsApp...', 'success');
-  }
-
-  sanitizePhone(phone) {
-    let cleaned = String(phone || '').replace(/[^\d+]/g, '');
-    if (cleaned.startsWith('+')) cleaned = cleaned.slice(1);
-    if (cleaned.startsWith('0')) cleaned = cleaned.replace(/^0+/, '');
-    if (cleaned.length === 10) cleaned = '91' + cleaned;
-    return cleaned;
-  }
-
   async confirmDeleteTx(txId) {
-    if (confirm('ഈ ഇടപാട് ഡിലീറ്റ് ചെയ്യണമെന്ന് ഉറപ്പാണോ?')) {
+    if (confirm(window.i18n.t('confirmDelete'))) {
       await window.dbEngine.deleteTransaction(Number(txId));
-      this.showToast('ഇടപാട് മായ്ച്ചു!', 'info');
+      this.showToast(window.i18n.t('deletedSuccess'), 'info');
       await this.refreshData();
     }
   }
 
-  // ================= 15. CUSTOM CATEGORY MODAL =================
+  // ================= 16. CUSTOM CATEGORY MODAL =================
   openAddCategoryModal() {
     document.getElementById('newCatNameMl').value = '';
     document.getElementById('newCatNameEn').value = '';
-    document.getElementById('categoryModal')?.classList.remove('hidden');
+    document.getElementById('categoryModal').classList.remove('hidden');
   }
 
   closeAddCategoryModal() {
-    document.getElementById('categoryModal')?.classList.add('hidden');
+    document.getElementById('categoryModal').classList.add('hidden');
   }
 
-  async handleSaveCategory(e) {
-    e.preventDefault();
-    const type = document.getElementById('newCatType').value;
+  async handleSaveCategory(event) {
+    event.preventDefault();
+
     const nameMl = document.getElementById('newCatNameMl').value.trim();
     const nameEn = document.getElementById('newCatNameEn').value.trim();
+    const type = document.getElementById('newCatType').value;
     const color = document.getElementById('newCatColor').value;
 
-    if (!nameMl) return;
+    if (!nameMl && !nameEn) return;
 
-    const newId = 'cat_' + Date.now();
-    await window.dbEngine.addCategory({
-      id: newId,
-      nameMl,
-      nameEn,
+    const newCat = {
+      id: 'cat_' + Date.now(),
+      nameMl: nameMl || nameEn,
+      nameEn: nameEn || nameMl,
       type,
       color,
       isCustom: true
-    });
+    };
 
-    this.showToast('പുതിയ കാറ്റഗറി ചേർത്തു!', 'success');
+    await window.dbEngine.addCategory(newCat);
+    this.showToast(window.i18n.t('categoryAdded'), 'success');
     this.closeAddCategoryModal();
     await this.refreshData();
   }
 
-  async deleteCustomCategory(id) {
-    if (confirm('ഈ കാറ്റഗറി ഒഴിവാക്കണോ?')) {
-      await window.dbEngine.deleteCategory(id);
-      this.showToast('കാറ്റഗറി ഒഴിവാക്കി', 'info');
+  async deleteCategory(catId) {
+    if (confirm(window.i18n.currentLang === 'ml' ? 'ഈ കാറ്റഗറി ഒഴിവാക്കണമെന്ന് ഉറപ്പാണോ?' : 'Are you sure you want to remove this category?')) {
+      await window.dbEngine.deleteCategory(catId);
+      this.showToast(window.i18n.t('categoryRemoved'), 'info');
       await this.refreshData();
     }
   }
 
-  // ================= 16. OFFICE PROFILE & BACKUP =================
-  async handleSaveOfficeProfile(e) {
-    e.preventDefault();
-    const profile = {
+  // ================= 17. OFFICE PROFILE =================
+  async handleSaveOfficeProfile(event) {
+    event.preventDefault();
+    this.officeProfile = {
       name: document.getElementById('settingOfficeName').value.trim(),
       tagline: document.getElementById('settingOfficeTagline').value.trim(),
       address: document.getElementById('settingOfficeAddress').value.trim(),
@@ -1370,79 +1636,90 @@ Thank you! 🙏`;
       currency: document.getElementById('settingOfficeCurrency').value.trim() || '₹'
     };
 
-    await window.dbEngine.setSetting('officeProfile', profile);
-    this.officeProfile = profile;
+    await window.dbEngine.setSetting('officeProfile', this.officeProfile);
     this.applyProfileToHeader();
-    this.showToast('ഓഫീസ് പ്രൊഫൈൽ സേവ് ചെയ്തു!', 'success');
+    this.showToast(window.i18n.t('profileSaved'), 'success');
   }
 
+  // ================= 18. DATA BACKUP & RESTORE =================
   async handleDownloadBackup() {
-    const jsonStr = await window.dbEngine.exportBackupJSON();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const backupJson = await window.dbEngine.exportDataBackup();
+    const blob = new Blob([backupJson], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Office_Finance_Backup_${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `OfficeFinance_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    this.showToast('ബാക്കപ്പ് ഡൗൺലോഡ് പൂർത്തിയായി!', 'success');
+    this.showToast(window.i18n.t('backupDownloaded'), 'success');
   }
 
-  handleRestoreBackup(event) {
+  async handleRestoreBackup(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const count = await window.dbEngine.restoreBackupJSON(e.target.result);
-        this.showToast(`${count} ഇടപാടുകൾ റീസ്റ്റോർ ചെയ്തു!`, 'success');
+        const count = await window.dbEngine.importDataBackup(e.target.result);
+        this.showToast(window.i18n.t('restoreSuccess').replace('{count}', count), 'success');
         await this.refreshData();
       } catch (err) {
-        alert('ബാക്കപ്പ് ഫയൽ തെറ്റാണ്!');
+        alert(window.i18n.currentLang === 'ml' ? 'ബാക്കപ്പ് ഫയൽ തെറ്റാണ്!' : 'Invalid backup file format!');
       }
     };
     reader.readAsText(file);
+    event.target.value = '';
   }
 
-  openPinSettingPrompt() {
-    const current = this.userPin;
-    const promptMsg = current ? 'പുതിയ 4-അക്ക PIN നൽകുക (ഒഴിവാക്കാൻ ഒന്നും നൽകരുത്):' : '4-അക്ക സുരക്ഷാ PIN നൽകുക:';
-    const newPin = prompt(promptMsg);
+  // ================= 19. PIN SETUP & FULL RESET =================
+  async openPinSettingPrompt() {
+    const pin = prompt(
+      window.i18n.currentLang === 'ml'
+        ? 'പുതിയ 4-അക്ക സുരക്ഷാ PIN നൽകുക (ഒഴിവാക്കാൻ ശൂന്യമായി വിടുക):'
+        : 'Enter 4-digit security PIN (leave blank to disable):',
+      this.userPin || ''
+    );
 
-    if (newPin === null) return;
-    if (newPin === '') {
-      this.userPin = null;
-      window.dbEngine.setSetting('appPin', null);
-      this.updatePinStatusUI();
-      this.showToast('PIN സുരക്ഷ ഒഴിവാക്കി', 'info');
+    if (pin === null) {
+      this.showToast(window.i18n.t('pinChangeCancelled'), 'info');
       return;
     }
 
-    if (/^\d{4}$/.test(newPin)) {
-      this.userPin = newPin;
-      window.dbEngine.setSetting('appPin', newPin);
+    const trimmed = pin.trim();
+    if (trimmed && /^\d{4}$/.test(trimmed)) {
+      this.userPin = trimmed;
+      await window.dbEngine.setSetting('appPin', trimmed);
       this.updatePinStatusUI();
-      this.showToast('PIN വിജയകരമായി സേവ് ചെയ്തു!', 'success');
+      this.showToast(window.i18n.t('pinChanged'), 'success');
+    } else if (!trimmed) {
+      this.userPin = null;
+      await window.dbEngine.setSetting('appPin', null);
+      this.updatePinStatusUI();
+      this.showToast(window.i18n.t('pinDisabled'), 'info');
     } else {
-      alert('ദയവായി 4 അക്കങ്ങൾ മാത്രം നൽകുക (e.g. 1234)');
+      alert(window.i18n.currentLang === 'ml' ? 'PIN കൃത്യം 4 അക്കങ്ങൾ മാത്രമായിരിക്കണം!' : 'PIN must be exactly 4 numeric digits!');
     }
   }
 
   async confirmClearAllData() {
-    if (confirm('ശ്രദ്ധിക്കുക: എല്ലാ വരവ് ചിലവ് ഇടപാടുകളും പൂർണ്ണമായും മായ്ക്കപ്പെടും. തുടരണോ?')) {
-      if (confirm('ഡാറ്റ തിരിച്ചെടുക്കാൻ സാധിക്കില്ല. നിങ്ങൾ ഉറപ്പാണോ?')) {
-        await window.dbEngine.clearAllData();
-        this.showToast('എല്ലാ ഇടപാടുകളും മായ്ച്ചു.', 'info');
-        await this.refreshData();
-      }
+    if (confirm(window.i18n.t('confirmClearAll'))) {
+      await window.dbEngine.clearAllTransactions();
+      this.showToast(window.i18n.t('allCleared'), 'info');
+      await this.refreshData();
     }
   }
 
-  // ================= 17. PWA & TOAST =================
+  // ================= 20. PWA LOGIC =================
   setupPWA() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(reg => console.log('Finnova ServiceWorker registered:', reg.scope))
+          .catch(err => console.log('Finnova ServiceWorker registration failed:', err));
+      });
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {

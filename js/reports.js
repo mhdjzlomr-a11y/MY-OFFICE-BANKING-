@@ -354,18 +354,22 @@ class ReportsEngine {
 
   // --- 4. Excel (CSV with UTF-8 BOM) Export ---
   exportToCSV(transactions, categories, profile, periodLabel = '') {
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
     const catMap = {};
     (categories || []).forEach(c => { catMap[c.id] = c; });
 
-    const headers = ['ID', 'Date', 'Type', 'Category', 'Party / Name', 'Amount (INR)', 'Bill / Ref No', 'Description'];
+    const headers = isMl 
+      ? ['ഐഡി (ID)', 'തീയതി (Date)', 'ഇടപാട് തരം (Type)', 'വിഭാഗം (Category)', 'വ്യക്തി / സ്ഥാപനം (Party)', 'തുക (Amount)', 'ബിൽ നമ്പർ (Bill No)', 'വിവരണം (Notes)']
+      : ['ID', 'Date', 'Type', 'Category', 'Party / Name', 'Amount (INR)', 'Bill / Ref No', 'Description'];
 
     const rows = transactions.map(tx => {
       const cat = catMap[tx.category];
-      const catName = cat ? (cat.nameMl || cat.nameEn) : (tx.category || '');
+      const catName = cat ? (window.i18n ? window.i18n.getCategoryName(cat) : (cat.nameMl || cat.nameEn)) : (tx.category || '');
+      const typeStr = tx.type === 'income' ? (isMl ? 'വരവ്' : 'Income') : (isMl ? 'ചിലവ്' : 'Expense');
       return [
         tx.id,
         tx.date || '',
-        tx.type === 'income' ? 'Income' : 'Expense',
+        typeStr,
         `"${(catName).replace(/"/g, '""')}"`,
         `"${(tx.party || '').replace(/"/g, '""')}"`,
         tx.amount,
