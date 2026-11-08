@@ -1,55 +1,41 @@
 # =====================================================================
-# Office Finance Local Web Server (Windows PowerShell)
+# Office Finance Local Web Server (TcpListener - Zero Errors)
 # =====================================================================
 
-$Port = 5050
-$Root = $PSScriptRoot
-
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$Port/")
-$listener.Prefixes.Add("http://127.0.0.1:$Port/")
-
-# Try to add local Wi-Fi IP for Android mobile access
-$localIP = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "*Wi-Fi*", "*Ethernet*" -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" } | Select-Object -ExpandProperty IPAddress -First 1)
-
-if ($localIP) {
-    try {
-        $listener.Prefixes.Add("http://${localIP}:${Port}/")
-    } catch {
-        # continue with localhost
-    }
-}
+$port = 5050
+$root = $PSScriptRoot
 
 try {
-    $listener.Start()
+    $endpoint = New-Object System.Net.IPEndPoint ([System.Net.IPAddress]::Loopback, $port)
+    $server = New-Object System.Net.Sockets.TcpListener $endpoint
+    $server.Start()
 } catch {
-    $Port = 8080
-    $listener = New-Object System.Net.HttpListener
-    $listener.Prefixes.Add("http://localhost:$Port/")
-    $listener.Prefixes.Add("http://127.0.0.1:$Port/")
-    $listener.Start()
+    $port = 8080
+    $endpoint = New-Object System.Net.IPEndPoint ([System.Net.IPAddress]::Loopback, $port)
+    $server = New-Object System.Net.Sockets.TcpListener $endpoint
+    $server.Start()
 }
 
 Clear-Host
 Write-Host "=================================================================" -ForegroundColor Green
 Write-Host "         OFFICE FINANCE LOCAL SERVER IS LIVE & RUNNING!          " -ForegroundColor Cyan
-Write-Host "         ഓഫീസ് ഫിനാൻസ് ലോക്കൽ വെബ് സെർവർ തയ്യാറാണ്!              " -ForegroundColor Yellow
+Write-Host "         ഓഫീസ് ഫിനാൻസ് ലോക്കൽ സെർവർ പ്രവർത്തിക്കുന്നു!            " -ForegroundColor Yellow
 Write-Host "=================================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  💻 PC Browser URL:      " -NoNewline -ForegroundColor White
-Write-Host "http://localhost:$Port" -ForegroundColor Cyan
-if ($localIP) {
-    Write-Host "  📱 Mobile (Same Wi-Fi): " -NoNewline -ForegroundColor White
-    Write-Host "http://${localIP}:${Port}" -ForegroundColor Yellow
-}
+Write-Host "  Chrome Browser URL: http://localhost:$port" -ForegroundColor White
 Write-Host ""
-Write-Host "  [!] Keep this window OPEN while using the application." -ForegroundColor Gray
-Write-Host "  [!] To stop the server: Press Ctrl + C or close this window." -ForegroundColor Gray
+Write-Host "  [!] ഈ വിൻഡോ ക്ലോസ് ചെയ്യാതെ മിനിമൈസ് ചെയ്തു വെയ്ക്കുക." -ForegroundColor Gray
+Write-Host "  [!] സെർവർ നിർത്താൻ: ഈ വിൻഡോ ക്ലോസ് ചെയ്യുക (Close window)." -ForegroundColor Gray
 Write-Host "=================================================================" -ForegroundColor Green
 Write-Host ""
 
-# Launch Browser
-Start-Process "http://localhost:$Port"
+# Launch Google Chrome
+$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+if (Test-Path $chrome) {
+    Start-Process $chrome "http://localhost:$port"
+} else {
+    Start-Process "http://localhost:$port"
+}
 
 $mimeTypes = @{
     ".html"        = "text/html; charset=utf-8"
@@ -60,40 +46,44 @@ $mimeTypes = @{
     ".png"         = "image/png"
     ".svg"         = "image/svg+xml"
     ".ico"         = "image/x-icon"
-    ".woff2"       = "font/woff2"
-    ".ttf"         = "font/ttf"
 }
 
-while ($listener.IsListening) {
+while ($true) {
     try {
-        $context = $listener.GetContext()
-        $request = $context.Request
-        $response = $context.Response
+        $client = $server.AcceptTcpClient()
+        $stream = $client.GetStream()
+        $reader = New-Object System.IO.StreamReader $stream
+        $line = $reader.ReadLine()
 
-        $path = $request.Url.LocalPath
-        if ($path -eq "/" -or $path -eq "") {
-            $path = "/index.html"
+        if ($line) {
+            $tokens = $line.Split(' ')
+            if ($tokens.Length -ge 2 -and $tokens[0] -eq 'GET') {
+                $path = $tokens[1].Split('?')[0]
+                if ($path -eq '/' -or $path -eq '') { $path = '/index.html' }
+                $filePath = Join-Path $root ($path.TrimStart('/').Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+
+                if (Test-Path $filePath -PathType Leaf) {
+                    $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
+                    $mime = $mimeTypes[$ext]
+                    if (-not $mime) { $mime = "application/octet-stream" }
+                    $bytes = [System.IO.File]::ReadAllBytes($filePath)
+
+                    $header = "HTTP/1.1 200 OK`r`nContent-Type: $mime`r`nContent-Length: $($bytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nConnection: close`r`n`r`n"
+                    $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+                    $stream.Write($headerBytes, 0, $headerBytes.Length)
+                    $stream.Write($bytes, 0, $bytes.Length)
+                } else {
+                    $body = "404 Not Found"
+                    $bodyBytes = [System.Text.Encoding]::ASCII.GetBytes($body)
+                    $header = "HTTP/1.1 404 Not Found`r`nContent-Type: text/plain`r`nContent-Length: $($bodyBytes.Length)`r`nConnection: close`r`n`r`n"
+                    $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+                    $stream.Write($headerBytes, 0, $headerBytes.Length)
+                    $stream.Write($bodyBytes, 0, $bodyBytes.Length)
+                }
+            }
         }
-
-        $filePath = Join-Path $Root ($path.TrimStart('/').Replace('/', [System.IO.Path]::DirectorySeparatorChar))
-
-        if (Test-Path $filePath -PathType Leaf) {
-            $ext = [System.IO.Path]::GetExtension($filePath).ToLower()
-            $mime = $mimeTypes[$ext]
-            if (-not $mime) { $mime = "application/octet-stream" }
-
-            $bytes = [System.IO.File]::ReadAllBytes($filePath)
-            $response.ContentType = $mime
-            $response.ContentLength64 = $bytes.Length
-            $response.AddHeader("Access-Control-Allow-Origin", "*")
-            $response.AddHeader("Cache-Control", "no-cache")
-            $response.OutputStream.Write($bytes, 0, $bytes.Length)
-        } else {
-            $response.StatusCode = 404
-            $errBytes = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
-            $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
-        }
-        $response.Close()
+        $stream.Flush()
+        $client.Close()
     } catch {
         # ignore client disconnects
     }

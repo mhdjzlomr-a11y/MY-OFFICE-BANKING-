@@ -1,8 +1,6 @@
 @echo off
-title Office Finance Local Server
+title Office Finance Server & Chrome Launcher
 cd /d "%~dp0"
-echo ========================================================
-echo        STARTING OFFICE FINANCE LOCAL SERVER...
-echo ========================================================
-powershell.exe -NoExit -ExecutionPolicy Bypass -File "%~dp0server.ps1"
+echo Starting Office Finance on http://localhost:5050 in Chrome...
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0server.ps1"
 pause
