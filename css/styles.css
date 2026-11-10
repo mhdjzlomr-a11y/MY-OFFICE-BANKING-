@@ -1828,4 +1828,55 @@ body {
   }
 }
 
+/* Global Utility */
+.hidden {
+  display: none !important;
+}
+
+/* Cloud Sync Pill Button (Dashboard Title Row) */
+.cloud-sync-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid rgba(14, 165, 233, 0.35);
+  background: var(--light-blue-50);
+  color: var(--light-blue-600);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  vertical-align: middle;
+}
+.cloud-sync-pill-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+.cloud-sync-pill-btn.synced {
+  background: var(--emerald-light);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #059669;
+}
+html.dark .cloud-sync-pill-btn.synced {
+  color: #34d399;
+}
+.cloud-sync-pill-btn.syncing {
+  background: var(--finnova-purple-light);
+  border-color: rgba(92, 84, 248, 0.4);
+  color: var(--finnova-purple);
+}
+.cloud-sync-pill-btn.pending {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #d97706;
+}
+.cloud-sync-pill-btn.error {
+  background: var(--coral-light);
+  border-color: rgba(244, 63, 94, 0.45);
+  color: var(--coral-rose);
+}
+
+
 

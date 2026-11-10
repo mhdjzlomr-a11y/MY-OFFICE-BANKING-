@@ -205,6 +205,10 @@
                   <span data-i18n="btnSwitchDivision">മാറ്റുക (Switch)</span>
                 </span>
               </button>
+              <button type="button" id="btnDashCloudSyncStatus" class="cloud-sync-pill-btn off" title="Gmail Cross-Device Cloud Sync">
+                <span id="dashCloudSyncDot">☁️</span>
+                <span id="dashCloudSyncText" data-i18n="cloudSyncConnect">Gmail Sync: Connect</span>
+              </button>
             </h2>
             <p class="page-sub" data-i18n="pageSub">Manage and track all your office income and expenses in one place.</p>
           </div>
@@ -742,6 +746,43 @@
 
       <!-- ================= TAB 4: SETTINGS VIEW ================= -->
       <section id="view-settings" class="tab-view hidden">
+
+        <!-- ================= GMAIL CROSS-DEVICE CLOUD SYNC ================= -->
+        <div class="white-box" id="cloudSyncSettingsCard" style="margin-bottom: 20px; border-left: 4px solid #0ea5e9;">
+          <div class="box-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 1.3rem;">☁️</span>
+                <h3 class="box-title" data-i18n="cloudSyncTitle">Gmail ക്ലൗഡ് സിങ്ക് (Cross-Device Sync)</h3>
+                <span id="settingsCloudBadge" style="font-size: 0.72rem; padding: 3px 10px; border-radius: 999px; background: rgba(100,116,139,0.15); color: var(--text-muted); font-weight: 800;">
+                  ⚪ Not Connected
+                </span>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" data-i18n="cloudSyncSub">
+                നിങ്ങളുടെ ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിലെല്ലാം ഒരേ ജിമെയിൽ വഴി എല്ലാ വരവ്-ചിലവ് കണക്കുകളും തത്സമയം ലഭിക്കാൻ ഇത് കണക്ട് ചെയ്യുക (100% സൗജന്യം).
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" id="btnSettingsSyncNow" class="action-btn-pill btn-pill-white hidden" style="padding: 8px 14px; font-size: 0.8rem;">
+                <i data-lucide="refresh-cw"></i>
+                <span data-i18n="btnSyncNow">ഇപ്പോൾ സിങ്ക് ചെയ്യുക (Sync Now)</span>
+              </button>
+              <button type="button" id="btnOpenCloudSyncModal" class="action-btn-pill btn-pill-green" style="padding: 8px 16px; font-size: 0.82rem;">
+                <i data-lucide="cloud"></i>
+                <span id="btnOpenCloudSyncLabel" data-i18n="btnSetupCloudSync">☁️ Gmail സിങ്ക് സെറ്റ് ചെയ്യുക</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="settingsCloudSummaryBar" style="background: var(--bg-subtle); border-radius: var(--radius-md); padding: 10px 14px; border: 1px solid var(--border-light); font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span id="settingsCloudDetailText" style="color: var(--text-muted);">
+              ഒരേ ബ്രൗസറിലെ ടാബുകൾ തനിയെ സിങ്ക് ആകും. മറ്റൊരു ഫോണിലേക്കോ ടാബിലേക്കോ കമ്പ്യൂട്ടറിലേക്കോ കണക്ട് ചെയ്യാൻ മുകളിലെ ബട്ടൺ അമർത്തുക.
+            </span>
+            <button type="button" id="btnSettingsCopyMagicLink" class="action-btn-pill btn-pill-white hidden" style="padding: 5px 12px; font-size: 0.74rem; color: var(--finnova-purple);">
+              <span>🔗 മറ്റു ഡിവൈസിൽ തുറക്കാൻ ലിങ്ക് എടുക്കുക</span>
+            </button>
+          </div>
+        </div>
         
         <!-- Category Management -->
         <div class="white-box" style="margin-bottom: 20px;">
@@ -1607,6 +1648,138 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: GMAIL CROSS-DEVICE CLOUD SYNC ================= -->
+  <div id="cloudSyncModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 560px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">☁️</span>
+          <div>
+            <h3 class="modal-heading-text" data-i18n="cloudModalTitle">Gmail Cross-Device Cloud Sync</h3>
+            <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;" data-i18n="cloudModalSub">
+              ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിൽ ഒരേ കണക്കുകൾ സ്വയം വരാൻ (100% സൗജന്യം)
+            </p>
+          </div>
+        </div>
+        <button id="btnCloseCloudSyncModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Status Summary Banner -->
+      <div id="cloudModalStatusBanner" style="margin: 10px 0 14px 0; padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg-subtle); border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <div id="cloudModalStatusTitle" style="font-weight: 800; font-size: 0.85rem; color: var(--text-dark);">⚪ കണക്ട് ചെയ്തിട്ടില്ല (Not Connected)</div>
+          <div id="cloudModalStatusSub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">ഓരോ ഉപകരണത്തിലെയും ഡാറ്റ സ്വയം സിങ്ക് ആവാൻ താഴെ സെറ്റ് ചെയ്യുക.</div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" id="btnCloudSyncNowModal" class="action-btn-pill btn-pill-green hidden" style="padding: 6px 12px; font-size: 0.76rem;">
+            🔄 Sync Now
+          </button>
+          <button type="button" id="btnCloudDisconnect" class="action-btn-pill btn-pill-white hidden" style="padding: 6px 10px; font-size: 0.74rem; color: var(--coral-rose);">
+            Disconnect
+          </button>
+        </div>
+      </div>
+
+      <!-- Connected Multi-Device Magic Link Box (Shown when connected) -->
+      <div id="cloudShareDeviceBox" class="hidden" style="margin-bottom: 16px; background: rgba(16, 185, 129, 0.08); border: 1.5px dashed #10b981; border-radius: var(--radius-md); padding: 14px;">
+        <div style="font-weight: 800; font-size: 0.86rem; color: #047857; margin-bottom: 6px;">
+          📲 നിങ്ങളുടെ ടാബിലും മറ്റ് കമ്പ്യൂട്ടറിലും ഈ കണക്കുകൾ തുറക്കാൻ (Connect Other Devices):
+        </div>
+        <p style="font-size: 0.75rem; line-height: 1.5; color: var(--text-dark); margin: 0 0 10px 0;">
+          താഴെയുള്ള ബട്ടൺ വഴി ഈ <strong>മാജിക് ലിങ്ക്</strong> നിങ്ങളുടെ ജിമെയിലിലേക്കോ വാട്സാപ്പിലേക്കോ അയക്കുക. ഇനി ഏത് സിസ്റ്റത്തിൽ ജിമെയിൽ തുറന്ന് ആ ലിങ്കിൽ ക്ലിക്ക് ചെയ്താലും നിങ്ങളുടെ എല്ലാ എൻട്രികളും അവിടെ വരും!
+        </p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="btnCloudSendToGmail" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.78rem; background: #ea4335; color: white;">
+            📧 എൻറെ ജിമെയിലിലേക്ക് അയക്കുക (Send to Gmail)
+          </button>
+          <button type="button" id="btnCloudShareWhatsapp" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.78rem; background: #25d366; color: white;">
+            📲 WhatsApp വഴി അയക്കുക
+          </button>
+          <button type="button" id="btnCloudCopyMagicLink" class="action-btn-pill btn-pill-white" style="padding: 8px 12px; font-size: 0.78rem;">
+            📋 ലിങ്ക് കോപ്പി (Copy Link)
+          </button>
+        </div>
+      </div>
+
+      <!-- Provider Switcher Tabs -->
+      <div style="display: flex; gap: 6px; margin-bottom: 14px; background: var(--bg-subtle); padding: 4px; border-radius: var(--radius-pill); border: 1px solid var(--border-light);">
+        <button type="button" id="tabCloudDrive" class="period-tab-btn active" style="flex: 1; text-align: center;">
+          📁 Gmail Drive (Free Forever)
+        </button>
+        <button type="button" id="tabCloudFirebase" class="period-tab-btn" style="flex: 1; text-align: center;">
+          🔥 Firebase Google Login
+        </button>
+      </div>
+
+      <!-- PANEL 1: PERSONAL GMAIL GOOGLE DRIVE & SHEETS (APPS SCRIPT) -->
+      <div id="panelCloudDrive" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="background: rgba(14, 165, 233, 0.08); border-radius: var(--radius-md); padding: 12px; border: 1px solid rgba(14, 165, 233, 0.25); font-size: 0.75rem; line-height: 1.55; color: var(--text-dark);">
+          <strong>ℹ️ എന്തുകൊണ്ട് ഇത് ആവശ്യമാണ്?</strong><br>
+          ബ്രൗസറിൽ ജിമെയിൽ ലോഗിൻ ചെയ്താലും ഫോണിലെ ഡാറ്റ തനിയെ ടാബിലേക്കോ കമ്പ്യൂട്ടറിലേക്കോ പോവില്ല. ഒരിക്കൽ നിങ്ങളുടെ സ്വന്തം ജിമെയിലിലെ <strong>Google Drive</strong> ഇവിടെ കണക്ട് ചെയ്താൽ എല്ലാ ഡാറ്റയും Google Drive-ലും Google Sheet-ലും സുരക്ഷിതമായി സേവ് ആകും — <strong>എന്നും 100% സൗജന്യം!</strong>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+          <div class="form-group">
+            <label class="form-label">1. നിങ്ങളുടെ ജിമെയിൽ (Your Gmail Address)</label>
+            <input id="cloudInputGmail" type="email" class="form-input" placeholder="e.g. myoffice@gmail.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">2. സിങ്ക് പിൻ (Secret Sync PIN)</label>
+            <input id="cloudInputKey" type="text" class="form-input" placeholder="e.g. 246810" value="246810" />
+          </div>
+        </div>
+
+        <!-- Copy Script Box -->
+        <div style="background: var(--bg-subtle); border: 1px dashed var(--finnova-purple); border-radius: var(--radius-md); padding: 12px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <strong style="font-size: 0.8rem; color: var(--finnova-purple);">ഘട്ടം A: Google Drive-ൽ 1-മിനിറ്റ് സെറ്റപ്പ്</strong>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" id="btnCopyAppsScript" class="action-btn-pill btn-pill-green" style="padding: 5px 12px; font-size: 0.74rem;">
+                📋 കോഡ് കോപ്പി ചെയ്യുക (Copy Code)
+              </button>
+              <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener noreferrer" class="action-btn-pill btn-pill-white" style="padding: 5px 12px; font-size: 0.74rem; text-decoration: none;">
+                ↗️ script.google.com തുറക്കുക
+              </a>
+            </div>
+          </div>
+          <ol style="margin: 0; padding-left: 18px; font-size: 0.74rem; line-height: 1.6; color: var(--text-dark);">
+            <li>മുകളിൽ Gmail നൽകിയ ശേഷം <strong>"കോഡ് കോപ്പി ചെയ്യുക"</strong> ക്ലിക്ക് ചെയ്യുക.</li>
+            <li><strong>script.google.com</strong> നിങ്ങളുടെ അതേ ജിമെയിലിൽ തുറന്ന്, പഴയ കോഡ് മാറ്റി കോപ്പി ചെയ്ത കോഡ് Paste ചെയ്ത് Save (💾) ചെയ്യുക.</li>
+            <li>മുകളിൽ വലതുവശത്ത് <strong>Deploy → New deployment → Type: Web app → Who has access: Anyone → Deploy</strong> കൊടുക്കുക. <em>("Google hasn't verified" വന്നാൽ Advanced → Go to project (unsafe) → Allow നൽകുക)</em>.</li>
+            <li>കിട്ടുന്ന <strong>Web app URL</strong> താഴെ നൽകി Connect അമർത്തുക!</li>
+          </ol>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ഘട്ടം B: Google Apps Script Web App URL ഇവിടെ നൽകുക</label>
+          <input id="cloudInputScriptUrl" type="url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec" />
+        </div>
+
+        <button type="button" id="btnConnectAppsScript" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem;">
+          🔗 കണക്ട് & സിങ്ക് ചെയ്യുക (Connect & Sync Gmail)
+        </button>
+      </div>
+
+      <!-- PANEL 2: OPTIONAL FIREBASE + GOOGLE SIGN-IN -->
+      <div id="panelCloudFirebase" class="hidden" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="background: rgba(245, 158, 11, 0.08); border-radius: var(--radius-md); padding: 12px; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; line-height: 1.5; color: var(--text-dark);">
+          <strong>🔥 Firebase Google Sign-In:</strong> ഏത് പുതിയ സിസ്റ്റത്തിലും വെബ്സൈറ്റ് തുറന്ന് നേരിട്ട് <strong>"Sign in with Google"</strong> ക്ലിക്ക് ചെയ്ത് സിങ്ക് ചെയ്യണമെങ്കിൽ നിങ്ങളുടെ സൗജന്യ Firebase Project Config JSON ഇവിടെ നൽകാം. (Firestore Rules-ൽ <code>allow read, write: if request.auth != null && request.auth.uid == userId;</code> ചേർക്കാൻ മറക്കരുത്).
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Firebase Config JSON ({ apiKey, authDomain, projectId, ... })</label>
+          <textarea id="cloudInputFirebaseJson" rows="5" class="form-input" style="font-family: monospace; font-size: 0.75rem;" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
+        </div>
+
+        <button type="button" id="btnFirebaseGoogleSignIn" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem; background: #4285F4; color: white;">
+          G ജിമെയിൽ വഴി ലോഗിൻ ചെയ്യുക (Sign in with Google)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= MODAL: ATTACHMENT LIGHTBOX ================= -->
   <div id="lightboxModal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.92);">
     <button id="btnCloseLightbox" style="position: absolute; top: 20px; right: 20px; color: white; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; padding: 10px; cursor: pointer;">
@@ -1620,6 +1793,7 @@
   <!-- JavaScript Modules -->
   <script src="./js/icons.js"></script>
   <script src="./js/db.js"></script>
+  <script src="./js/cloud.js"></script>
   <script src="./js/i18n.js"></script>
   <script src="./js/charts.js"></script>
   <script src="./js/reports.js"></script>

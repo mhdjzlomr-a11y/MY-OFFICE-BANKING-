@@ -108,6 +108,59 @@ const DEFAULT_OFFICE_PROFILE = {
 class FinanceDB {
   constructor() {
     this.db = null;
+    this.syncChannel = (typeof BroadcastChannel !== 'undefined')
+      ? new BroadcastChannel('office_finance_sync_v1')
+      : null;
+    this._suppressSyncNotify = false;
+  }
+
+  generateSyncId(prefix = 'id') {
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `${prefix}_${Date.now()}_${rand}`;
+  }
+
+  makeLegacySyncId(prefix, str) {
+    let hash = 0;
+    const s = String(str || '');
+    for (let i = 0; i < s.length; i++) {
+      hash = ((hash << 5) - hash) + s.charCodeAt(i);
+      hash |= 0;
+    }
+    return `${prefix}_legacy_${Math.abs(hash).toString(36)}_${s.length}`;
+  }
+
+  notifyMutation(source = 'local', triggerCloud = true) {
+    if (this._suppressSyncNotify) return;
+    try {
+      if (this.syncChannel) {
+        this.syncChannel.postMessage({ type: 'db-updated', source, ts: Date.now() });
+      }
+      localStorage.setItem('office_finance_tab_ping', String(Date.now()));
+    } catch (_) {}
+
+    if (triggerCloud && window.cloudSync && typeof window.cloudSync.markLocalChange === 'function') {
+      window.cloudSync.markLocalChange();
+    }
+  }
+
+  async getDeletedLog() {
+    const raw = await this.getSetting('deletedSyncLog', []);
+    return Array.isArray(raw) ? raw : [];
+  }
+
+  async recordDeletedSyncId(syncId) {
+    if (!syncId) return;
+    const log = await this.getDeletedLog();
+    const now = new Date().toISOString();
+    const idx = log.findIndex(entry => entry && entry.syncId === syncId);
+    if (idx >= 0) {
+      log[idx].deletedAt = now;
+    } else {
+      log.push({ syncId, deletedAt: now });
+    }
+    const cutoff = Date.now() - (180 * 24 * 60 * 60 * 1000);
+    const pruned = log.filter(entry => entry && entry.syncId && new Date(entry.deletedAt || 0).getTime() > cutoff);
+    await this._setSettingRaw('deletedSyncLog', pruned);
   }
 
   async init() {
@@ -164,52 +217,79 @@ class FinanceDB {
 
   async seedDefaults() {
     // Seed default categories and ensure new division categories exist
-    const categories = await this.getAllCategories();
-    const existingIds = new Set(categories.map(c => c.id));
-    const tx = this.db.transaction('categories', 'readwrite');
-    const store = tx.objectStore('categories');
+    const prevSuppress = this._suppressSyncNotify;
+    this._suppressSyncNotify = true;
+    try {
+      const categories = await this.getAllCategories();
+      const deletedLog = await this.getDeletedLog();
+      const deletedSet = new Set(deletedLog.map(d => d.syncId));
+      const existingIds = new Set(categories.map(c => c.id));
+      const tx = this.db.transaction('categories', 'readwrite');
+      const store = tx.objectStore('categories');
 
-    // Add any default category that doesn't exist yet
-    for (const cat of DEFAULT_CATEGORIES) {
-      if (!existingIds.has(cat.id)) {
-        store.put(cat);
+      // Add any default category that doesn't exist yet (unless explicitly deleted)
+      for (const cat of DEFAULT_CATEGORIES) {
+        const sid = cat.syncId || cat.id;
+        if (!existingIds.has(cat.id) && !deletedSet.has(sid)) {
+          store.put({
+            ...cat,
+            syncId: sid,
+            updatedAt: '2026-01-01T00:00:00.000Z'
+          });
+        }
       }
-    }
 
-    // Ensure all existing categories have division set (default to office)
-    for (const cat of categories) {
-      if (!cat.division) {
-        cat.division = 'office';
-        store.put(cat);
+      // Ensure all existing categories have division & syncId
+      for (const cat of categories) {
+        let changed = false;
+        if (!cat.division) {
+          cat.division = 'office';
+          changed = true;
+        }
+        if (!cat.syncId) {
+          cat.syncId = cat.id;
+          changed = true;
+        }
+        if (!cat.updatedAt) {
+          cat.updatedAt = '2026-01-01T00:00:00.000Z';
+          changed = true;
+        }
+        if (changed) store.put(cat);
       }
-    }
 
-    // Seed default divisions
-    const savedDivisions = await this.getSetting('divisions');
-    if (!savedDivisions || !Array.isArray(savedDivisions) || savedDivisions.length === 0) {
-      await this.setSetting('divisions', DEFAULT_DIVISIONS);
-    }
+      // Seed default divisions
+      const savedDivisions = await this.getSetting('divisions');
+      if (!savedDivisions || !Array.isArray(savedDivisions) || savedDivisions.length === 0) {
+        await this._setSettingRaw('divisions', DEFAULT_DIVISIONS.map(d => ({
+          ...d,
+          syncId: d.id,
+          updatedAt: '2026-01-01T00:00:00.000Z'
+        })));
+      }
 
-    // Ensure PIN system is cleared / disabled
-    await this.setSetting('appPin', null);
+      // Ensure PIN system is cleared / disabled
+      await this._setSettingRaw('appPin', null);
 
-    // Seed default office profile
-    const profile = await this.getSetting('officeProfile');
-    if (!profile) {
-      await this.setSetting('officeProfile', DEFAULT_OFFICE_PROFILE);
-    } else if (!profile.name || profile.name.includes('My Office') || profile.name.includes('എന്റെ ഓഫീസ്')) {
-      profile.name = 'OFFICE FINANCE TRACKER';
-      await this.setSetting('officeProfile', profile);
-    }
+      // Seed default office profile
+      const profile = await this.getSetting('officeProfile');
+      if (!profile) {
+        await this._setSettingRaw('officeProfile', DEFAULT_OFFICE_PROFILE);
+      } else if (!profile.name || profile.name.includes('My Office') || profile.name.includes('എന്റെ ഓഫീസ്')) {
+        profile.name = 'OFFICE FINANCE TRACKER';
+        await this._setSettingRaw('officeProfile', profile);
+      }
 
-    const lang = await this.getSetting('language');
-    if (!lang) {
-      await this.setSetting('language', 'ml');
-    }
+      const lang = await this.getSetting('language');
+      if (!lang) {
+        await this._setSettingRaw('language', 'ml');
+      }
 
-    const theme = await this.getSetting('theme');
-    if (!theme) {
-      await this.setSetting('theme', 'light');
+      const theme = await this.getSetting('theme');
+      if (!theme) {
+        await this._setSettingRaw('theme', 'light');
+      }
+    } finally {
+      this._suppressSyncNotify = prevSuppress;
     }
   }
 
@@ -224,11 +304,13 @@ class FinanceDB {
 
   async saveDivision(div) {
     const list = await this.getDivisions();
-    const idx = list.findIndex(d => d.id === div.id);
+    const now = new Date().toISOString();
+    const syncId = div.syncId || div.id;
+    const idx = list.findIndex(d => d.id === div.id || (d.syncId && d.syncId === syncId));
     if (idx >= 0) {
-      list[idx] = { ...list[idx], ...div };
+      list[idx] = { ...list[idx], ...div, syncId, updatedAt: now };
     } else {
-      list.push(div);
+      list.push({ ...div, syncId, updatedAt: now });
     }
     await this.setSetting('divisions', list);
     return list;
@@ -236,7 +318,11 @@ class FinanceDB {
 
   async deleteDivision(divId) {
     const list = await this.getDivisions();
+    const target = list.find(d => d.id === divId);
     const filtered = list.filter(d => d.id !== divId);
+    if (target) {
+      await this.recordDeletedSyncId(target.syncId || target.id);
+    }
     await this.setSetting('divisions', filtered);
     return filtered;
   }
@@ -252,11 +338,13 @@ class FinanceDB {
 
   async saveAuthorizedUser(user) {
     const list = await this.getAuthorizedUsers();
-    const idx = list.findIndex(u => u.id === user.id);
+    const now = new Date().toISOString();
+    const syncId = user.syncId || user.id;
+    const idx = list.findIndex(u => u.id === user.id || (u.syncId && u.syncId === syncId));
     if (idx >= 0) {
-      list[idx] = { ...list[idx], ...user };
+      list[idx] = { ...list[idx], ...user, syncId, updatedAt: now };
     } else {
-      list.push(user);
+      list.push({ ...user, syncId, updatedAt: now });
     }
     await this.setSetting('authorizedUsers', list);
     return list;
@@ -264,7 +352,11 @@ class FinanceDB {
 
   async deleteAuthorizedUser(userId) {
     const list = await this.getAuthorizedUsers();
-    const filtered = list.filter(u => u.id !== userId && !u.isMaster);
+    const target = list.find(u => u.id === userId && !u.isMaster);
+    const filtered = list.filter(u => u.id !== userId || u.isMaster);
+    if (target) {
+      await this.recordDeletedSyncId(target.syncId || target.id);
+    }
     await this.setSetting('authorizedUsers', filtered);
     return filtered;
   }
@@ -299,47 +391,65 @@ class FinanceDB {
 
   async addTransaction(item) {
     await this.init();
-    return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
+    const result = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('transactions', 'readwrite');
       const store = tx.objectStore('transactions');
       const data = {
         ...item,
+        syncId: item.syncId || this.generateSyncId('tx'),
         amount: parseFloat(item.amount) || 0,
-        createdAt: item.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: item.createdAt || now,
+        updatedAt: now
       };
       const req = store.add(data);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
+    this.notifyMutation('transaction:add');
+    return result;
   }
 
   async updateTransaction(item) {
     await this.init();
-    return new Promise((resolve, reject) => {
+    const existing = item.id ? await this.getTransactionById(item.id) : null;
+    const now = new Date().toISOString();
+    const result = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('transactions', 'readwrite');
       const store = tx.objectStore('transactions');
       const data = {
+        ...existing,
         ...item,
         id: Number(item.id),
+        syncId: item.syncId || (existing && existing.syncId) || this.generateSyncId('tx'),
         amount: parseFloat(item.amount) || 0,
-        updatedAt: new Date().toISOString()
+        createdAt: item.createdAt || (existing && existing.createdAt) || now,
+        updatedAt: now
       };
       const req = store.put(data);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
+    this.notifyMutation('transaction:update');
+    return result;
   }
 
   async deleteTransaction(id) {
     await this.init();
-    return new Promise((resolve, reject) => {
+    const existing = await this.getTransactionById(id);
+    if (existing) {
+      const sid = existing.syncId || this.makeLegacySyncId('tx', `${existing.createdAt}|${existing.date}|${existing.type}|${existing.amount}|${existing.party || ''}`);
+      await this.recordDeletedSyncId(sid);
+    }
+    const result = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('transactions', 'readwrite');
       const store = tx.objectStore('transactions');
       const req = store.delete(Number(id));
       req.onsuccess = () => resolve(true);
       req.onerror = () => reject(req.error);
     });
+    this.notifyMutation('transaction:delete');
+    return result;
   }
 
   // --- Categories ---
@@ -357,41 +467,57 @@ class FinanceDB {
 
   async addCategory(cat) {
     await this.init();
-    return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
+    const result = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('categories', 'readwrite');
       const store = tx.objectStore('categories');
       const id = cat.id || 'cat_' + Date.now();
       const item = {
         ...cat,
         id,
+        syncId: cat.syncId || id,
+        updatedAt: now,
         isCustom: true
       };
       const req = store.put(item);
       req.onsuccess = () => resolve(item);
       req.onerror = () => reject(req.error);
     });
+    this.notifyMutation('category:add');
+    return result;
   }
 
   async updateCategory(cat) {
     await this.init();
-    return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
+    const item = {
+      ...cat,
+      syncId: cat.syncId || cat.id,
+      updatedAt: now
+    };
+    const result = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('categories', 'readwrite');
       const store = tx.objectStore('categories');
-      const req = store.put(cat);
-      req.onsuccess = () => resolve(cat);
+      const req = store.put(item);
+      req.onsuccess = () => resolve(item);
       req.onerror = () => reject(req.error);
     });
+    this.notifyMutation('category:update');
+    return result;
   }
 
   async deleteCategory(id) {
     await this.init();
-    return new Promise((resolve, reject) => {
+    await this.recordDeletedSyncId(id);
+    const result = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('categories', 'readwrite');
       const store = tx.objectStore('categories');
       const req = store.delete(id);
       req.onsuccess = () => resolve(true);
       req.onerror = () => reject(req.error);
     });
+    this.notifyMutation('category:delete');
+    return result;
   }
 
   // --- Contacts & WhatsApp Directory ---
@@ -417,47 +543,76 @@ class FinanceDB {
 
   async addContact(contact) {
     await this.init();
-    if (!contact.createdAt) contact.createdAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    const entry = {
+      ...contact,
+      syncId: contact.syncId || this.generateSyncId('ct'),
+      createdAt: contact.createdAt || now,
+      updatedAt: now
+    };
+    let resId;
     if (this.db.objectStoreNames.contains('contacts')) {
-      return new Promise((resolve, reject) => {
+      resId = await new Promise((resolve, reject) => {
         const tx = this.db.transaction('contacts', 'readwrite');
         const store = tx.objectStore('contacts');
-        const req = store.add(contact);
+        const req = store.add(entry);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
       });
     } else {
       const list = (await this.getSetting('savedContactsList', [])) || [];
-      contact.id = Date.now();
-      list.push(contact);
-      await this.setSetting('savedContactsList', list);
-      return contact.id;
+      entry.id = Date.now();
+      list.push(entry);
+      await this._setSettingRaw('savedContactsList', list);
+      resId = entry.id;
     }
+    this.notifyMutation('contact:add');
+    return resId;
   }
 
   async updateContact(contact) {
     await this.init();
+    const now = new Date().toISOString();
+    const all = await this.getAllContacts();
+    const existing = all.find(c => Number(c.id) === Number(contact.id));
+    const entry = {
+      ...existing,
+      ...contact,
+      id: Number(contact.id),
+      syncId: contact.syncId || (existing && existing.syncId) || this.generateSyncId('ct'),
+      createdAt: contact.createdAt || (existing && existing.createdAt) || now,
+      updatedAt: now
+    };
+    let resId;
     if (this.db.objectStoreNames.contains('contacts')) {
-      return new Promise((resolve, reject) => {
+      resId = await new Promise((resolve, reject) => {
         const tx = this.db.transaction('contacts', 'readwrite');
         const store = tx.objectStore('contacts');
-        const req = store.put(contact);
+        const req = store.put(entry);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
       });
     } else {
       let list = (await this.getSetting('savedContactsList', [])) || [];
-      list = list.map(c => c.id === contact.id ? contact : c);
-      await this.setSetting('savedContactsList', list);
-      return contact.id;
+      list = list.map(c => c.id === entry.id ? entry : c);
+      await this._setSettingRaw('savedContactsList', list);
+      resId = entry.id;
     }
+    this.notifyMutation('contact:update');
+    return resId;
   }
 
   async deleteContact(id) {
     await this.init();
     const numId = Number(id);
+    const all = await this.getAllContacts();
+    const existing = all.find(c => Number(c.id) === numId);
+    if (existing) {
+      const sid = existing.syncId || this.makeLegacySyncId('ct', `${existing.name || ''}|${existing.phone || ''}`);
+      await this.recordDeletedSyncId(sid);
+    }
     if (this.db.objectStoreNames.contains('contacts')) {
-      return new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         const tx = this.db.transaction('contacts', 'readwrite');
         const store = tx.objectStore('contacts');
         const req = store.delete(numId);
@@ -467,9 +622,10 @@ class FinanceDB {
     } else {
       let list = (await this.getSetting('savedContactsList', [])) || [];
       list = list.filter(c => c.id !== numId);
-      await this.setSetting('savedContactsList', list);
-      return true;
+      await this._setSettingRaw('savedContactsList', list);
     }
+    this.notifyMutation('contact:delete');
+    return true;
   }
 
   async findContactByName(name) {
@@ -492,7 +648,7 @@ class FinanceDB {
     });
   }
 
-  async setSetting(key, value) {
+  async _setSettingRaw(key, value) {
     await this.init();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction('settings', 'readwrite');
@@ -503,9 +659,407 @@ class FinanceDB {
     });
   }
 
+  async setSetting(key, value) {
+    await this._setSettingRaw(key, value);
+    const syncedKeys = new Set([
+      'officeProfile',
+      'whatsappGateway',
+      'divisions',
+      'authorizedUsers',
+      'activeDivision',
+      'appLanguage',
+      'language',
+      'theme'
+    ]);
+    if (syncedKeys.has(key) && !this._suppressSyncNotify) {
+      await this._setSettingRaw('settingsUpdatedAt', new Date().toISOString());
+      this.notifyMutation(`setting:${key}`);
+    }
+    return value;
+  }
+
+  // --- Cloud Sync Normalization & Conflict-Free Merge ---
+
+  async ensureAllSyncIds() {
+    await this.init();
+    const prevSuppress = this._suppressSyncNotify;
+    this._suppressSyncNotify = true;
+    try {
+      // Backfill transactions
+      const txs = await this.getAllTransactions();
+      const txWrites = txs.filter(t => !t.syncId || !t.updatedAt);
+      if (txWrites.length > 0) {
+        await new Promise((resolve, reject) => {
+          const idbTx = this.db.transaction('transactions', 'readwrite');
+          const store = idbTx.objectStore('transactions');
+          for (const t of txWrites) {
+            if (!t.syncId) {
+              t.syncId = this.makeLegacySyncId('tx', `${t.createdAt || ''}|${t.date || ''}|${t.type || ''}|${t.amount || 0}|${t.party || ''}|${t.billNo || ''}`);
+            }
+            if (!t.updatedAt) {
+              t.updatedAt = t.createdAt || new Date().toISOString();
+            }
+            store.put(t);
+          }
+          idbTx.oncomplete = () => resolve(true);
+          idbTx.onerror = () => reject(idbTx.error);
+        });
+      }
+
+      // Backfill contacts
+      if (this.db.objectStoreNames.contains('contacts')) {
+        const contacts = await this.getAllContacts();
+        const ctWrites = contacts.filter(c => !c.syncId || !c.updatedAt);
+        if (ctWrites.length > 0) {
+          await new Promise((resolve, reject) => {
+            const idbTx = this.db.transaction('contacts', 'readwrite');
+            const store = idbTx.objectStore('contacts');
+            for (const c of ctWrites) {
+              if (!c.syncId) {
+                c.syncId = this.makeLegacySyncId('ct', `${c.name || ''}|${c.phone || ''}|${c.type || ''}`);
+              }
+              if (!c.updatedAt) {
+                c.updatedAt = c.createdAt || new Date().toISOString();
+              }
+              store.put(c);
+            }
+            idbTx.oncomplete = () => resolve(true);
+            idbTx.onerror = () => reject(idbTx.error);
+          });
+        }
+      }
+    } finally {
+      this._suppressSyncNotify = prevSuppress;
+    }
+  }
+
+  async exportCloudVault() {
+    await this.ensureAllSyncIds();
+    const transactions = await this.getAllTransactions();
+    const categories = await this.getAllCategories();
+    const contacts = await this.getAllContacts();
+    const divisions = await this.getDivisions();
+    const authorizedUsers = await this.getAuthorizedUsers();
+    const deletedLog = await this.getDeletedLog();
+    const officeProfile = await this.getSetting('officeProfile');
+    const appLanguage = await this.getSetting('appLanguage');
+    const language = await this.getSetting('language');
+    const theme = await this.getSetting('theme');
+    const whatsappGateway = await this.getSetting('whatsappGateway');
+    const settingsUpdatedAt = await this.getSetting('settingsUpdatedAt', '2026-01-01T00:00:00.000Z');
+
+    return {
+      appName: 'OfficeFinanceCloud',
+      version: 4,
+      exportedAt: new Date().toISOString(),
+      settingsUpdatedAt,
+      transactions,
+      categories: categories.map(c => ({ ...c, syncId: c.syncId || c.id, updatedAt: c.updatedAt || '2026-01-01T00:00:00.000Z' })),
+      contacts,
+      divisions: divisions.map(d => ({ ...d, syncId: d.syncId || d.id, updatedAt: d.updatedAt || '2026-01-01T00:00:00.000Z' })),
+      authorizedUsers: authorizedUsers.map(u => ({ ...u, syncId: u.syncId || u.id, updatedAt: u.updatedAt || '2026-01-01T00:00:00.000Z' })),
+      deletedLog,
+      settings: {
+        officeProfile,
+        appLanguage,
+        language,
+        theme,
+        whatsappGateway
+      }
+    };
+  }
+
+  async mergeCloudVault(remoteVault) {
+    if (!remoteVault || (remoteVault.appName !== 'OfficeFinanceCloud' && remoteVault.appName !== 'OfficeFinance')) {
+      return { changed: false };
+    }
+
+    await this.init();
+    await this.ensureAllSyncIds();
+
+    const prevSuppress = this._suppressSyncNotify;
+    this._suppressSyncNotify = true;
+    let changed = false;
+
+    try {
+      // 1. Merge deletedLog
+      const localDelLog = await this.getDeletedLog();
+      const delMap = {};
+      const ingestDel = (arr) => {
+        if (!Array.isArray(arr)) return;
+        for (const d of arr) {
+          if (!d || !d.syncId) continue;
+          const ts = new Date(d.deletedAt || 0).getTime();
+          if (!delMap[d.syncId] || delMap[d.syncId] < ts) {
+            delMap[d.syncId] = ts;
+          }
+        }
+      };
+      ingestDel(localDelLog);
+      ingestDel(remoteVault.deletedLog);
+
+      const cutoff = Date.now() - (180 * 24 * 60 * 60 * 1000);
+      const mergedDelLog = Object.keys(delMap)
+        .filter(sid => delMap[sid] > cutoff)
+        .map(sid => ({ syncId: sid, deletedAt: new Date(delMap[sid]).toISOString() }));
+      await this._setSettingRaw('deletedSyncLog', mergedDelLog);
+
+      // 2. Merge Transactions by syncId (never collide local autoIncrement IDs)
+      const localTxs = await this.getAllTransactions();
+      const localTxBySid = new Map();
+      for (const lt of localTxs) {
+        if (lt.syncId) localTxBySid.set(lt.syncId, lt);
+      }
+
+      const txToPut = [];
+      const txToDeleteIds = [];
+
+      // Delete any local tx superseded by tombstone
+      for (const lt of localTxs) {
+        const sid = lt.syncId;
+        const lts = new Date(lt.updatedAt || lt.createdAt || 0).getTime();
+        if (sid && delMap[sid] && delMap[sid] >= lts) {
+          txToDeleteIds.push(Number(lt.id));
+          localTxBySid.delete(sid);
+          changed = true;
+        }
+      }
+
+      if (Array.isArray(remoteVault.transactions)) {
+        for (const rt of remoteVault.transactions) {
+          if (!rt) continue;
+          const sid = rt.syncId || this.makeLegacySyncId('tx', `${rt.createdAt || ''}|${rt.date || ''}|${rt.type || ''}|${rt.amount || 0}|${rt.party || ''}|${rt.billNo || ''}`);
+          const rts = new Date(rt.updatedAt || rt.createdAt || 0).getTime();
+          if (delMap[sid] && delMap[sid] >= rts) continue;
+
+          const existingLocal = localTxBySid.get(sid);
+          if (!existingLocal) {
+            const { id: _ignoreId, ...cleanRemote } = rt;
+            cleanRemote.syncId = sid;
+            cleanRemote.amount = parseFloat(cleanRemote.amount) || 0;
+            cleanRemote.updatedAt = cleanRemote.updatedAt || cleanRemote.createdAt || new Date().toISOString();
+            txToPut.push(cleanRemote);
+            localTxBySid.set(sid, cleanRemote);
+            changed = true;
+          } else {
+            const lts = new Date(existingLocal.updatedAt || existingLocal.createdAt || 0).getTime();
+            if (rts > lts) {
+              const mergedItem = {
+                ...rt,
+                id: Number(existingLocal.id),
+                syncId: sid,
+                amount: parseFloat(rt.amount) || 0
+              };
+              txToPut.push(mergedItem);
+              localTxBySid.set(sid, mergedItem);
+              changed = true;
+            }
+          }
+        }
+      }
+
+      if (txToPut.length > 0 || txToDeleteIds.length > 0) {
+        await new Promise((resolve, reject) => {
+          const idbTx = this.db.transaction('transactions', 'readwrite');
+          const store = idbTx.objectStore('transactions');
+          for (const did of txToDeleteIds) store.delete(did);
+          for (const item of txToPut) store.put(item);
+          idbTx.oncomplete = () => resolve(true);
+          idbTx.onerror = () => reject(idbTx.error);
+        });
+      }
+
+      // 3. Merge Contacts by syncId
+      if (this.db.objectStoreNames.contains('contacts')) {
+        const localContacts = await this.getAllContacts();
+        const localCtBySid = new Map();
+        for (const lc of localContacts) {
+          if (lc.syncId) localCtBySid.set(lc.syncId, lc);
+        }
+
+        const ctToPut = [];
+        const ctToDeleteIds = [];
+
+        for (const lc of localContacts) {
+          const sid = lc.syncId;
+          const lts = new Date(lc.updatedAt || lc.createdAt || 0).getTime();
+          if (sid && delMap[sid] && delMap[sid] >= lts) {
+            ctToDeleteIds.push(Number(lc.id));
+            localCtBySid.delete(sid);
+            changed = true;
+          }
+        }
+
+        if (Array.isArray(remoteVault.contacts)) {
+          for (const rc of remoteVault.contacts) {
+            if (!rc || !rc.name) continue;
+            const sid = rc.syncId || this.makeLegacySyncId('ct', `${rc.name || ''}|${rc.phone || ''}|${rc.type || ''}`);
+            const rts = new Date(rc.updatedAt || rc.createdAt || 0).getTime();
+            if (delMap[sid] && delMap[sid] >= rts) continue;
+
+            const existingLocal = localCtBySid.get(sid);
+            if (!existingLocal) {
+              const { id: _ignoreId, ...cleanRemote } = rc;
+              cleanRemote.syncId = sid;
+              cleanRemote.updatedAt = cleanRemote.updatedAt || cleanRemote.createdAt || new Date().toISOString();
+              ctToPut.push(cleanRemote);
+              localCtBySid.set(sid, cleanRemote);
+              changed = true;
+            } else {
+              const lts = new Date(existingLocal.updatedAt || existingLocal.createdAt || 0).getTime();
+              if (rts > lts) {
+                const mergedCt = { ...rc, id: Number(existingLocal.id), syncId: sid };
+                ctToPut.push(mergedCt);
+                localCtBySid.set(sid, mergedCt);
+                changed = true;
+              }
+            }
+          }
+        }
+
+        if (ctToPut.length > 0 || ctToDeleteIds.length > 0) {
+          await new Promise((resolve, reject) => {
+            const idbTx = this.db.transaction('contacts', 'readwrite');
+            const store = idbTx.objectStore('contacts');
+            for (const did of ctToDeleteIds) store.delete(did);
+            for (const item of ctToPut) store.put(item);
+            idbTx.oncomplete = () => resolve(true);
+            idbTx.onerror = () => reject(idbTx.error);
+          });
+        }
+      }
+
+      // 4. Merge Categories
+      const localCats = await this.getAllCategories();
+      const localCatMap = new Map(localCats.map(c => [c.id, c]));
+      const catToPut = [];
+      const catToDeleteIds = [];
+
+      for (const lc of localCats) {
+        const sid = lc.syncId || lc.id;
+        const lts = new Date(lc.updatedAt || '2026-01-01T00:00:00.000Z').getTime();
+        if (delMap[sid] && delMap[sid] >= lts) {
+          catToDeleteIds.push(lc.id);
+          changed = true;
+        }
+      }
+
+      if (Array.isArray(remoteVault.categories)) {
+        for (const rc of remoteVault.categories) {
+          if (!rc || !rc.id) continue;
+          const sid = rc.syncId || rc.id;
+          const rts = new Date(rc.updatedAt || '2026-01-01T00:00:00.000Z').getTime();
+          if (delMap[sid] && delMap[sid] >= rts) continue;
+
+          const existingLocal = localCatMap.get(rc.id);
+          if (!existingLocal) {
+            catToPut.push({ ...rc, syncId: sid });
+            changed = true;
+          } else {
+            const lts = new Date(existingLocal.updatedAt || '2026-01-01T00:00:00.000Z').getTime();
+            if (rts > lts) {
+              catToPut.push({ ...rc, syncId: sid });
+              changed = true;
+            }
+          }
+        }
+      }
+
+      if (catToPut.length > 0 || catToDeleteIds.length > 0) {
+        await new Promise((resolve, reject) => {
+          const idbTx = this.db.transaction('categories', 'readwrite');
+          const store = idbTx.objectStore('categories');
+          for (const did of catToDeleteIds) store.delete(did);
+          for (const item of catToPut) store.put(item);
+          idbTx.oncomplete = () => resolve(true);
+          idbTx.onerror = () => reject(idbTx.error);
+        });
+      }
+
+      // 5. Merge Divisions & Authorized Users
+      const mergeSettingArray = (localArr, remoteArr) => {
+        const map = new Map();
+        let arrChanged = false;
+        const ingest = (arr, isRemote) => {
+          if (!Array.isArray(arr)) return;
+          for (const item of arr) {
+            if (!item || !item.id) continue;
+            const sid = item.syncId || item.id;
+            const ts = new Date(item.updatedAt || '2026-01-01T00:00:00.000Z').getTime();
+            if (delMap[sid] && delMap[sid] >= ts) {
+              if (!isRemote && map.has(sid)) arrChanged = true;
+              continue;
+            }
+            const cur = map.get(sid);
+            if (!cur) {
+              map.set(sid, { ...item, syncId: sid });
+              if (isRemote) arrChanged = true;
+            } else {
+              const curTs = new Date(cur.updatedAt || '2026-01-01T00:00:00.000Z').getTime();
+              if (ts > curTs) {
+                map.set(sid, { ...item, syncId: sid });
+                arrChanged = true;
+              }
+            }
+          }
+        };
+        ingest(localArr, false);
+        ingest(remoteArr, true);
+        return { list: Array.from(map.values()), arrChanged };
+      };
+
+      if (Array.isArray(remoteVault.divisions)) {
+        const localDivs = await this.getDivisions();
+        const resDivs = mergeSettingArray(localDivs, remoteVault.divisions);
+        if (resDivs.list.length > 0 && (resDivs.arrChanged || resDivs.list.length !== localDivs.length)) {
+          await this._setSettingRaw('divisions', resDivs.list);
+          changed = true;
+        }
+      }
+
+      if (Array.isArray(remoteVault.authorizedUsers)) {
+        const localUsers = await this.getAuthorizedUsers();
+        const resUsers = mergeSettingArray(localUsers, remoteVault.authorizedUsers);
+        if (resUsers.list.length > 0 && (resUsers.arrChanged || resUsers.list.length !== localUsers.length)) {
+          await this._setSettingRaw('authorizedUsers', resUsers.list);
+          changed = true;
+        }
+      }
+
+      // 6. Merge Settings
+      if (remoteVault.settings) {
+        const localSettingsTs = new Date(await this.getSetting('settingsUpdatedAt', '2026-01-01T00:00:00.000Z')).getTime();
+        const remoteSettingsTs = new Date(remoteVault.settingsUpdatedAt || 0).getTime();
+        if (remoteSettingsTs > localSettingsTs) {
+          const s = remoteVault.settings;
+          if (s.officeProfile) await this._setSettingRaw('officeProfile', s.officeProfile);
+          if (s.whatsappGateway) await this._setSettingRaw('whatsappGateway', s.whatsappGateway);
+          if (s.appLanguage) await this._setSettingRaw('appLanguage', s.appLanguage);
+          if (s.language) await this._setSettingRaw('language', s.language);
+          if (s.theme) await this._setSettingRaw('theme', s.theme);
+          await this._setSettingRaw('settingsUpdatedAt', remoteVault.settingsUpdatedAt);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        await this.saveLocalSnapshot();
+      }
+    } finally {
+      this._suppressSyncNotify = prevSuppress;
+    }
+
+    if (changed) {
+      this.notifyMutation('cloud-merge', false);
+    }
+
+    return { changed };
+  }
+
   // --- Backup & Restore & Lifetime Snapshots ---
 
   async exportBackup() {
+    await this.ensureAllSyncIds();
     const transactions = await this.getAllTransactions();
     const categories = await this.getAllCategories();
     const contacts = await this.getAllContacts();
@@ -513,6 +1067,7 @@ class FinanceDB {
     const authorizedUsers = await this.getAuthorizedUsers();
     const officeProfile = await this.getSetting('officeProfile');
     const language = await this.getSetting('language');
+    const appLanguage = await this.getSetting('appLanguage');
     const theme = await this.getSetting('theme');
     const whatsappGateway = await this.getSetting('whatsappGateway');
 
@@ -528,6 +1083,7 @@ class FinanceDB {
       settings: {
         officeProfile,
         language,
+        appLanguage,
         theme,
         whatsappGateway
       }
@@ -535,68 +1091,104 @@ class FinanceDB {
   }
 
   async importBackup(data) {
-    if (!data || !data.appName || data.appName !== 'OfficeFinance') {
+    if (!data || !data.appName || (data.appName !== 'OfficeFinance' && data.appName !== 'OfficeFinanceCloud')) {
       throw new Error('Invalid backup file. Please select a valid Office Finance backup JSON.');
     }
 
     await this.init();
+    const prevSuppress = this._suppressSyncNotify;
+    this._suppressSyncNotify = true;
 
-    // Import Categories
-    if (Array.isArray(data.categories)) {
-      const txCat = this.db.transaction('categories', 'readwrite');
-      const storeCat = txCat.objectStore('categories');
-      for (const cat of data.categories) {
-        storeCat.put(cat);
-      }
-    }
-
-    // Import Transactions
-    if (Array.isArray(data.transactions)) {
-      const txT = this.db.transaction('transactions', 'readwrite');
-      const storeT = txT.objectStore('transactions');
-      for (const item of data.transactions) {
-        storeT.put(item);
-      }
-    }
-
-    // Import Contacts
-    if (Array.isArray(data.contacts)) {
-      for (const contact of data.contacts) {
-        if (contact && contact.name) {
-          await this.addContact(contact);
+    try {
+      // Import Categories
+      if (Array.isArray(data.categories)) {
+        const txCat = this.db.transaction('categories', 'readwrite');
+        const storeCat = txCat.objectStore('categories');
+        for (const cat of data.categories) {
+          storeCat.put({ ...cat, syncId: cat.syncId || cat.id, updatedAt: cat.updatedAt || new Date().toISOString() });
         }
       }
+
+      // Import Transactions (deduplicated by syncId or signature)
+      if (Array.isArray(data.transactions)) {
+        const existingTxs = await this.getAllTransactions();
+        const existingBySid = new Map();
+        for (const et of existingTxs) {
+          const sid = et.syncId || this.makeLegacySyncId('tx', `${et.createdAt || ''}|${et.date || ''}|${et.type || ''}|${et.amount || 0}|${et.party || ''}|${et.billNo || ''}`);
+          existingBySid.set(sid, et);
+        }
+        const txT = this.db.transaction('transactions', 'readwrite');
+        const storeT = txT.objectStore('transactions');
+        for (const item of data.transactions) {
+          const sid = item.syncId || this.makeLegacySyncId('tx', `${item.createdAt || ''}|${item.date || ''}|${item.type || ''}|${item.amount || 0}|${item.party || ''}|${item.billNo || ''}`);
+          const match = existingBySid.get(sid);
+          if (match) {
+            storeT.put({ ...item, id: Number(match.id), syncId: sid });
+          } else {
+            const { id: _dropId, ...clean } = item;
+            storeT.add({ ...clean, syncId: sid, updatedAt: clean.updatedAt || new Date().toISOString() });
+          }
+        }
+      }
+
+      // Import Contacts (deduplicated by syncId/name+phone)
+      if (Array.isArray(data.contacts)) {
+        const existingCts = await this.getAllContacts();
+        const existingBySid = new Map();
+        for (const ec of existingCts) {
+          const sid = ec.syncId || this.makeLegacySyncId('ct', `${ec.name || ''}|${ec.phone || ''}|${ec.type || ''}`);
+          existingBySid.set(sid, ec);
+        }
+        for (const contact of data.contacts) {
+          if (contact && contact.name) {
+            const sid = contact.syncId || this.makeLegacySyncId('ct', `${contact.name || ''}|${contact.phone || ''}|${contact.type || ''}`);
+            const match = existingBySid.get(sid);
+            if (match) {
+              await this.updateContact({ ...contact, id: match.id, syncId: sid });
+            } else {
+              const { id: _dropId, ...clean } = contact;
+              await this.addContact({ ...clean, syncId: sid });
+            }
+          }
+        }
+      }
+
+      // Import Divisions
+      if (Array.isArray(data.divisions)) {
+        await this._setSettingRaw('divisions', data.divisions);
+      }
+
+      // Import Authorized Users
+      if (Array.isArray(data.authorizedUsers) && data.authorizedUsers.length > 0) {
+        await this._setSettingRaw('authorizedUsers', data.authorizedUsers);
+      }
+
+      // Import Settings
+      if (data.settings) {
+        if (data.settings.officeProfile) {
+          await this._setSettingRaw('officeProfile', data.settings.officeProfile);
+        }
+        if (data.settings.language) {
+          await this._setSettingRaw('language', data.settings.language);
+        }
+        if (data.settings.appLanguage) {
+          await this._setSettingRaw('appLanguage', data.settings.appLanguage);
+        }
+        if (data.settings.theme) {
+          await this._setSettingRaw('theme', data.settings.theme);
+        }
+        if (data.settings.whatsappGateway) {
+          await this._setSettingRaw('whatsappGateway', data.settings.whatsappGateway);
+        }
+      }
+
+      // Save auto-snapshot right after import
+      await this.saveLocalSnapshot();
+    } finally {
+      this._suppressSyncNotify = prevSuppress;
     }
 
-    // Import Divisions
-    if (Array.isArray(data.divisions)) {
-      await this.setSetting('divisions', data.divisions);
-    }
-
-    // Import Authorized Users
-    if (Array.isArray(data.authorizedUsers) && data.authorizedUsers.length > 0) {
-      await this.setSetting('authorizedUsers', data.authorizedUsers);
-    }
-
-    // Import Settings
-    if (data.settings) {
-      if (data.settings.officeProfile) {
-        await this.setSetting('officeProfile', data.settings.officeProfile);
-      }
-      if (data.settings.language) {
-        await this.setSetting('language', data.settings.language);
-      }
-      if (data.settings.theme) {
-        await this.setSetting('theme', data.settings.theme);
-      }
-      if (data.settings.whatsappGateway) {
-        await this.setSetting('whatsappGateway', data.settings.whatsappGateway);
-      }
-    }
-
-    // Save auto-snapshot right after import
-    await this.saveLocalSnapshot();
-
+    this.notifyMutation('backup:import');
     return true;
   }
 
@@ -634,7 +1226,12 @@ class FinanceDB {
 
   async clearAllData() {
     await this.init();
-    return new Promise((resolve, reject) => {
+    const existing = await this.getAllTransactions();
+    for (const item of existing) {
+      const sid = item.syncId || this.makeLegacySyncId('tx', `${item.createdAt || ''}|${item.date || ''}|${item.type || ''}|${item.amount || 0}|${item.party || ''}`);
+      await this.recordDeletedSyncId(sid);
+    }
+    await new Promise((resolve, reject) => {
       const tx = this.db.transaction(['transactions'], 'readwrite');
       tx.objectStore('transactions').clear();
       tx.oncomplete = () => {
@@ -645,6 +1242,8 @@ class FinanceDB {
       };
       tx.onerror = () => reject(tx.error);
     });
+    this.notifyMutation('transactions:clearAll');
+    return true;
   }
 }
 

@@ -71,16 +71,361 @@ class OfficeFinanceApp {
     // 6. Setup DOM Event Listeners
     this.setupEventListeners();
 
-    // 7. Setup PWA & Service Worker
+    // 7. Setup Cross-Tab Sync & Gmail Cloud Sync Engine
+    await this.setupCrossTabAndCloudSync();
+
+    // 8. Setup PWA & Service Worker
     this.setupPWA();
 
-    // 8. Check URL parameters
+    // 9. Check URL parameters
     this.checkUrlActions();
 
-    // 9. Render Icons
+    // 10. Render Icons
     if (window.renderLucideIcons) {
       window.renderLucideIcons();
     }
+  }
+
+  // ================= 0B. CROSS-TAB & GMAIL CLOUD SYNC ENGINE =================
+  async setupCrossTabAndCloudSync() {
+    let tabRefreshTimer = null;
+    const scheduleTabRefresh = () => {
+      if (tabRefreshTimer) clearTimeout(tabRefreshTimer);
+      tabRefreshTimer = setTimeout(async () => {
+        await this.loadSettings();
+        await this.refreshData();
+      }, 150);
+    };
+
+    if (window.dbEngine && window.dbEngine.syncChannel) {
+      window.dbEngine.syncChannel.addEventListener('message', (evt) => {
+        if (evt.data && evt.data.type === 'db-updated') {
+          scheduleTabRefresh();
+        }
+      });
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'office_finance_tab_ping') {
+        scheduleTabRefresh();
+      }
+    });
+
+    if (window.cloudSync) {
+      const { linkedFromUrl } = await window.cloudSync.init(async ({ state, error, changed, showToast }) => {
+        this.updateCloudSyncUI(state, error);
+        if (changed) {
+          await this.loadSettings();
+          await this.initTheme();
+          if (window.i18n) {
+            await window.i18n.init();
+          }
+          await this.refreshData();
+        }
+        if (showToast && state === 'synced') {
+          this.showToast(
+            window.i18n.currentLang === 'ml'
+              ? '☁️ Gmail ക്ലൗഡ് സിങ്ക് പൂർത്തിയായി!'
+              : '☁️ Gmail Cloud Sync completed!',
+            'success'
+          );
+        }
+      });
+
+      this.updateCloudSyncUI(window.cloudSync.state, window.cloudSync.lastError);
+
+      if (linkedFromUrl) {
+        this.showToast(
+          window.i18n.currentLang === 'ml'
+            ? '✅ Gmail ക്ലൗഡ് സിങ്ക് കണക്ട് ചെയ്തു! എല്ലാ കണക്കുകളും ലഭ്യമായി.'
+            : '✅ Gmail Cloud Sync linked! All entries synced.',
+          'success'
+        );
+      }
+    }
+  }
+
+  updateCloudSyncUI(state = 'off', errMsg = '') {
+    if (!window.cloudSync) return;
+    const cfg = window.cloudSync.config || {};
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+
+    const dashBtn = document.getElementById('btnDashCloudSyncStatus');
+    const dashDot = document.getElementById('dashCloudSyncDot');
+    const dashText = document.getElementById('dashCloudSyncText');
+
+    const settingsBadge = document.getElementById('settingsCloudBadge');
+    const settingsDetail = document.getElementById('settingsCloudDetailText');
+    const btnSettingsSync = document.getElementById('btnSettingsSyncNow');
+    const btnSettingsCopy = document.getElementById('btnSettingsCopyMagicLink');
+    const btnSetupLabel = document.getElementById('btnOpenCloudSyncLabel');
+
+    const modalTitle = document.getElementById('cloudModalStatusTitle');
+    const modalSub = document.getElementById('cloudModalStatusSub');
+    const btnModalSync = document.getElementById('btnCloudSyncNowModal');
+    const btnDisconnect = document.getElementById('btnCloudDisconnect');
+    const shareBox = document.getElementById('cloudShareDeviceBox');
+
+    const connected = window.cloudSync.isConfigured();
+    const emailTag = cfg.gmail ? ` (${cfg.gmail})` : '';
+
+    if (dashBtn) {
+      dashBtn.className = `cloud-sync-pill-btn ${state || 'off'}`;
+    }
+
+    if (!connected || state === 'off') {
+      if (dashDot) dashDot.textContent = '☁️';
+      if (dashText) dashText.textContent = isMl ? 'Gmail സിങ്ക്: ഓഫ് (കണക്ട്)' : 'Gmail Sync: Off (Connect)';
+      if (settingsBadge) {
+        settingsBadge.textContent = isMl ? '⚪ കണക്ട് ചെയ്തിട്ടില്ല' : '⚪ Not Connected';
+        settingsBadge.style.background = 'rgba(100,116,139,0.15)';
+        settingsBadge.style.color = 'var(--text-muted)';
+      }
+      if (settingsDetail) {
+        settingsDetail.textContent = isMl
+          ? 'ഒരേ ബ്രൗസറിലെ ടാബുകൾ തനിയെ സിങ്ക് ആകും. ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവ തമ്മിൽ കണക്ട് ചെയ്യാൻ മുകളിലെ ബട്ടൺ അമർത്തുക.'
+          : 'Same-browser tabs sync automatically. Connect Gmail Sync to sync across your phone, tablet, and computer.';
+      }
+      if (btnSettingsSync) btnSettingsSync.classList.add('hidden');
+      if (btnSettingsCopy) btnSettingsCopy.classList.add('hidden');
+      if (btnSetupLabel) btnSetupLabel.textContent = isMl ? '☁️ Gmail സിങ്ക് സെറ്റ് ചെയ്യുക' : '☁️ Setup Gmail Sync';
+
+      if (modalTitle) modalTitle.textContent = isMl ? '⚪ കണക്ട് ചെയ്തിട്ടില്ല (Not Connected)' : '⚪ Not Connected';
+      if (modalSub) modalSub.textContent = isMl ? 'ഓരോ ഉപകരണത്തിലെയും ഡാറ്റ സ്വയം സിങ്ക് ആവാൻ താഴെ സെറ്റ് ചെയ്യുക.' : 'Configure below to auto-sync across all devices.';
+      if (btnModalSync) btnModalSync.classList.add('hidden');
+      if (btnDisconnect) btnDisconnect.classList.add('hidden');
+      if (shareBox) shareBox.classList.add('hidden');
+    } else if (state === 'syncing') {
+      if (dashDot) dashDot.textContent = '🔄';
+      if (dashText) dashText.textContent = isMl ? 'സിങ്ക് ചെയ്യുന്നു...' : 'Syncing...';
+      if (settingsBadge) {
+        settingsBadge.textContent = isMl ? '🔄 സിങ്ക് ചെയ്യുന്നു...' : '🔄 Syncing...';
+        settingsBadge.style.background = 'rgba(92,84,248,0.15)';
+        settingsBadge.style.color = 'var(--finnova-purple)';
+      }
+      if (modalTitle) modalTitle.textContent = isMl ? '🔄 ക്ലൗഡുമായി സിങ്ക് ചെയ്യുന്നു...' : '🔄 Syncing with Cloud...';
+    } else if (state === 'pending') {
+      if (dashDot) dashDot.textContent = '🟡';
+      if (dashText) dashText.textContent = isMl ? `സിങ്ക് ബാക്കിയുണ്ട്${emailTag}` : `Pending Sync${emailTag}`;
+      if (settingsBadge) {
+        settingsBadge.textContent = isMl ? '🟡 അപ്‌ലോഡ് ബാക്കിയുണ്ട്' : '🟡 Pending Sync';
+        settingsBadge.style.background = 'rgba(245,158,11,0.15)';
+        settingsBadge.style.color = '#d97706';
+      }
+      if (btnSettingsSync) btnSettingsSync.classList.remove('hidden');
+      if (btnSettingsCopy) btnSettingsCopy.classList.remove('hidden');
+      if (btnSetupLabel) btnSetupLabel.textContent = isMl ? '⚙️ സിങ്ക് സെറ്റിംഗ്സ്' : '⚙️ Sync Settings';
+      if (btnModalSync) btnModalSync.classList.remove('hidden');
+      if (btnDisconnect) btnDisconnect.classList.remove('hidden');
+      if (shareBox) shareBox.classList.remove('hidden');
+    } else if (state === 'error') {
+      if (dashDot) dashDot.textContent = '⚠️';
+      if (dashText) dashText.textContent = isMl ? 'സിങ്ക് പിശക് (Retry)' : 'Sync Error (Retry)';
+      if (settingsBadge) {
+        settingsBadge.textContent = `⚠️ ${errMsg || 'Error'}`;
+        settingsBadge.style.background = 'var(--coral-light)';
+        settingsBadge.style.color = 'var(--coral-rose)';
+      }
+      if (btnSettingsSync) btnSettingsSync.classList.remove('hidden');
+      if (btnSettingsCopy) btnSettingsCopy.classList.remove('hidden');
+      if (modalTitle) modalTitle.textContent = `⚠️ Sync Issue: ${errMsg || 'Offline / Network Error'}`;
+      if (btnModalSync) btnModalSync.classList.remove('hidden');
+      if (btnDisconnect) btnDisconnect.classList.remove('hidden');
+      if (shareBox) shareBox.classList.remove('hidden');
+    } else {
+      const lastTime = cfg.lastSyncAt ? new Date(cfg.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      if (dashDot) dashDot.textContent = '🟢';
+      if (dashText) dashText.textContent = isMl ? `സിങ്ക് ഓൺ: ${cfg.gmail || 'Gmail'}` : `Synced: ${cfg.gmail || 'Gmail'}`;
+      if (settingsBadge) {
+        settingsBadge.textContent = isMl ? `🟢 കണക്റ്റഡ് (${cfg.gmail || 'Gmail'})` : `🟢 Connected (${cfg.gmail || 'Gmail'})`;
+        settingsBadge.style.background = 'rgba(16,185,129,0.15)';
+        settingsBadge.style.color = '#059669';
+      }
+      if (settingsDetail) {
+        settingsDetail.textContent = isMl
+          ? `അവസാന സിങ്ക്: ${lastTime || 'ഇപ്പോൾ'} • നിങ്ങളുടെ ഫോണിലും ടാബിലും കമ്പ്യൂട്ടറിലും ഡാറ്റ സ്വയം സിങ്ക് ആകുന്നുണ്ട്.`
+          : `Last synced: ${lastTime || 'Just now'} • Auto-sync active across your devices.`;
+      }
+      if (btnSettingsSync) btnSettingsSync.classList.remove('hidden');
+      if (btnSettingsCopy) btnSettingsCopy.classList.remove('hidden');
+      if (btnSetupLabel) btnSetupLabel.textContent = isMl ? '⚙️ സിങ്ക് & ഡിവൈസ് ലിങ്ക്' : '⚙️ Sync & Device Link';
+
+      if (modalTitle) modalTitle.textContent = isMl ? `🟢 സിങ്ക് സജീവമാണ് (${cfg.gmail || 'Gmail'})` : `🟢 Sync Active (${cfg.gmail || 'Gmail'})`;
+      if (modalSub) modalSub.textContent = isMl ? `അവസാനമായി സിങ്ക് ചെയ്ത സമയം: ${lastTime || 'ഇപ്പോൾ'}` : `Last synced at: ${lastTime || 'Just now'}`;
+      if (btnModalSync) btnModalSync.classList.remove('hidden');
+      if (btnDisconnect) btnDisconnect.classList.remove('hidden');
+      if (shareBox) shareBox.classList.remove('hidden');
+    }
+  }
+
+  openCloudSyncModal() {
+    if (!window.cloudSync) return;
+    const cfg = window.cloudSync.config || {};
+    const gmailInp = document.getElementById('cloudInputGmail');
+    const keyInp = document.getElementById('cloudInputKey');
+    const urlInp = document.getElementById('cloudInputScriptUrl');
+    const fbInp = document.getElementById('cloudInputFirebaseJson');
+
+    if (gmailInp && cfg.gmail) gmailInp.value = cfg.gmail;
+    if (keyInp && cfg.syncKey) keyInp.value = cfg.syncKey;
+    if (urlInp && cfg.scriptUrl) urlInp.value = cfg.scriptUrl;
+    if (fbInp && cfg.firebaseConfig) fbInp.value = JSON.stringify(cfg.firebaseConfig, null, 2);
+
+    this.switchCloudProviderTab(cfg.provider === 'firebase' ? 'firebase' : 'drive');
+    this.updateCloudSyncUI(window.cloudSync.state, window.cloudSync.lastError);
+    document.getElementById('cloudSyncModal')?.classList.remove('hidden');
+    if (window.renderLucideIcons) window.renderLucideIcons();
+  }
+
+  closeCloudSyncModal() {
+    document.getElementById('cloudSyncModal')?.classList.add('hidden');
+  }
+
+  switchCloudProviderTab(tab = 'drive') {
+    const tabDrive = document.getElementById('tabCloudDrive');
+    const tabFb = document.getElementById('tabCloudFirebase');
+    const panelDrive = document.getElementById('panelCloudDrive');
+    const panelFb = document.getElementById('panelCloudFirebase');
+
+    if (tab === 'firebase') {
+      tabDrive?.classList.remove('active');
+      tabFb?.classList.add('active');
+      panelDrive?.classList.add('hidden');
+      panelFb?.classList.remove('hidden');
+    } else {
+      tabDrive?.classList.add('active');
+      tabFb?.classList.remove('active');
+      panelDrive?.classList.remove('hidden');
+      panelFb?.classList.add('hidden');
+    }
+  }
+
+  async copyAppsScriptToClipboard() {
+    if (!window.cloudSync) return;
+    const gmail = document.getElementById('cloudInputGmail')?.value.trim() || '';
+    const key = document.getElementById('cloudInputKey')?.value.trim() || '246810';
+    const code = window.cloudSync.generateAppsScriptCode(gmail, key);
+
+    try {
+      await navigator.clipboard.writeText(code);
+      this.showToast(
+        window.i18n.currentLang === 'ml'
+          ? '✅ സ്ക്രിപ്റ്റ് കോഡ് കോപ്പി ചെയ്തു! ഇനി script.google.com-ൽ Paste ചെയ്യുക.'
+          : '✅ Apps Script code copied! Paste it into script.google.com.',
+        'success'
+      );
+    } catch (_) {
+      prompt('Copy this code:', code);
+    }
+  }
+
+  async handleConnectAppsScript() {
+    if (!window.cloudSync) return;
+    const gmail = document.getElementById('cloudInputGmail')?.value.trim();
+    const key = document.getElementById('cloudInputKey')?.value.trim();
+    const url = document.getElementById('cloudInputScriptUrl')?.value.trim();
+
+    const btn = document.getElementById('btnConnectAppsScript');
+    if (btn) btn.disabled = true;
+
+    try {
+      await window.cloudSync.testAndConnectAppsScript(gmail, url, key);
+      this.showToast(
+        window.i18n.currentLang === 'ml'
+          ? '🟢 Gmail ക്ലൗഡ് സിങ്ക് വിജയകരമായി കണക്ട് ചെയ്തു!'
+          : '🟢 Gmail Cloud Sync connected successfully!',
+        'success'
+      );
+    } catch (err) {
+      alert((window.i18n.currentLang === 'ml' ? 'കണക്ട് ചെയ്യുന്നതിൽ പിശക്: ' : 'Connection Error: ') + (err.message || err));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async handleFirebaseSignIn() {
+    if (!window.cloudSync) return;
+    const rawJson = document.getElementById('cloudInputFirebaseJson')?.value.trim();
+    let fbConfig = null;
+    if (rawJson) {
+      try {
+        fbConfig = JSON.parse(rawJson);
+      } catch (_) {
+        alert(window.i18n.currentLang === 'ml' ? 'ശരിയായ Firebase JSON Config നൽകുക!' : 'Invalid Firebase Config JSON!');
+        return;
+      }
+    } else if (window.cloudSync.config && window.cloudSync.config.firebaseConfig) {
+      fbConfig = window.cloudSync.config.firebaseConfig;
+    } else {
+      alert(window.i18n.currentLang === 'ml' ? 'Firebase Config JSON ഇവിടെ നൽകുക.' : 'Please paste your Firebase Config JSON first.');
+      return;
+    }
+
+    try {
+      await window.cloudSync.signInWithFirebaseGoogle(fbConfig);
+      this.showToast(
+        window.i18n.currentLang === 'ml'
+          ? '🟢 Google വഴി വിജയകരമായി ലോഗിൻ ചെയ്തു!'
+          : '🟢 Signed in with Google!',
+        'success'
+      );
+    } catch (err) {
+      alert('Firebase Login Error: ' + (err.message || err));
+    }
+  }
+
+  async copyMagicSyncLink() {
+    if (!window.cloudSync || !window.cloudSync.isConfigured()) return;
+    const link = window.cloudSync.buildMagicSyncLink();
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      this.showToast(
+        window.i18n.currentLang === 'ml'
+          ? '📋 മാജിക് ലിങ്ക് കോപ്പി ചെയ്തു! ഇനി നിങ്ങളുടെ ടാബിലോ കമ്പ്യൂട്ടറിലോ തുറക്കാം.'
+          : '📋 Magic Connect Link copied! Open it on your tablet or PC.',
+        'success'
+      );
+    } catch (_) {
+      prompt('Copy your device connect link:', link);
+    }
+  }
+
+  sendMagicLinkToGmail() {
+    if (!window.cloudSync || !window.cloudSync.isConfigured()) return;
+    const link = window.cloudSync.buildMagicSyncLink();
+    const to = encodeURIComponent(window.cloudSync.config.gmail || '');
+    const subject = encodeURIComponent('OFFICE FINANCE TRACKER - Device Sync Link');
+    const body = encodeURIComponent(
+      `OFFICE FINANCE TRACKER - Cross-Device Sync Link\n\n` +
+      `ഏത് ഫോണിലോ ടാബിലോ കമ്പ്യൂട്ടറിലോ ഈ ലിങ്കിൽ ക്ലിക്ക് ചെയ്താൽ നിങ്ങളുടെ എല്ലാ എൻട്രികളും ഓട്ടോമാറ്റിക്കായി അവിടെ വരും:\n\n` +
+      `${link}\n`
+    );
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
+  }
+
+  shareMagicLinkViaWhatsapp() {
+    if (!window.cloudSync || !window.cloudSync.isConfigured()) return;
+    const link = window.cloudSync.buildMagicSyncLink();
+    const text = encodeURIComponent(
+      `OFFICE FINANCE TRACKER - മറ്റൊരു ഫോണിലോ ടാബിലോ കമ്പ്യൂട്ടറിലോ കണക്കുകൾ തുറക്കാൻ ഈ ലിങ്ക് ക്ലിക്ക് ചെയ്യുക:\n\n${link}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer');
+  }
+
+  async handleCloudDisconnect() {
+    if (!window.cloudSync) return;
+    const ok = confirm(
+      window.i18n.currentLang === 'ml'
+        ? 'ക്ലൗഡ് സിങ്ക് വിച്ഛേദിക്കണോ? (ഈ ഫോണിലെ കണക്കുകൾ സുരക്ഷിതമായി തന്നെ നിലനിൽക്കും)'
+        : 'Disconnect Cloud Sync? (Your local entries will stay safe on this device.)'
+    );
+    if (!ok) return;
+    await window.cloudSync.disconnect();
+    this.showToast(
+      window.i18n.currentLang === 'ml' ? 'ക്ലൗഡ് സിങ്ക് ഓഫ് ചെയ്തു.' : 'Cloud sync disconnected.',
+      'info'
+    );
   }
 
   // ================= 1. THEME HANDLING (DARK / LIGHT) =================
@@ -2731,6 +3076,30 @@ Thank you!`;
         this.submitSwitchUserWithPin();
       }
     });
+
+    // 29. Gmail Cross-Device Cloud Sync Listeners
+    document.getElementById('btnDashCloudSyncStatus')?.addEventListener('click', () => this.openCloudSyncModal());
+    document.getElementById('btnOpenCloudSyncModal')?.addEventListener('click', () => this.openCloudSyncModal());
+    document.getElementById('btnCloseCloudSyncModal')?.addEventListener('click', () => this.closeCloudSyncModal());
+
+    document.getElementById('btnSettingsSyncNow')?.addEventListener('click', () => {
+      if (window.cloudSync) window.cloudSync.syncNow(true);
+    });
+    document.getElementById('btnCloudSyncNowModal')?.addEventListener('click', () => {
+      if (window.cloudSync) window.cloudSync.syncNow(true);
+    });
+
+    document.getElementById('btnSettingsCopyMagicLink')?.addEventListener('click', () => this.copyMagicSyncLink());
+    document.getElementById('btnCloudCopyMagicLink')?.addEventListener('click', () => this.copyMagicSyncLink());
+    document.getElementById('btnCloudSendToGmail')?.addEventListener('click', () => this.sendMagicLinkToGmail());
+    document.getElementById('btnCloudShareWhatsapp')?.addEventListener('click', () => this.shareMagicLinkViaWhatsapp());
+
+    document.getElementById('tabCloudDrive')?.addEventListener('click', () => this.switchCloudProviderTab('drive'));
+    document.getElementById('tabCloudFirebase')?.addEventListener('click', () => this.switchCloudProviderTab('firebase'));
+    document.getElementById('btnCopyAppsScript')?.addEventListener('click', () => this.copyAppsScriptToClipboard());
+    document.getElementById('btnConnectAppsScript')?.addEventListener('click', () => this.handleConnectAppsScript());
+    document.getElementById('btnFirebaseGoogleSignIn')?.addEventListener('click', () => this.handleFirebaseSignIn());
+    document.getElementById('btnCloudDisconnect')?.addEventListener('click', () => this.handleCloudDisconnect());
   }
 
   // ================= 15. VIEW NAVIGATION =================
@@ -2773,6 +3142,10 @@ Thank you!`;
   onLanguageChanged() {
     this.applyProfileToHeader();
     this.updatePinStatusUI();
+    this.applyUserRoleUI();
+    if (window.cloudSync) {
+      this.updateCloudSyncUI(window.cloudSync.state, window.cloudSync.lastError);
+    }
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
@@ -2805,8 +3178,38 @@ Thank you!`;
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      this.currentAttachment = e.target.result;
-      this.showAttachmentPreview(this.currentAttachment);
+      const rawDataUrl = e.target.result;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxDim = 900;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          this.currentAttachment = canvas.toDataURL('image/jpeg', 0.72);
+        } catch (_) {
+          this.currentAttachment = rawDataUrl;
+        }
+        this.showAttachmentPreview(this.currentAttachment);
+      };
+      img.onerror = () => {
+        this.currentAttachment = rawDataUrl;
+        this.showAttachmentPreview(this.currentAttachment);
+      };
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
   }

@@ -346,7 +346,15 @@ const translations = {
     sessionLocked: 'സെഷൻ ലോക്ക് ചെയ്തു',
     welcomeUser: 'സ്വാഗതം',
     btnSwitchUser: 'ഉപയോക്താവിനെ മാറ്റുക',
-    btnSwitchDivision: 'മാറ്റുക (Switch)'
+    btnSwitchDivision: 'മാറ്റുക (Switch)',
+    activeUserLabel: 'നിലവിൽ ലോഗിൻ ചെയ്തത്:',
+    cloudSyncConnect: 'Gmail സിങ്ക്: ഓഫ് (കണക്ട്)',
+    cloudSyncTitle: 'Gmail ക്ലൗഡ് സിങ്ക് (Cross-Device Sync)',
+    cloudSyncSub: 'നിങ്ങളുടെ ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിലെല്ലാം ഒരേ ജിമെയിൽ വഴി എല്ലാ കണക്കുകളും തത്സമയം ലഭിക്കാൻ ഇത് കണക്ട് ചെയ്യുക (100% സൗജന്യം).',
+    btnSyncNow: 'ഇപ്പോൾ സിങ്ക് ചെയ്യുക',
+    btnSetupCloudSync: '☁️ Gmail സിങ്ക് സെറ്റ് ചെയ്യുക',
+    cloudModalTitle: 'Gmail Cross-Device Cloud Sync',
+    cloudModalSub: 'ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിൽ ഒരേ കണക്കുകൾ സ്വയം വരാൻ (100% സൗജന്യം)'
   },
 
   en: {
@@ -690,7 +698,15 @@ const translations = {
     sessionLocked: 'App Locked',
     welcomeUser: 'Welcome',
     btnSwitchUser: 'Switch User',
-    btnSwitchDivision: 'Switch'
+    btnSwitchDivision: 'Switch',
+    activeUserLabel: 'Current Active User:',
+    cloudSyncConnect: 'Gmail Sync: Off (Connect)',
+    cloudSyncTitle: 'Gmail Cloud Sync (Cross-Device)',
+    cloudSyncSub: 'Keep all your phone, tablet, and computer entries synced under your Gmail account (100% Free Forever).',
+    btnSyncNow: 'Sync Now',
+    btnSetupCloudSync: '☁️ Setup Gmail Sync',
+    cloudModalTitle: 'Gmail Cross-Device Cloud Sync',
+    cloudModalSub: 'Sync all entries automatically across phone, tablet, and computer (100% Free)'
   }
 };
 
