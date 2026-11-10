@@ -1,4 +1,4 @@
-const CACHE_NAME = 'office-finance-v6';
+const CACHE_NAME = 'office-finance-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -51,6 +51,8 @@ self.addEventListener('fetch', (event) => {
     reqUrl.includes('script.google.com') ||
     reqUrl.includes('script.googleusercontent.com') ||
     reqUrl.includes('googleapis.com') ||
+    reqUrl.includes('accounts.google.com') ||
+    reqUrl.includes('firebaseapp.com') ||
     reqUrl.includes('firebaseio.com')
   ) {
     return;

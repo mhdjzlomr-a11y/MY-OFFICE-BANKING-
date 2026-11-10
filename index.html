@@ -1705,16 +1705,42 @@
 
       <!-- Provider Switcher Tabs -->
       <div style="display: flex; gap: 6px; margin-bottom: 14px; background: var(--bg-subtle); padding: 4px; border-radius: var(--radius-pill); border: 1px solid var(--border-light);">
-        <button type="button" id="tabCloudDrive" class="period-tab-btn active" style="flex: 1; text-align: center;">
-          📁 Gmail Drive (Free Forever)
+        <button type="button" id="tabCloudFirebase" class="period-tab-btn active" style="flex: 1; text-align: center;">
+          🔥 Google Login (Firebase)
         </button>
-        <button type="button" id="tabCloudFirebase" class="period-tab-btn" style="flex: 1; text-align: center;">
-          🔥 Firebase Google Login
+        <button type="button" id="tabCloudDrive" class="period-tab-btn" style="flex: 1; text-align: center;">
+          📁 Gmail Drive (Apps Script)
         </button>
       </div>
 
-      <!-- PANEL 1: PERSONAL GMAIL GOOGLE DRIVE & SHEETS (APPS SCRIPT) -->
-      <div id="panelCloudDrive" style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- PANEL 1: GOOGLE SIGN-IN + FIREBASE REAL-TIME SYNC (PRIMARY RECOMMENDED) -->
+      <div id="panelCloudFirebase" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="background: rgba(66, 133, 244, 0.08); border-radius: var(--radius-md); padding: 12px; border: 1px solid rgba(66, 133, 244, 0.25); font-size: 0.74rem; line-height: 1.6; color: var(--text-dark);">
+          <strong>🔥 Google Sign-In (100% സൗജന്യം &amp; തത്സമയ Sync):</strong><br>
+          നിങ്ങളുടെ സ്വന്തം സൗജന്യ Firebase പ്രൊജക്റ്റിലെ <strong>Config</strong> ഇവിടെ നൽകിയാൽ ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിൽ <strong>"Sign in with Google"</strong> വഴി തത്സമയം ഡാറ്റ Sync ആകും (ONE DAY &amp; OFFICE FINANCE രണ്ടിനും ഒരേ Firebase Config മതി!).
+          <details style="margin-top: 6px;">
+            <summary style="cursor: pointer; font-weight: 800; color: #2563eb;">📋 സൗജന്യ Firebase Config എടുക്കുന്ന വിധം (4 ലളിതമായ ഘട്ടങ്ങൾ)</summary>
+            <ol style="margin: 6px 0 0 0; padding-left: 18px;">
+              <li><a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:700;">console.firebase.google.com</a> നിങ്ങളുടെ ജിമെയിലിൽ തുറന്ന് സൗജന്യ Project ഉണ്ടാക്കുക.</li>
+              <li><strong>Build → Authentication → Get Started → Google → Enable</strong> ചെയ്യുക. (Settings → Authorized domains-ൽ <code>mhdjzlomr-a11y.github.io</code> ചേർക്കുക).</li>
+              <li><strong>Build → Firestore Database → Create database</strong> എടുത്ത് Rules-ൽ:<br><code style="font-size:0.68rem;">match /users/{userId}/{document=**} { allow read, write: if request.auth != null &amp;&amp; request.auth.uid == userId; }</code> ചേർത്ത് Publish ചെയ്യുക.</li>
+              <li>Project Overview-ൽ <strong>Web (&lt;/&gt;)</strong> ക്ലിക്ക് ചെയ്ത് കിട്ടുന്ന <code>firebaseConfig = { ... }</code> കോപ്പി ചെയ്ത് താഴെ നൽകുക!</li>
+            </ol>
+          </details>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Firebase Config ({ apiKey, authDomain, projectId, ... })</label>
+          <textarea id="cloudInputFirebaseJson" rows="5" class="form-input" style="font-family: monospace; font-size: 0.75rem;" placeholder='const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "..." };'></textarea>
+        </div>
+
+        <button type="button" id="btnFirebaseGoogleSignIn" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem; background: #4285F4; color: white;">
+          G ജിമെയിൽ വഴി ലോഗിൻ ചെയ്യുക (Sign in with Google)
+        </button>
+      </div>
+
+      <!-- PANEL 2: PERSONAL GMAIL GOOGLE DRIVE & SHEETS (APPS SCRIPT) -->
+      <div id="panelCloudDrive" class="hidden" style="display: flex; flex-direction: column; gap: 12px;">
         <div style="background: rgba(14, 165, 233, 0.08); border-radius: var(--radius-md); padding: 12px; border: 1px solid rgba(14, 165, 233, 0.25); font-size: 0.75rem; line-height: 1.55; color: var(--text-dark);">
           <strong>ℹ️ എന്തുകൊണ്ട് ഇത് ആവശ്യമാണ്?</strong><br>
           ബ്രൗസറിൽ ജിമെയിൽ ലോഗിൻ ചെയ്താലും ഫോണിലെ ഡാറ്റ തനിയെ ടാബിലേക്കോ കമ്പ്യൂട്ടറിലേക്കോ പോവില്ല. ഒരിക്കൽ നിങ്ങളുടെ സ്വന്തം ജിമെയിലിലെ <strong>Google Drive</strong> ഇവിടെ കണക്ട് ചെയ്താൽ എല്ലാ ഡാറ്റയും Google Drive-ലും Google Sheet-ലും സുരക്ഷിതമായി സേവ് ആകും — <strong>എന്നും 100% സൗജന്യം!</strong>
@@ -1759,22 +1785,6 @@
 
         <button type="button" id="btnConnectAppsScript" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem;">
           🔗 കണക്ട് & സിങ്ക് ചെയ്യുക (Connect & Sync Gmail)
-        </button>
-      </div>
-
-      <!-- PANEL 2: OPTIONAL FIREBASE + GOOGLE SIGN-IN -->
-      <div id="panelCloudFirebase" class="hidden" style="display: flex; flex-direction: column; gap: 12px;">
-        <div style="background: rgba(245, 158, 11, 0.08); border-radius: var(--radius-md); padding: 12px; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; line-height: 1.5; color: var(--text-dark);">
-          <strong>🔥 Firebase Google Sign-In:</strong> ഏത് പുതിയ സിസ്റ്റത്തിലും വെബ്സൈറ്റ് തുറന്ന് നേരിട്ട് <strong>"Sign in with Google"</strong> ക്ലിക്ക് ചെയ്ത് സിങ്ക് ചെയ്യണമെങ്കിൽ നിങ്ങളുടെ സൗജന്യ Firebase Project Config JSON ഇവിടെ നൽകാം. (Firestore Rules-ൽ <code>allow read, write: if request.auth != null && request.auth.uid == userId;</code> ചേർക്കാൻ മറക്കരുത്).
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Firebase Config JSON ({ apiKey, authDomain, projectId, ... })</label>
-          <textarea id="cloudInputFirebaseJson" rows="5" class="form-input" style="font-family: monospace; font-size: 0.75rem;" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}'></textarea>
-        </div>
-
-        <button type="button" id="btnFirebaseGoogleSignIn" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem; background: #4285F4; color: white;">
-          G ജിമെയിൽ വഴി ലോഗിൻ ചെയ്യുക (Sign in with Google)
         </button>
       </div>
     </div>

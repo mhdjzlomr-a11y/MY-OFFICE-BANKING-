@@ -271,7 +271,7 @@ class OfficeFinanceApp {
     if (urlInp && cfg.scriptUrl) urlInp.value = cfg.scriptUrl;
     if (fbInp && cfg.firebaseConfig) fbInp.value = JSON.stringify(cfg.firebaseConfig, null, 2);
 
-    this.switchCloudProviderTab(cfg.provider === 'firebase' ? 'firebase' : 'drive');
+    this.switchCloudProviderTab(cfg.provider === 'apps_script' ? 'drive' : 'firebase');
     this.updateCloudSyncUI(window.cloudSync.state, window.cloudSync.lastError);
     document.getElementById('cloudSyncModal')?.classList.remove('hidden');
     if (window.renderLucideIcons) window.renderLucideIcons();
@@ -349,9 +349,11 @@ class OfficeFinanceApp {
     let fbConfig = null;
     if (rawJson) {
       try {
-        fbConfig = JSON.parse(rawJson);
-      } catch (_) {
-        alert(window.i18n.currentLang === 'ml' ? 'ശരിയായ Firebase JSON Config നൽകുക!' : 'Invalid Firebase Config JSON!');
+        fbConfig = window.cloudSync.parseFlexibleFirebaseConfig(rawJson);
+      } catch (parseErr) {
+        alert(window.i18n.currentLang === 'ml'
+          ? 'ശരിയായ Firebase Config നൽകുക! (Firebase Console-ൽ നിന്നും ലഭിക്കുന്ന { apiKey, authDomain, projectId, ... } ഭാഗം Paste ചെയ്യുക)'
+          : (parseErr.message || 'Invalid Firebase Config!'));
         return;
       }
     } else if (window.cloudSync.config && window.cloudSync.config.firebaseConfig) {
