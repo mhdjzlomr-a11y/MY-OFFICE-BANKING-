@@ -355,6 +355,11 @@
               <span data-i18n="btnPrint">Print</span>
             </button>
 
+            <button type="button" id="btnDashCalendarShortcut" class="action-btn-pill btn-pill-white" style="padding: 7px 14px; font-size: 0.78rem; color: #0284c7; border-color: rgba(14,165,233,0.4);" title="Calendar Daily/Weekly/Monthly Report">
+              <i data-lucide="calendar"></i>
+              <span data-i18n="btnCalendarReport">📅 കലണ്ടർ റിപ്പോർട്ട്</span>
+            </button>
+
             <button type="button" id="dashBtnArchivePeriod" class="action-btn-pill btn-pill-green" style="padding: 7px 14px; font-size: 0.78rem; background: linear-gradient(135deg, #5c54f8 0%, #7c3aed 100%); color: #fff;" title="Store Weekly/Monthly Report & Start New">
               <i data-lucide="archive"></i>
               <span data-i18n="btnArchiveAndNew">📦 സ്റ്റോർ & പുതിയത് തുടങ്ങുക</span>
@@ -556,6 +561,143 @@
             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="reportsSubtitle">
               Download official Daily, Weekly, Monthly, and Yearly statements in PDF or Excel with 1-click
             </p>
+          </div>
+        </div>
+
+        <!-- ================= INTERACTIVE CALENDAR DAILY / WEEKLY / MONTHLY REPORT ================= -->
+        <div class="white-box" id="calendarReportSection" style="margin-bottom: 20px; border-left: 4px solid #0ea5e9;">
+          <div class="box-header" style="margin-bottom: 10px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 1.35rem;">📅</span>
+                <h4 class="box-title" data-i18n="calendarReportTitle">കലണ്ടർ ഡയലി റിപ്പോർട്ട് (Calendar Daily Report)</h4>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" data-i18n="calendarReportSub">
+                കലണ്ടറിലെ ഏതെങ്കിലും തീയതി ക്ലിക്ക് ചെയ്ത് ആ ദിവസത്തെയോ ആ ആഴ്ചയിലെയോ മാസത്തിലെയോ മുഴുവൻ വരവ്-ചിലവുകളും കാണാം
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <select id="calendarDivisionSelect" class="form-input" style="width: auto; min-width: 155px; padding: 6px 10px; font-size: 0.78rem;">
+                <option value="all" data-i18n="divisionFilterAll">🌐 All Divisions</option>
+                <option value="office">🏢 Office Finance</option>
+                <option value="school">🏫 School Finance</option>
+                <option value="home">🏠 Home & Personal</option>
+              </select>
+              <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; background: var(--bg-subtle); padding: 6px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border-light);">
+                <input type="checkbox" id="calIncludeArchivedChk" checked style="accent-color: var(--finnova-purple); cursor: pointer;" />
+                <span data-i18n="calIncludeArchived">സ്റ്റോർ ചെയ്തവയും കാണിക്കുക</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="calendar-layout-grid">
+            <!-- Left Column: Month Navigator + Calendar Grid + Monthly Totals -->
+            <div>
+              <div class="calendar-nav-bar">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <button type="button" id="btnCalPrevMonth" class="sq-pill-btn" title="Previous Month">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+                  <div id="calMonthYearTitle" style="font-size: 1.02rem; font-weight: 800; color: var(--text-dark); min-width: 145px; text-align: center;">
+                    November 2026
+                  </div>
+                  <button type="button" id="btnCalNextMonth" class="sq-pill-btn" title="Next Month">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+                </div>
+                <button type="button" id="btnCalToday" class="action-btn-pill btn-pill-white" style="padding: 6px 12px; font-size: 0.74rem;">
+                  📅 <span data-i18n="calBtnToday">ഇന്ന് (Today)</span>
+                </button>
+              </div>
+
+              <!-- Month Totals Bar -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;">
+                <div style="background: var(--bg-subtle); padding: 7px 6px; border-radius: 10px; border: 1px solid var(--border-light); text-align: center;">
+                  <div style="font-size: 0.64rem; color: var(--text-muted);" data-i18n="calMonthIncLabel">മാസ വരവ്</div>
+                  <div id="calMonthIncome" style="font-size: 0.8rem; font-weight: 800; color: var(--emerald-green);">₹0</div>
+                </div>
+                <div style="background: var(--bg-subtle); padding: 7px 6px; border-radius: 10px; border: 1px solid var(--border-light); text-align: center;">
+                  <div style="font-size: 0.64rem; color: var(--text-muted);" data-i18n="calMonthExpLabel">മാസ ചിലവ്</div>
+                  <div id="calMonthExpense" style="font-size: 0.8rem; font-weight: 800; color: var(--coral-rose);">₹0</div>
+                </div>
+                <div style="background: var(--bg-subtle); padding: 7px 6px; border-radius: 10px; border: 1px solid var(--border-light); text-align: center;">
+                  <div style="font-size: 0.64rem; color: var(--text-muted);" data-i18n="calMonthNetLabel">മാസ ബാക്കി</div>
+                  <div id="calMonthNet" style="font-size: 0.8rem; font-weight: 800; color: var(--finnova-purple);">₹0</div>
+                </div>
+                <div style="background: var(--bg-subtle); padding: 7px 6px; border-radius: 10px; border: 1px solid var(--border-light); text-align: center;">
+                  <div style="font-size: 0.64rem; color: var(--text-muted);" data-i18n="calActiveDaysLabel">ദിവസങ്ങൾ</div>
+                  <div id="calMonthActiveDays" style="font-size: 0.8rem; font-weight: 800; color: var(--light-blue-600);">0</div>
+                </div>
+              </div>
+
+              <!-- Weekday Headers -->
+              <div class="calendar-weekdays-row">
+                <div class="calendar-weekday-cell sun" data-i18n="wdSun">Sun</div>
+                <div class="calendar-weekday-cell" data-i18n="wdMon">Mon</div>
+                <div class="calendar-weekday-cell" data-i18n="wdTue">Tue</div>
+                <div class="calendar-weekday-cell" data-i18n="wdWed">Wed</div>
+                <div class="calendar-weekday-cell" data-i18n="wdThu">Thu</div>
+                <div class="calendar-weekday-cell" data-i18n="wdFri">Fri</div>
+                <div class="calendar-weekday-cell" data-i18n="wdSat">Sat</div>
+              </div>
+
+              <!-- Calendar 42-Day Grid -->
+              <div id="calendarGridContainer" class="calendar-days-grid">
+                <!-- Populated via app.js -->
+              </div>
+            </div>
+
+            <!-- Right Column: Selected Day / Week / Month Breakdown -->
+            <div class="calendar-detail-card">
+              <!-- Scope Switcher: Day / Week / Month -->
+              <div style="display: flex; gap: 4px; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-pill); border: 1px solid var(--border-light);">
+                <button type="button" id="calScopeDayBtn" class="period-tab-btn active" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 0.74rem;" data-i18n="calScopeDay">📅 ആ ദിവസം (Day)</button>
+                <button type="button" id="calScopeWeekBtn" class="period-tab-btn" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 0.74rem;" data-i18n="calScopeWeek">🗓️ ആ ആഴ്ച (Week)</button>
+                <button type="button" id="calScopeMonthBtn" class="period-tab-btn" style="flex: 1; text-align: center; padding: 6px 8px; font-size: 0.74rem;" data-i18n="calScopeMonth">📊 ആ മാസം (Month)</button>
+              </div>
+
+              <div>
+                <div id="calDetailHeading" style="font-size: 0.96rem; font-weight: 800; color: var(--text-dark);">10 November 2026</div>
+                <div id="calDetailSub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Selected day transactions</div>
+              </div>
+
+              <!-- 3 Scope Metric Totals -->
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <div style="background: var(--bg-surface); padding: 8px; border-radius: 10px; border: 1px solid var(--border-light); border-left: 3px solid var(--emerald-green);">
+                  <div style="font-size: 0.65rem; color: var(--text-muted);" data-i18n="totalIncome">Income</div>
+                  <div id="calDetailIncome" style="font-size: 0.88rem; font-weight: 800; color: var(--emerald-green);">₹0.00</div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 8px; border-radius: 10px; border: 1px solid var(--border-light); border-left: 3px solid var(--coral-rose);">
+                  <div style="font-size: 0.65rem; color: var(--text-muted);" data-i18n="totalExpense">Expense</div>
+                  <div id="calDetailExpense" style="font-size: 0.88rem; font-weight: 800; color: var(--coral-rose);">₹0.00</div>
+                </div>
+                <div style="background: var(--bg-surface); padding: 8px; border-radius: 10px; border: 1px solid var(--border-light); border-left: 3px solid var(--finnova-purple);">
+                  <div style="font-size: 0.65rem; color: var(--text-muted);" data-i18n="netBalance">Net</div>
+                  <div id="calDetailNet" style="font-size: 0.88rem; font-weight: 800; color: var(--finnova-purple);">₹0.00</div>
+                </div>
+              </div>
+
+              <!-- Export & Add Entry Buttons for Selected Date/Week/Month -->
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" id="btnCalDetailPdf" class="btn-export-pdf" style="padding: 6px 10px; font-size: 0.74rem;">
+                  <i data-lucide="file-text"></i> PDF
+                </button>
+                <button type="button" id="btnCalDetailCsv" class="btn-export-excel" style="padding: 6px 10px; font-size: 0.74rem;">
+                  <i data-lucide="sheet"></i> Excel
+                </button>
+                <button type="button" id="btnCalDetailPrint" class="btn-export-print" style="padding: 6px 10px; font-size: 0.74rem;">
+                  <i data-lucide="printer"></i> <span data-i18n="btnPrint">Print</span>
+                </button>
+                <button type="button" id="btnCalAddTxOnDate" class="action-btn-pill btn-pill-green" style="padding: 6px 10px; font-size: 0.74rem; margin-left: auto;">
+                  <i data-lucide="plus"></i> <span data-i18n="btnCalAddEntry">+ എൻട്രി</span>
+                </button>
+              </div>
+
+              <!-- Day-by-Day / Itemized Report Container -->
+              <div id="calDetailListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; padding-right: 2px;">
+                <!-- Populated dynamically via app.js -->
+              </div>
+            </div>
           </div>
         </div>
 

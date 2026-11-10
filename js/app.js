@@ -49,6 +49,15 @@ class OfficeFinanceApp {
     this.activeArchiveFilter = 'all'; // 'all' | 'weekly' | 'monthly'
     this.viewingArchiveId = null;
 
+    // Interactive Financial Calendar State
+    const nowCal = new Date();
+    this.calYear = nowCal.getFullYear();
+    this.calMonth = nowCal.getMonth();
+    this.calSelectedDate = `${nowCal.getFullYear()}-${String(nowCal.getMonth() + 1).padStart(2, '0')}-${String(nowCal.getDate()).padStart(2, '0')}`;
+    this.calScope = 'day'; // 'day' | 'week' | 'month'
+    this.calIncludeArchived = true;
+    this.calDivisionFilter = null;
+
     // Admin & Access Control (PIN system removed - direct open access)
     this.currentUser = { id: 'user_master', name: 'Owner', role: 'admin' };
     this.isLocked = false;
@@ -745,6 +754,7 @@ class OfficeFinanceApp {
     const btnSidebarAddTxDirect = document.getElementById('btnSidebarAddTxDirect');
     const btnDashArchive = document.getElementById('dashBtnArchivePeriod');
     const btnRepArchive = document.getElementById('btnOpenArchiveModalReports');
+    const btnCalAdd = document.getElementById('btnCalAddTxOnDate');
 
     if (btnCreateTx) btnCreateTx.style.display = isViewer ? 'none' : 'inline-flex';
     if (mobileFabAdd) mobileFabAdd.style.display = isViewer ? 'none' : 'flex';
@@ -752,6 +762,7 @@ class OfficeFinanceApp {
     if (btnSidebarAddTxDirect) btnSidebarAddTxDirect.style.display = isViewer ? 'none' : 'inline-flex';
     if (btnDashArchive) btnDashArchive.style.display = isViewer ? 'none' : 'inline-flex';
     if (btnRepArchive) btnRepArchive.style.display = isViewer ? 'none' : 'inline-flex';
+    if (btnCalAdd) btnCalAdd.style.display = isViewer ? 'none' : 'inline-flex';
 
     // Settings access restrictions: User management & clear data only for Admin
     const userMgmtSec = document.getElementById('userAccessManagementSection');
@@ -1028,6 +1039,7 @@ class OfficeFinanceApp {
     this.renderTransactionsList();
     this.renderReports();
     this.renderStoredArchivesList();
+    this.renderCalendarReport();
     this.populateCategoryDatalist();
     this.populatePartyDatalist();
     this.renderSettingsCategoryChips();
@@ -2491,6 +2503,436 @@ class OfficeFinanceApp {
     this.showToast(isMl ? 'റിപ്പോർട്ട് ഒഴിവാക്കി.' : 'Stored report deleted.', 'info');
   }
 
+  // ================= 10C. INTERACTIVE FINANCIAL CALENDAR =================
+  toLocalIsoDate(d) {
+    const dt = d instanceof Date ? d : new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
+
+  formatCompactCurrency(num) {
+    const n = Math.abs(Number(num) || 0);
+    const curr = (this.officeProfile && this.officeProfile.currency) || '₹';
+    if (n >= 10000000) return `${curr}${(n / 10000000).toFixed(1)}Cr`;
+    if (n >= 100000) return `${curr}${(n / 100000).toFixed(1)}L`;
+    if (n >= 1000) return `${curr}${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
+    return `${curr}${Math.round(n)}`;
+  }
+
+  syncCalendarDivisionSelect() {
+    const sel = document.getElementById('calendarDivisionSelect');
+    if (!sel) return;
+    const prev = this.calDivisionFilter !== null ? this.calDivisionFilter : (this.currentDivision || 'all');
+    const allLabel = window.i18n.t('divisionFilterAll') || '🌐 All Divisions';
+    const opts = [
+      `<option value="all">${this.escapeHtml(allLabel)}</option>`,
+      ...(this.divisions || []).map(d => {
+        const icon = this.getDivisionIcon(d.id);
+        const name = window.i18n.currentLang === 'ml' ? (d.nameMl || d.nameEn) : (d.nameEn || d.nameMl);
+        return `<option value="${this.escapeHtml(d.id)}">${icon} ${this.escapeHtml(name)}</option>`;
+      })
+    ];
+    sel.innerHTML = opts.join('');
+    sel.value = prev;
+    if (!sel.value) sel.value = 'all';
+  }
+
+  getCalendarTransactions() {
+    const divSel = document.getElementById('calendarDivisionSelect');
+    const activeDiv = divSel ? divSel.value : (this.calDivisionFilter !== null ? this.calDivisionFilter : (this.currentDivision || 'all'));
+
+    const seen = new Set();
+    const combined = [];
+
+    const addIfUnique = (tx, isArchived = false) => {
+      if (!tx || !tx.date) return;
+      const sid = tx.syncId || `${tx.createdAt || ''}|${tx.date}|${tx.type}|${tx.amount}|${tx.party || ''}|${tx.billNo || ''}`;
+      if (seen.has(sid)) return;
+      seen.add(sid);
+      combined.push(isArchived ? { ...tx, _isArchived: true } : tx);
+    };
+
+    for (const tx of (this.transactions || [])) {
+      addIfUnique(tx, false);
+    }
+
+    if (this.calIncludeArchived) {
+      for (const arch of (this.periodArchives || [])) {
+        if (Array.isArray(arch.transactions)) {
+          for (const atx of arch.transactions) {
+            addIfUnique(atx, true);
+          }
+        }
+      }
+    }
+
+    return combined.filter(tx => {
+      if (activeDiv && activeDiv !== 'all') {
+        return activeDiv === 'office'
+          ? (tx.division === 'office' || !tx.division)
+          : (tx.division === activeDiv);
+      }
+      return true;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+
+  getCalendarWeekRange(dateStr) {
+    const parts = String(dateStr || '').split('-').map(Number);
+    const base = (parts.length === 3 && !parts.some(isNaN))
+      ? new Date(parts[0], parts[1] - 1, parts[2])
+      : new Date();
+    const dow = base.getDay(); // 0=Sun..6=Sat
+    const start = new Date(base.getFullYear(), base.getMonth(), base.getDate() - dow);
+    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    return {
+      startDate: start,
+      endDate: end,
+      startStr: this.toLocalIsoDate(start),
+      endStr: this.toLocalIsoDate(end)
+    };
+  }
+
+  selectCalendarDate(dateStr) {
+    if (!dateStr) return;
+    this.calSelectedDate = dateStr;
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length === 3 && !parts.some(isNaN)) {
+      this.calYear = parts[0];
+      this.calMonth = parts[1] - 1;
+    }
+    this.renderCalendarReport();
+  }
+
+  shiftCalendarMonth(delta) {
+    let m = this.calMonth + delta;
+    let y = this.calYear;
+    while (m < 0) { m += 12; y--; }
+    while (m > 11) { m -= 12; y++; }
+    this.calYear = y;
+    this.calMonth = m;
+    const monthStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+    if (!this.calSelectedDate || !this.calSelectedDate.startsWith(monthStr)) {
+      this.calSelectedDate = `${monthStr}-01`;
+    }
+    this.renderCalendarReport();
+  }
+
+  jumpCalendarToToday() {
+    const now = new Date();
+    this.calYear = now.getFullYear();
+    this.calMonth = now.getMonth();
+    this.calSelectedDate = this.toLocalIsoDate(now);
+    this.renderCalendarReport();
+  }
+
+  setCalendarScope(scope = 'day') {
+    this.calScope = scope;
+    const btnDay = document.getElementById('calScopeDayBtn');
+    const btnWeek = document.getElementById('calScopeWeekBtn');
+    const btnMonth = document.getElementById('calScopeMonthBtn');
+    btnDay?.classList.toggle('active', scope === 'day');
+    btnWeek?.classList.toggle('active', scope === 'week');
+    btnMonth?.classList.toggle('active', scope === 'month');
+    this.renderCalendarReport();
+  }
+
+  renderCalendarReport() {
+    const gridEl = document.getElementById('calendarGridContainer');
+    if (!gridEl) return;
+
+    this.syncCalendarDivisionSelect();
+    const txs = this.getCalendarTransactions();
+
+    // Build dayMap[YYYY-MM-DD]
+    const dayMap = {};
+    for (const tx of txs) {
+      const d = tx.date ? tx.date.slice(0, 10) : '';
+      if (!d) continue;
+      if (!dayMap[d]) {
+        dayMap[d] = { income: 0, expense: 0, net: 0, txs: [] };
+      }
+      const amt = parseFloat(tx.amount) || 0;
+      if (tx.type === 'income') dayMap[d].income += amt;
+      else if (tx.type === 'expense') dayMap[d].expense += amt;
+      dayMap[d].net = dayMap[d].income - dayMap[d].expense;
+      dayMap[d].txs.push(tx);
+    }
+
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    const monthTitleEl = document.getElementById('calMonthYearTitle');
+    if (monthTitleEl) {
+      const dt = new Date(this.calYear, this.calMonth, 1);
+      monthTitleEl.textContent = dt.toLocaleString(isMl ? 'ml-IN' : 'en-US', { month: 'long', year: 'numeric' });
+    }
+
+    // Monthly totals for current (calYear, calMonth)
+    const monthPrefix = `${this.calYear}-${String(this.calMonth + 1).padStart(2, '0')}`;
+    let mInc = 0;
+    let mExp = 0;
+    let mDays = 0;
+    Object.keys(dayMap).forEach(k => {
+      if (k.startsWith(monthPrefix)) {
+        mInc += dayMap[k].income;
+        mExp += dayMap[k].expense;
+        mDays++;
+      }
+    });
+    const mNet = mInc - mExp;
+
+    const mIncEl = document.getElementById('calMonthIncome');
+    const mExpEl = document.getElementById('calMonthExpense');
+    const mNetEl = document.getElementById('calMonthNet');
+    const mDaysEl = document.getElementById('calMonthActiveDays');
+    if (mIncEl) mIncEl.textContent = this.formatCompactCurrency(mInc);
+    if (mExpEl) mExpEl.textContent = this.formatCompactCurrency(mExp);
+    if (mNetEl) {
+      mNetEl.textContent = (mNet < 0 ? '-' : '') + this.formatCompactCurrency(mNet);
+      mNetEl.style.color = mNet >= 0 ? 'var(--finnova-purple)' : 'var(--coral-rose)';
+    }
+    if (mDaysEl) mDaysEl.textContent = String(mDays);
+
+    // Selected Week Range for soft row highlight
+    const weekRange = this.getCalendarWeekRange(this.calSelectedDate);
+    const todayStr = this.toLocalIsoDate(new Date());
+
+    // Build 42-day grid (Sun..Sat)
+    const firstOfMonth = new Date(this.calYear, this.calMonth, 1);
+    const startOffset = firstOfMonth.getDay();
+    const gridStart = new Date(this.calYear, this.calMonth, 1 - startOffset);
+
+    const cells = [];
+    for (let i = 0; i < 42; i++) {
+      const cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      const dStr = this.toLocalIsoDate(cellDate);
+      const isCurrentMonth = cellDate.getMonth() === this.calMonth && cellDate.getFullYear() === this.calYear;
+      const isToday = dStr === todayStr;
+      const isSelected = dStr === this.calSelectedDate;
+      const inWeek = dStr >= weekRange.startStr && dStr <= weekRange.endStr;
+      const stats = dayMap[dStr];
+
+      const classes = ['calendar-day-cell'];
+      if (!isCurrentMonth) classes.push('other-month');
+      if (inWeek && this.calScope === 'week') classes.push('in-selected-week');
+      if (isToday) classes.push('today');
+      if (isSelected) classes.push('selected');
+
+      const incHtml = (stats && stats.income > 0)
+        ? `<div class="cal-pill-inc">+${this.formatCompactCurrency(stats.income)}</div>`
+        : '';
+      const expHtml = (stats && stats.expense > 0)
+        ? `<div class="cal-pill-exp">-${this.formatCompactCurrency(stats.expense)}</div>`
+        : '';
+      const countDot = (stats && stats.txs.length > 0)
+        ? `<span class="calendar-day-badge-dot">${stats.txs.length}</span>`
+        : '';
+
+      cells.push(`
+        <button type="button" class="${classes.join(' ')}" onclick="window.appEngine.selectCalendarDate('${dStr}')" title="${this.formatDate(dStr)}">
+          <div class="calendar-day-num-row">
+            <span class="calendar-day-num">${cellDate.getDate()}</span>
+            ${countDot}
+          </div>
+          <div class="calendar-day-pills">
+            ${incHtml}
+            ${expHtml}
+          </div>
+        </button>
+      `);
+    }
+
+    gridEl.innerHTML = cells.join('');
+    this.renderCalendarDetailPanel(dayMap, weekRange, monthPrefix);
+  }
+
+  getCalendarScopeData() {
+    const txs = this.getCalendarTransactions();
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    const weekRange = this.getCalendarWeekRange(this.calSelectedDate);
+    const monthPrefix = `${this.calYear}-${String(this.calMonth + 1).padStart(2, '0')}`;
+
+    let scopeTxs = [];
+    let title = '';
+
+    if (this.calScope === 'week') {
+      scopeTxs = txs.filter(t => {
+        const d = (t.date || '').slice(0, 10);
+        return d >= weekRange.startStr && d <= weekRange.endStr;
+      });
+      title = isMl
+        ? `ആഴ്ച റിപ്പോർട്ട് (${this.formatDate(weekRange.startStr)} - ${this.formatDate(weekRange.endStr)})`
+        : `Weekly Report (${this.formatDate(weekRange.startStr)} - ${this.formatDate(weekRange.endStr)})`;
+    } else if (this.calScope === 'month') {
+      scopeTxs = txs.filter(t => (t.date || '').slice(0, 10).startsWith(monthPrefix));
+      const dt = new Date(this.calYear, this.calMonth, 1);
+      const mName = dt.toLocaleString(isMl ? 'ml-IN' : 'en-US', { month: 'long', year: 'numeric' });
+      title = isMl ? `${mName} - ഡയലി റിപ്പോർട്ട്` : `${mName} - Daily Breakdown`;
+    } else {
+      scopeTxs = txs.filter(t => (t.date || '').slice(0, 10) === this.calSelectedDate);
+      title = isMl
+        ? `${this.formatDate(this.calSelectedDate)} - ദിവസ റിപ്പോർട്ട്`
+        : `Daily Report (${this.formatDate(this.calSelectedDate)})`;
+    }
+
+    return { txs: scopeTxs, title, weekRange, monthPrefix };
+  }
+
+  renderCalendarDetailPanel(dayMap, weekRange, monthPrefix) {
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    const { txs, title } = this.getCalendarScopeData();
+
+    let inc = 0;
+    let exp = 0;
+    txs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') inc += amt;
+      else if (t.type === 'expense') exp += amt;
+    });
+    const net = inc - exp;
+
+    const headEl = document.getElementById('calDetailHeading');
+    const subEl = document.getElementById('calDetailSub');
+    const incEl = document.getElementById('calDetailIncome');
+    const expEl = document.getElementById('calDetailExpense');
+    const netEl = document.getElementById('calDetailNet');
+    const listEl = document.getElementById('calDetailListContainer');
+
+    if (headEl) headEl.textContent = title;
+    if (subEl) {
+      subEl.textContent = isMl
+        ? `${txs.length} ഇടപാടുകൾ കണ്ടെത്തി (ക്ലിക്ക് ചെയ്ത തീയതി: ${this.formatDate(this.calSelectedDate)})`
+        : `${txs.length} entries found (Selected: ${this.formatDate(this.calSelectedDate)})`;
+    }
+    if (incEl) incEl.textContent = this.formatCurrency(inc);
+    if (expEl) expEl.textContent = this.formatCurrency(exp);
+    if (netEl) {
+      netEl.textContent = this.formatCurrency(net);
+      netEl.style.color = net >= 0 ? 'var(--finnova-purple)' : 'var(--coral-rose)';
+    }
+
+    if (!listEl) return;
+
+    if (this.calScope === 'month' || this.calScope === 'week') {
+      // Group by date descending for crisp day-by-day summary + expandable/visible entries
+      const grouped = {};
+      txs.forEach(t => {
+        const d = (t.date || '').slice(0, 10);
+        if (!grouped[d]) grouped[d] = { inc: 0, exp: 0, items: [] };
+        const amt = parseFloat(t.amount) || 0;
+        if (t.type === 'income') grouped[d].inc += amt;
+        else if (t.type === 'expense') grouped[d].exp += amt;
+        grouped[d].items.push(t);
+      });
+
+      const datesDesc = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+      if (datesDesc.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.82rem; background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-light);">
+            ${isMl ? 'ഈ കാലയളവിൽ വരവ്-ചിലവുകൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല.' : 'No expenses or incomes recorded for this period.'}
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = datesDesc.map(d => {
+        const g = grouped[d];
+        const dNet = g.inc - g.exp;
+        const rowsHtml = g.items.map(tx => {
+          const cat = this.categories.find(c => c.id === tx.category);
+          const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+          const isInc = tx.type === 'income';
+          const archTag = tx._isArchived ? ` <span style="font-size: 0.62rem; padding: 1px 5px; border-radius: 999px; background: rgba(92,84,248,0.12); color: var(--finnova-purple);">📦 Stored</span>` : '';
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-top: 1px dashed var(--border-light); font-size: 0.78rem; gap: 6px;">
+              <div style="min-width: 0;">
+                <div style="font-weight: 700; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.escapeHtml(tx.party || catName)}${archTag}</div>
+                <div style="font-size: 0.68rem; color: var(--text-muted);">${this.escapeHtml(catName)}${tx.billNo ? ` • #${this.escapeHtml(tx.billNo)}` : ''}</div>
+              </div>
+              <div style="font-weight: 800; color: ${isInc ? 'var(--emerald-green)' : 'var(--coral-rose)'}; white-space: nowrap;">
+                ${isInc ? '+' : '-'} ${this.formatCurrency(tx.amount)}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; padding: 10px 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; cursor: pointer;" onclick="window.appEngine.selectCalendarDate('${d}'); window.appEngine.setCalendarScope('day');">
+              <div style="font-weight: 800; font-size: 0.82rem; color: var(--text-dark);">
+                📅 ${this.formatDate(d)} <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">(${g.items.length})</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 0.74rem; font-weight: 800;">
+                ${g.inc > 0 ? `<span style="color: var(--emerald-green);">+${this.formatCompactCurrency(g.inc)}</span>` : ''}
+                ${g.exp > 0 ? `<span style="color: var(--coral-rose);">-${this.formatCompactCurrency(g.exp)}</span>` : ''}
+                <span style="color: ${dNet >= 0 ? 'var(--finnova-purple)' : 'var(--coral-rose)'};">${isMl ? 'ബാക്കി' : 'Net'}: ${this.formatCompactCurrency(dNet)}</span>
+              </div>
+            </div>
+            <div style="margin-top: 6px;">
+              ${rowsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+      return;
+    }
+
+    // Single Day View
+    if (txs.length === 0) {
+      listEl.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.82rem; background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-light);">
+          ${isMl ? `${this.formatDate(this.calSelectedDate)}-ൽ ഇടപാടുകൾ ഒന്നും ഇല്ല.` : `No entries recorded on ${this.formatDate(this.calSelectedDate)}.`}
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = txs.map(tx => {
+      const cat = this.categories.find(c => c.id === tx.category);
+      const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+      const catColor = (cat && cat.color) ? cat.color : '#0ea5e9';
+      const isInc = tx.type === 'income';
+      const archTag = tx._isArchived ? ` • 📦 Stored` : '';
+      return `
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+            <div style="width: 32px; height: 32px; border-radius: 9px; background: ${catColor}; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              ${this.escapeHtml(catName.slice(0, 1))}
+            </div>
+            <div style="min-width: 0;">
+              <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${this.escapeHtml(tx.party || catName)}
+              </div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">
+                ${this.escapeHtml(catName)} • ${this.escapeHtml(this.getDivisionName(tx.division))}${tx.billNo ? ` • #${this.escapeHtml(tx.billNo)}` : ''}${archTag}
+              </div>
+            </div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0;">
+            <div style="font-weight: 800; font-size: 0.9rem; color: ${isInc ? 'var(--emerald-green)' : 'var(--coral-rose)'};">
+              ${isInc ? '+' : '-'} ${this.formatCurrency(tx.amount)}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  exportCalendarScope(format = 'pdf') {
+    const { txs, title } = this.getCalendarScopeData();
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    if (!txs || txs.length === 0) {
+      this.showToast(isMl ? 'ഈ തിരഞ്ഞെടുത്ത കാലയളവിൽ എൻട്രികൾ ഒന്നും ഇല്ല!' : 'No entries in selected calendar period!', 'info');
+      return;
+    }
+    if (!window.reportsEngine) return;
+    if (format === 'csv') {
+      window.reportsEngine.exportToCSV(txs, this.categories, this.officeProfile, title);
+    } else if (format === 'print') {
+      window.reportsEngine.openPrintableStatement(txs, this.categories, this.officeProfile, title);
+    } else {
+      window.reportsEngine.downloadStatementPDF(txs, this.categories, this.officeProfile, title);
+    }
+  }
+
   // ================= 11. SETTINGS CHIPS RENDERING =================
   renderSettingsCategoryChips() {
     const expContainer = document.getElementById('expenseCategoryChips');
@@ -2520,7 +2962,7 @@ class OfficeFinanceApp {
   }
 
   // ================= 12. ADD / EDIT TRANSACTION MODAL =================
-  openAddTxModal(type = 'expense', preselectedDiv = null) {
+  openAddTxModal(type = 'expense', preselectedDiv = null, preselectedDate = null) {
     if (this.currentUser && this.currentUser.role === 'viewer') {
       this.showToast(window.i18n.t('viewerRestrictedAction'), 'error');
       return;
@@ -2538,7 +2980,7 @@ class OfficeFinanceApp {
     document.getElementById('txId').value = '';
     document.getElementById('txAmount').value = '';
     document.getElementById('txCategory').value = '';
-    document.getElementById('txDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('txDate').value = preselectedDate || this.toLocalIsoDate(new Date());
     document.getElementById('txParty').value = '';
     document.getElementById('txPhone').value = '';
     const chkAdd = document.getElementById('txSendWhatsapp');
@@ -3546,6 +3988,36 @@ Thank you!`;
     document.getElementById('btnArchiveModalRestore')?.addEventListener('click', () => {
       if (this.viewingArchiveId) this.restoreArchiveToLedger(this.viewingArchiveId);
     });
+
+    // 31. Interactive Financial Calendar Listeners
+    document.getElementById('btnDashCalendarShortcut')?.addEventListener('click', () => {
+      this.switchView('reports');
+      setTimeout(() => {
+        document.getElementById('calendarReportSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    });
+    document.getElementById('btnCalPrevMonth')?.addEventListener('click', () => this.shiftCalendarMonth(-1));
+    document.getElementById('btnCalNextMonth')?.addEventListener('click', () => this.shiftCalendarMonth(1));
+    document.getElementById('btnCalToday')?.addEventListener('click', () => this.jumpCalendarToToday());
+    document.getElementById('calendarDivisionSelect')?.addEventListener('change', (e) => {
+      this.calDivisionFilter = e.target.value;
+      this.renderCalendarReport();
+    });
+    document.getElementById('calIncludeArchivedChk')?.addEventListener('change', (e) => {
+      this.calIncludeArchived = Boolean(e.target.checked);
+      this.renderCalendarReport();
+    });
+    document.getElementById('calScopeDayBtn')?.addEventListener('click', () => this.setCalendarScope('day'));
+    document.getElementById('calScopeWeekBtn')?.addEventListener('click', () => this.setCalendarScope('week'));
+    document.getElementById('calScopeMonthBtn')?.addEventListener('click', () => this.setCalendarScope('month'));
+    document.getElementById('btnCalDetailPdf')?.addEventListener('click', () => this.exportCalendarScope('pdf'));
+    document.getElementById('btnCalDetailCsv')?.addEventListener('click', () => this.exportCalendarScope('csv'));
+    document.getElementById('btnCalDetailPrint')?.addEventListener('click', () => this.exportCalendarScope('print'));
+    document.getElementById('btnCalAddTxOnDate')?.addEventListener('click', () => {
+      const divSel = document.getElementById('calendarDivisionSelect')?.value;
+      const divToUse = (divSel && divSel !== 'all') ? divSel : (this.currentDivision !== 'all' ? this.currentDivision : 'office');
+      this.openAddTxModal('expense', divToUse, this.calSelectedDate);
+    });
   }
 
   // ================= 15. VIEW NAVIGATION =================
@@ -3571,6 +4043,7 @@ Thank you!`;
     if (viewName === 'reports') {
       this.renderReports();
       this.renderStoredArchivesList();
+      this.renderCalendarReport();
     } else if (viewName === 'transactions') {
       this.renderTransactionsList();
     } else if (viewName === 'dashboard') {
@@ -3597,6 +4070,7 @@ Thank you!`;
     this.renderTransactionsList();
     this.renderReports();
     this.renderStoredArchivesList();
+    this.renderCalendarReport();
     this.populateCategoryDatalist();
     this.populatePartyDatalist();
     this.renderSettingsCategoryChips();

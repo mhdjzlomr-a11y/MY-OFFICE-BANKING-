@@ -374,7 +374,27 @@ const translations = {
     resetModeCarrySub: 'റിപ്പോർട്ട് സേവ് ചെയ്ത്, മിച്ചമുള്ള തുക പുതിയ മാസത്തെ / ആഴ്ചയിലെ Opening Balance ആയി ഒരൊറ്റ എൻട്രിയായി ചേർക്കും.',
     resetModeSnapshotTitle: 'എൻട്രികൾ മായ്ക്കാതെ റിപ്പോർട്ട് മാത്രം സ്റ്റോർ ചെയ്യുക (Store Copy Only)',
     resetModeSnapshotSub: 'ആക്ടീവ് എൻട്രികൾ മായ്ക്കാതെ തന്നെ ഒരു റിപ്പോർട്ട് കോപ്പി മാത്രം സ്റ്റോർ ചെയ്തു വെക്കും.',
-    btnRestoreArchive: 'തിരികെ എടുക്കുക (Restore)'
+    btnRestoreArchive: 'തിരികെ എടുക്കുക (Restore)',
+    btnCalendarReport: '📅 കലണ്ടർ റിപ്പോർട്ട്',
+    calendarReportTitle: 'കലണ്ടർ ഡയലി റിപ്പോർട്ട് (Calendar Daily Report)',
+    calendarReportSub: 'കലണ്ടറിലെ ഏതെങ്കിലും തീയതി ക്ലിക്ക് ചെയ്ത് ആ ദിവസത്തെയോ ആ ആഴ്ചയിലെയോ മാസത്തിലെയോ മുഴുവൻ വരവ്-ചിലവുകളും കാണാം',
+    calIncludeArchived: 'സ്റ്റോർ ചെയ്തവയും കാണിക്കുക',
+    calBtnToday: 'ഇന്ന് (Today)',
+    calMonthIncLabel: 'മാസ വരവ്',
+    calMonthExpLabel: 'മാസ ചിലവ്',
+    calMonthNetLabel: 'മാസ ബാക്കി',
+    calActiveDaysLabel: 'ദിവസങ്ങൾ',
+    wdSun: 'ഞാ',
+    wdMon: 'തി',
+    wdTue: 'ചൊ',
+    wdWed: 'ബു',
+    wdThu: 'വ്യാ',
+    wdFri: 'വെ',
+    wdSat: 'ശ',
+    calScopeDay: '📅 ആ ദിവസം',
+    calScopeWeek: '🗓️ ആ ആഴ്ച',
+    calScopeMonth: '📊 ആ മാസം',
+    btnCalAddEntry: '+ എൻട്രി'
   },
 
   en: {
@@ -746,7 +766,27 @@ const translations = {
     resetModeCarrySub: 'Stores complete report in archive, clears period entries, and creates one Opening Balance entry for the net surplus.',
     resetModeSnapshotTitle: 'Save Report Snapshot Only (Keep Active Entries)',
     resetModeSnapshotSub: 'Stores a frozen report copy in archive without clearing any active transactions.',
-    btnRestoreArchive: 'Restore Entries'
+    btnRestoreArchive: 'Restore Entries',
+    btnCalendarReport: '📅 Calendar Report',
+    calendarReportTitle: 'Calendar Daily Report',
+    calendarReportSub: 'Click any date on the calendar to inspect daily, weekly, or monthly expenses & incomes',
+    calIncludeArchived: 'Include Stored Archives',
+    calBtnToday: 'Today',
+    calMonthIncLabel: 'Month Income',
+    calMonthExpLabel: 'Month Expense',
+    calMonthNetLabel: 'Month Net',
+    calActiveDaysLabel: 'Active Days',
+    wdSun: 'Sun',
+    wdMon: 'Mon',
+    wdTue: 'Tue',
+    wdWed: 'Wed',
+    wdThu: 'Thu',
+    wdFri: 'Fri',
+    wdSat: 'Sat',
+    calScopeDay: '📅 Day',
+    calScopeWeek: '🗓️ Week',
+    calScopeMonth: '📊 Month',
+    btnCalAddEntry: '+ Entry'
   }
 };
 
