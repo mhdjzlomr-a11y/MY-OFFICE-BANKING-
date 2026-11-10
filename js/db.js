@@ -92,7 +92,9 @@ const DEFAULT_CATEGORIES = [
   { id: 'home_rent_rev', nameMl: 'വീട്ടുവാടക ലഭിച്ചത്', nameEn: 'House Rent Received', type: 'income', color: '#14b8a6', icon: 'home', division: 'home', isCustom: false },
   { id: 'home_interest', nameMl: 'ബാങ്ക് പലിശ & നിക്ഷേപ ലാഭം', nameEn: 'Bank Interest & Investment Returns', type: 'income', color: '#8b5cf6', icon: 'trending-up', division: 'home', isCustom: false },
   { id: 'home_gifts', nameMl: 'ബന്ധുക്കൾ / സുഹൃത്തുക്കൾ തന്നത്', nameEn: 'Gifts & Family Financial Support', type: 'income', color: '#ec4899', icon: 'gift', division: 'home', isCustom: false },
-  { id: 'home_misc_inc', nameMl: 'മറ്റ് കുടുംബ വരവുകൾ', nameEn: 'Other Family Income', type: 'income', color: '#64748b', icon: 'plus-circle', division: 'home', isCustom: false }
+  { id: 'home_misc_inc', nameMl: 'മറ്റ് കുടുംബ വരവുകൾ', nameEn: 'Other Family Income', type: 'income', color: '#64748b', icon: 'plus-circle', division: 'home', isCustom: false },
+  { id: 'opening_bal', nameMl: 'മുൻ കാലയളവ് ബാക്കി (Opening Balance)', nameEn: 'Opening Balance (Brought Forward)', type: 'income', color: '#5c54f8', icon: 'wallet', division: 'office', isCustom: false },
+  { id: 'opening_def', nameMl: 'മുൻ കാലയളവ് കുറവ് (Opening Deficit)', nameEn: 'Opening Deficit (Brought Forward)', type: 'expense', color: '#f59e0b', icon: 'wallet', division: 'office', isCustom: false }
 ];
 
 const DEFAULT_OFFICE_PROFILE = {
@@ -671,11 +673,81 @@ class FinanceDB {
       'language',
       'theme'
     ]);
-    if (syncedKeys.has(key) && !this._suppressSyncNotify) {
+    if (key === 'periodArchives') {
+      if (!this._suppressSyncNotify) {
+        this.notifyMutation('setting:periodArchives');
+      }
+    } else if (syncedKeys.has(key) && !this._suppressSyncNotify) {
       await this._setSettingRaw('settingsUpdatedAt', new Date().toISOString());
       this.notifyMutation(`setting:${key}`);
     }
     return value;
+  }
+
+  // --- Archived Weekly / Monthly Period Reports ---
+
+  async getPeriodArchives() {
+    await this.init();
+    const list = await this.getSetting('periodArchives', []);
+    if (!Array.isArray(list)) return [];
+    return list.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
+
+  async savePeriodArchive(archive) {
+    const list = await this.getPeriodArchives();
+    const now = new Date().toISOString();
+    const id = archive.id || `arch_${Date.now()}`;
+    const syncId = archive.syncId || id;
+    const item = {
+      ...archive,
+      id,
+      syncId,
+      createdAt: archive.createdAt || now,
+      updatedAt: now
+    };
+    const idx = list.findIndex(a => a.id === id || (a.syncId && a.syncId === syncId));
+    if (idx >= 0) {
+      list[idx] = item;
+    } else {
+      list.unshift(item);
+    }
+    await this.setSetting('periodArchives', list);
+    return item;
+  }
+
+  async deletePeriodArchive(archiveId) {
+    const list = await this.getPeriodArchives();
+    const target = list.find(a => a.id === archiveId || a.syncId === archiveId);
+    const filtered = list.filter(a => a.id !== archiveId && a.syncId !== archiveId);
+    if (target) {
+      await this.recordDeletedSyncId(target.syncId || target.id);
+    }
+    await this.setSetting('periodArchives', filtered);
+    return filtered;
+  }
+
+  async deleteMultipleTransactions(ids) {
+    await this.init();
+    if (!Array.isArray(ids) || ids.length === 0) return true;
+    const idSet = new Set(ids.map(id => Number(id)));
+    const all = await this.getAllTransactions();
+    for (const item of all) {
+      if (idSet.has(Number(item.id))) {
+        const sid = item.syncId || this.makeLegacySyncId('tx', `${item.createdAt || ''}|${item.date || ''}|${item.type || ''}|${item.amount || 0}|${item.party || ''}`);
+        await this.recordDeletedSyncId(sid);
+      }
+    }
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('transactions', 'readwrite');
+      const store = tx.objectStore('transactions');
+      for (const id of idSet) {
+        store.delete(id);
+      }
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+    this.notifyMutation('transaction:batchDelete');
+    return true;
   }
 
   // --- Cloud Sync Normalization & Conflict-Free Merge ---
@@ -740,6 +812,7 @@ class FinanceDB {
     const contacts = await this.getAllContacts();
     const divisions = await this.getDivisions();
     const authorizedUsers = await this.getAuthorizedUsers();
+    const periodArchives = await this.getPeriodArchives();
     const deletedLog = await this.getDeletedLog();
     const officeProfile = await this.getSetting('officeProfile');
     const appLanguage = await this.getSetting('appLanguage');
@@ -750,7 +823,7 @@ class FinanceDB {
 
     return {
       appName: 'OfficeFinanceCloud',
-      version: 4,
+      version: 5,
       exportedAt: new Date().toISOString(),
       settingsUpdatedAt,
       transactions,
@@ -758,6 +831,7 @@ class FinanceDB {
       contacts,
       divisions: divisions.map(d => ({ ...d, syncId: d.syncId || d.id, updatedAt: d.updatedAt || '2026-01-01T00:00:00.000Z' })),
       authorizedUsers: authorizedUsers.map(u => ({ ...u, syncId: u.syncId || u.id, updatedAt: u.updatedAt || '2026-01-01T00:00:00.000Z' })),
+      periodArchives: periodArchives.map(a => ({ ...a, syncId: a.syncId || a.id, updatedAt: a.updatedAt || a.createdAt || new Date().toISOString() })),
       deletedLog,
       settings: {
         officeProfile,
@@ -1026,6 +1100,15 @@ class FinanceDB {
         }
       }
 
+      if (Array.isArray(remoteVault.periodArchives)) {
+        const localArch = await this.getPeriodArchives();
+        const resArch = mergeSettingArray(localArch, remoteVault.periodArchives);
+        if (resArch.arrChanged || resArch.list.length !== localArch.length) {
+          await this._setSettingRaw('periodArchives', resArch.list);
+          changed = true;
+        }
+      }
+
       // 6. Merge Settings
       if (remoteVault.settings) {
         const localSettingsTs = new Date(await this.getSetting('settingsUpdatedAt', '2026-01-01T00:00:00.000Z')).getTime();
@@ -1065,6 +1148,7 @@ class FinanceDB {
     const contacts = await this.getAllContacts();
     const divisions = await this.getDivisions();
     const authorizedUsers = await this.getAuthorizedUsers();
+    const periodArchives = await this.getPeriodArchives();
     const officeProfile = await this.getSetting('officeProfile');
     const language = await this.getSetting('language');
     const appLanguage = await this.getSetting('appLanguage');
@@ -1072,7 +1156,7 @@ class FinanceDB {
     const whatsappGateway = await this.getSetting('whatsappGateway');
 
     return {
-      version: 3,
+      version: 4,
       appName: 'OfficeFinance',
       exportedAt: new Date().toISOString(),
       transactions,
@@ -1080,6 +1164,7 @@ class FinanceDB {
       contacts,
       divisions,
       authorizedUsers,
+      periodArchives,
       settings: {
         officeProfile,
         language,
@@ -1161,6 +1246,11 @@ class FinanceDB {
       // Import Authorized Users
       if (Array.isArray(data.authorizedUsers) && data.authorizedUsers.length > 0) {
         await this._setSettingRaw('authorizedUsers', data.authorizedUsers);
+      }
+
+      // Import Archived Period Reports
+      if (Array.isArray(data.periodArchives)) {
+        await this._setSettingRaw('periodArchives', data.periodArchives);
       }
 
       // Import Settings

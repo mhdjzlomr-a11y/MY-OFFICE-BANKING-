@@ -354,7 +354,27 @@ const translations = {
     btnSyncNow: 'ഇപ്പോൾ സിങ്ക് ചെയ്യുക',
     btnSetupCloudSync: '☁️ Gmail സിങ്ക് സെറ്റ് ചെയ്യുക',
     cloudModalTitle: 'Gmail Cross-Device Cloud Sync',
-    cloudModalSub: 'ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിൽ ഒരേ കണക്കുകൾ സ്വയം വരാൻ (100% സൗജന്യം)'
+    cloudModalSub: 'ഫോൺ, ടാബ്, കമ്പ്യൂട്ടർ എന്നിവയിൽ ഒരേ കണക്കുകൾ സ്വയം വരാൻ (100% സൗജന്യം)',
+    btnArchiveAndNew: '📦 സ്റ്റോർ & പുതിയത് തുടങ്ങുക',
+    btnStoreWeeklyNew: '📦 ആഴ്ച സ്റ്റോർ & പുതിയ ആഴ്ച തുടങ്ങുക',
+    btnStoreMonthlyNew: '📦 മാസം സ്റ്റോർ & പുതിയ മാസം തുടങ്ങുക',
+    storedReportsTitle: 'സ്റ്റോർ ചെയ്ത ആഴ്ച / മാസ റിപ്പോർട്ടുകൾ (Stored Reports)',
+    storedReportsSub: 'മുൻ ആഴ്ചകളിലെയും മാസങ്ങളിലെയും ക്ലോസ് ചെയ്ത മുഴുവൻ റിപ്പോർട്ടുകളും ഇവിടെ സുരക്ഷിതമായി സൂക്ഷിച്ചിരിക്കുന്നു',
+    archFilterWeekly: '🗓️ ആഴ്ചകൾ (Weekly)',
+    archFilterMonthly: '📊 മാസങ്ങൾ (Monthly)',
+    archiveModalTitle: 'റിപ്പോർട്ട് സ്റ്റോർ ചെയ്ത് പുതിയത് തുടങ്ങുക',
+    archiveModalSub: 'ഈ ആഴ്ചയിലെയോ മാസത്തിലെയോ കണക്കുകൾ സുരക്ഷിതമായി സേവ് ചെയ്ത് പുതിയ തുടക്കം കുറിക്കാം',
+    archivePeriodTypeLabel: 'കാലയളവ് (Period)',
+    archiveTitleLabel: 'റിപ്പോർട്ടിന്റെ പേര് (Report Title)',
+    archivePreviewLabel: 'സ്റ്റോർ ചെയ്യപ്പെടുന്ന കണക്കുകൾ:',
+    archiveResetModeLabel: 'പുതിയ ആഴ്ച / മാസം എങ്ങനെ തുടങ്ങണം?',
+    resetModeZeroTitle: '₹0.00 മുതൽ പുതിയതായി തുടങ്ങുക (Fresh Start at ₹0.00)',
+    resetModeZeroSub: 'റിപ്പോർട്ട് സേവ് ചെയ്ത ശേഷം, ഈ കണക്കുകൾ ആക്ടീവ് ബോർഡിൽ നിന്ന് ക്ലിയർ ചെയ്ത് പുതിയ ആഴ്ച/മാസം ₹0 മുതൽ തുടങ്ങും.',
+    resetModeCarryTitle: 'ബാക്കി തുക Opening Balance ആയി തുടരുക (Carry Forward Balance)',
+    resetModeCarrySub: 'റിപ്പോർട്ട് സേവ് ചെയ്ത്, മിച്ചമുള്ള തുക പുതിയ മാസത്തെ / ആഴ്ചയിലെ Opening Balance ആയി ഒരൊറ്റ എൻട്രിയായി ചേർക്കും.',
+    resetModeSnapshotTitle: 'എൻട്രികൾ മായ്ക്കാതെ റിപ്പോർട്ട് മാത്രം സ്റ്റോർ ചെയ്യുക (Store Copy Only)',
+    resetModeSnapshotSub: 'ആക്ടീവ് എൻട്രികൾ മായ്ക്കാതെ തന്നെ ഒരു റിപ്പോർട്ട് കോപ്പി മാത്രം സ്റ്റോർ ചെയ്തു വെക്കും.',
+    btnRestoreArchive: 'തിരികെ എടുക്കുക (Restore)'
   },
 
   en: {
@@ -706,7 +726,27 @@ const translations = {
     btnSyncNow: 'Sync Now',
     btnSetupCloudSync: '☁️ Setup Gmail Sync',
     cloudModalTitle: 'Gmail Cross-Device Cloud Sync',
-    cloudModalSub: 'Sync all entries automatically across phone, tablet, and computer (100% Free)'
+    cloudModalSub: 'Sync all entries automatically across phone, tablet, and computer (100% Free)',
+    btnArchiveAndNew: '📦 Store & Start New',
+    btnStoreWeeklyNew: '📦 Store Week & Start New Week',
+    btnStoreMonthlyNew: '📦 Store Month & Start New Month',
+    storedReportsTitle: 'Stored Weekly & Monthly Reports',
+    storedReportsSub: 'All closed weekly and monthly reports safely archived with itemized entries',
+    archFilterWeekly: '🗓️ Weekly',
+    archFilterMonthly: '📊 Monthly',
+    archiveModalTitle: 'Store Report & Start Fresh',
+    archiveModalSub: 'Safely archive this week or month report and begin a new period cleanly',
+    archivePeriodTypeLabel: 'Period Type',
+    archiveTitleLabel: 'Report Title',
+    archivePreviewLabel: 'Summary To Be Stored:',
+    archiveResetModeLabel: 'How to start the new period?',
+    resetModeZeroTitle: 'Fresh Start at ₹0.00',
+    resetModeZeroSub: 'Stores complete report in archive, then clears active period entries so new week/month begins at ₹0.00.',
+    resetModeCarryTitle: 'Carry Forward Net Balance as Opening Balance',
+    resetModeCarrySub: 'Stores complete report in archive, clears period entries, and creates one Opening Balance entry for the net surplus.',
+    resetModeSnapshotTitle: 'Save Report Snapshot Only (Keep Active Entries)',
+    resetModeSnapshotSub: 'Stores a frozen report copy in archive without clearing any active transactions.',
+    btnRestoreArchive: 'Restore Entries'
   }
 };
 

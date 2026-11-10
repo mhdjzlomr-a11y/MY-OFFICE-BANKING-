@@ -354,6 +354,11 @@
               <i data-lucide="printer"></i>
               <span data-i18n="btnPrint">Print</span>
             </button>
+
+            <button type="button" id="dashBtnArchivePeriod" class="action-btn-pill btn-pill-green" style="padding: 7px 14px; font-size: 0.78rem; background: linear-gradient(135deg, #5c54f8 0%, #7c3aed 100%); color: #fff;" title="Store Weekly/Monthly Report & Start New">
+              <i data-lucide="archive"></i>
+              <span data-i18n="btnArchiveAndNew">📦 സ്റ്റോർ & പുതിയത് തുടങ്ങുക</span>
+            </button>
           </div>
         </div>
 
@@ -601,6 +606,10 @@
                 <i data-lucide="sheet"></i> Weekly Excel
               </button>
             </div>
+            <button type="button" onclick="window.appEngine.openArchivePeriodModal('weekly')" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 7px 10px; font-size: 0.76rem; background: rgba(92,84,248,0.12); color: var(--finnova-purple); border: 1px solid rgba(92,84,248,0.3);">
+              <i data-lucide="archive"></i>
+              <span data-i18n="btnStoreWeeklyNew">📦 ആഴ്ച സ്റ്റോർ & പുതിയ ആഴ്ച തുടങ്ങുക</span>
+            </button>
           </div>
 
           <!-- Card 3: Monthly Report -->
@@ -625,6 +634,10 @@
                 <i data-lucide="sheet"></i> Monthly Excel
               </button>
             </div>
+            <button type="button" onclick="window.appEngine.openArchivePeriodModal('monthly')" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 7px 10px; font-size: 0.76rem; background: rgba(16,185,129,0.12); color: #059669; border: 1px solid rgba(16,185,129,0.35);">
+              <i data-lucide="archive"></i>
+              <span data-i18n="btnStoreMonthlyNew">📦 മാസം സ്റ്റോർ & പുതിയ മാസം തുടങ്ങുക</span>
+            </button>
           </div>
 
           <!-- Card 4: Yearly Report -->
@@ -649,6 +662,37 @@
                 <i data-lucide="sheet"></i> Yearly Excel
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- ================= STORED WEEKLY & MONTHLY ARCHIVED REPORTS VAULT ================= -->
+        <div class="white-box" id="storedReportsSection" style="margin-bottom: 20px; border-left: 4px solid var(--finnova-purple);">
+          <div class="box-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 1.3rem;">🗄️</span>
+                <h4 class="box-title" data-i18n="storedReportsTitle">സ്റ്റോർ ചെയ്ത ആഴ്ച / മാസ റിപ്പോർട്ടുകൾ (Stored Period Reports)</h4>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;" data-i18n="storedReportsSub">
+                മുൻ ആഴ്ചകളിലെയും മാസങ്ങളിലെയും ക്ലോസ് ചെയ്ത മുഴുവൻ റിപ്പോർട്ടുകളും ഇവിടെ സുരക്ഷിതമായി സൂക്ഷിച്ചിരിക്കുന്നു
+              </p>
+            </div>
+            <button type="button" id="btnOpenArchiveModalReports" class="action-btn-pill btn-pill-green" style="padding: 8px 14px; font-size: 0.8rem;">
+              <i data-lucide="archive"></i>
+              <span data-i18n="btnArchiveAndNew">+ ഇപ്പോൾ സ്റ്റോർ & പുതിയത് തുടങ്ങുക</span>
+            </button>
+          </div>
+
+          <!-- Filter Tabs for Archives -->
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;">
+            <button type="button" class="archive-filter-btn period-tab-btn active" data-archfilter="all" data-i18n="filterAll">എല്ലാം (All)</button>
+            <button type="button" class="archive-filter-btn period-tab-btn" data-archfilter="weekly" data-i18n="archFilterWeekly">🗓️ ആഴ്ചകൾ (Weekly)</button>
+            <button type="button" class="archive-filter-btn period-tab-btn" data-archfilter="monthly" data-i18n="archFilterMonthly">📊 മാസങ്ങൾ (Monthly)</button>
+          </div>
+
+          <!-- Stored Reports List -->
+          <div id="storedArchivesList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px;">
+            <!-- Populated dynamically via app.js -->
           </div>
         </div>
 
@@ -1786,6 +1830,163 @@
         <button type="button" id="btnConnectAppsScript" class="action-btn-pill btn-pill-green" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.9rem;">
           🔗 കണക്ട് & സിങ്ക് ചെയ്യുക (Connect & Sync Gmail)
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: STORE REPORT & START NEW WEEK / MONTH ================= -->
+  <div id="archivePeriodModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">📦</span>
+          <div>
+            <h3 class="modal-heading-text" data-i18n="archiveModalTitle">റിപ്പോർട്ട് സ്റ്റോർ ചെയ്ത് പുതിയത് തുടങ്ങുക</h3>
+            <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;" data-i18n="archiveModalSub">
+              ഈ ആഴ്ചയിലെയോ മാസത്തിലെയോ കണക്കുകൾ സുരക്ഷിതമായി സേവ് ചെയ്ത് പുതിയ തുടക്കം കുറിക്കാം
+            </p>
+          </div>
+        </div>
+        <button id="btnCloseArchivePeriodModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="archivePeriodForm" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+          <div class="form-group">
+            <label class="form-label" data-i18n="archivePeriodTypeLabel">കാലയളവ് (Period)</label>
+            <select id="archivePeriodType" class="form-input">
+              <option value="weekly" data-i18n="periodWeekly">ഈ ആഴ്ച (Weekly)</option>
+              <option value="monthly" data-i18n="periodMonthly">ഈ മാസം (Monthly)</option>
+              <option value="daily" data-i18n="periodDaily">ഇന്ന് (Today)</option>
+              <option value="all" data-i18n="periodAll">മുഴുവൻ കണക്കുകളും (All)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" data-i18n="divisionLabel">വിഭാഗം (Division)</label>
+            <select id="archivePeriodDivision" class="form-input">
+              <option value="office">🏢 Office Finance</option>
+              <option value="school">🏫 School Finance</option>
+              <option value="home">🏠 Home & Personal</option>
+              <option value="all">🌐 All Divisions</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" data-i18n="archiveTitleLabel">റിപ്പോർട്ടിന്റെ പേര് (Report Title)</label>
+          <input id="archiveReportTitle" type="text" class="form-input" placeholder="ഉദാ: നവംബർ 2026 / Week 1 Report" required />
+        </div>
+
+        <!-- Live Preview Box -->
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;" data-i18n="archivePreviewLabel">സ്റ്റോർ ചെയ്യപ്പെടുന്ന കണക്കുകൾ:</span>
+            <span id="archivePreviewCount" style="font-size: 0.74rem; font-weight: 800; color: var(--finnova-purple); background: var(--finnova-purple-light); padding: 2px 10px; border-radius: 999px;">0 Entries</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+            <div style="background: var(--bg-surface); padding: 8px; border-radius: 8px; border: 1px solid var(--border-light);">
+              <div style="font-size: 0.68rem; color: var(--text-muted);" data-i18n="totalIncome">Total Income</div>
+              <div id="archivePreviewIncome" style="font-size: 0.92rem; font-weight: 800; color: var(--emerald-green);">₹0.00</div>
+            </div>
+            <div style="background: var(--bg-surface); padding: 8px; border-radius: 8px; border: 1px solid var(--border-light);">
+              <div style="font-size: 0.68rem; color: var(--text-muted);" data-i18n="totalExpense">Total Expense</div>
+              <div id="archivePreviewExpense" style="font-size: 0.92rem; font-weight: 800; color: var(--coral-rose);">₹0.00</div>
+            </div>
+            <div style="background: var(--bg-surface); padding: 8px; border-radius: 8px; border: 1px solid var(--border-light);">
+              <div style="font-size: 0.68rem; color: var(--text-muted);" data-i18n="netBalance">Net Balance</div>
+              <div id="archivePreviewNet" style="font-size: 0.92rem; font-weight: 800; color: var(--finnova-purple);">₹0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fresh Start Behavior Options -->
+        <div class="form-group">
+          <label class="form-label" data-i18n="archiveResetModeLabel">പുതിയ ആഴ്ച / മാസം എങ്ങനെ തുടങ്ങണം?</label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label style="display: flex; align-items: flex-start; gap: 8px; background: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-light); cursor: pointer;">
+              <input type="radio" name="archiveResetMode" value="fresh_zero" checked style="margin-top: 3px; accent-color: var(--finnova-purple);" />
+              <div style="font-size: 0.78rem; line-height: 1.4;">
+                <strong style="color: var(--text-dark);" data-i18n="resetModeZeroTitle">₹0.00 മുതൽ പുതിയതായി തുടങ്ങുക (Fresh Start at ₹0.00)</strong><br>
+                <span style="color: var(--text-muted); font-size: 0.72rem;" data-i18n="resetModeZeroSub">റിപ്പോർട്ട് സേവ് ചെയ്ത ശേഷം, ഈ കണക്കുകൾ ആക്ടീവ് ബോർഡിൽ നിന്ന് ക്ലിയർ ചെയ്ത് പുതിയ ആഴ്ച/മാസം ₹0 മുതൽ തുടങ്ങും.</span>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: flex-start; gap: 8px; background: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-light); cursor: pointer;">
+              <input type="radio" name="archiveResetMode" value="carry_forward" style="margin-top: 3px; accent-color: var(--emerald-green);" />
+              <div style="font-size: 0.78rem; line-height: 1.4;">
+                <strong style="color: var(--text-dark);" data-i18n="resetModeCarryTitle">ബാക്കി തുക Opening Balance ആയി തുടരുക (Carry Forward Balance)</strong><br>
+                <span style="color: var(--text-muted); font-size: 0.72rem;" data-i18n="resetModeCarrySub">റിപ്പോർട്ട് സേവ് ചെയ്ത്, മിച്ചമുള്ള തുക പുതിയ മാസത്തെ / ആഴ്ചയിലെ Opening Balance ആയി ഒരൊറ്റ എൻട്രിയായി ചേർക്കും.</span>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: flex-start; gap: 8px; background: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-light); cursor: pointer;">
+              <input type="radio" name="archiveResetMode" value="snapshot_only" style="margin-top: 3px; accent-color: var(--light-blue-600);" />
+              <div style="font-size: 0.78rem; line-height: 1.4;">
+                <strong style="color: var(--text-dark);" data-i18n="resetModeSnapshotTitle">എൻട്രികൾ മായ്ക്കാതെ റിപ്പോർട്ട് മാത്രം സ്റ്റോർ ചെയ്യുക (Store Copy Only)</strong><br>
+                <span style="color: var(--text-muted); font-size: 0.72rem;" data-i18n="resetModeSnapshotSub">ആക്ടീവ് എൻട്രികൾ മായ്ക്കാതെ തന്നെ ഒരു റിപ്പോർട്ട് കോപ്പി മാത്രം സ്റ്റോർ ചെയ്തു വെക്കും.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <button type="button" id="btnCancelArchivePeriod" class="action-btn-pill btn-pill-white" style="flex: 0.6; justify-content: center;" data-i18n="btnCancel">Cancel</button>
+          <button type="submit" id="btnSubmitArchivePeriod" class="action-btn-pill btn-pill-green" style="flex: 1.4; justify-content: center; padding: 11px;">
+            ✅ സ്റ്റോർ & പുതിയത് തുടങ്ങുക (Confirm)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: VIEW STORED ARCHIVED REPORT DETAILS ================= -->
+  <div id="viewArchiveModal" class="modal-overlay hidden">
+    <div class="modal-dialog" style="max-width: 640px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-row">
+        <div>
+          <h3 id="viewArchiveTitle" class="modal-heading-text">Archived Report</h3>
+          <p id="viewArchiveMeta" style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Period details</p>
+        </div>
+        <button id="btnCloseViewArchiveModal" style="border: none; background: transparent; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Summary Strip -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0;">
+        <div style="background: var(--bg-subtle); padding: 10px; border-radius: var(--radius-md); border-left: 3px solid var(--emerald-green);">
+          <div style="font-size: 0.7rem; color: var(--text-muted);" data-i18n="totalIncome">Total Income</div>
+          <div id="viewArchiveIncome" style="font-size: 1.05rem; font-weight: 800; color: var(--emerald-green);">₹0.00</div>
+        </div>
+        <div style="background: var(--bg-subtle); padding: 10px; border-radius: var(--radius-md); border-left: 3px solid var(--coral-rose);">
+          <div style="font-size: 0.7rem; color: var(--text-muted);" data-i18n="totalExpense">Total Expense</div>
+          <div id="viewArchiveExpense" style="font-size: 1.05rem; font-weight: 800; color: var(--coral-rose);">₹0.00</div>
+        </div>
+        <div style="background: var(--bg-subtle); padding: 10px; border-radius: var(--radius-md); border-left: 3px solid var(--finnova-purple);">
+          <div style="font-size: 0.7rem; color: var(--text-muted);" data-i18n="netBalance">Net Balance</div>
+          <div id="viewArchiveNet" style="font-size: 1.05rem; font-weight: 800; color: var(--finnova-purple);">₹0.00</div>
+        </div>
+      </div>
+
+      <!-- Actions Strip -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+        <button type="button" id="btnArchiveModalPdf" class="btn-export-pdf">
+          <i data-lucide="file-text"></i> PDF
+        </button>
+        <button type="button" id="btnArchiveModalCsv" class="btn-export-excel">
+          <i data-lucide="sheet"></i> Excel (CSV)
+        </button>
+        <button type="button" id="btnArchiveModalRestore" class="action-btn-pill btn-pill-white" style="color: var(--finnova-purple);">
+          <i data-lucide="rotate-ccw"></i> <span data-i18n="btnRestoreArchive">തിരികെ എടുക്കുക (Restore)</span>
+        </button>
+      </div>
+
+      <!-- Archived Transactions List -->
+      <div id="viewArchiveTxList" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto;">
+        <!-- Populated dynamically -->
       </div>
     </div>
   </div>

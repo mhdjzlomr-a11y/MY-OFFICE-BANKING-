@@ -44,6 +44,11 @@ class OfficeFinanceApp {
     this.currentDivision = 'office'; // 'office' | 'school' | 'home' | 'all' | custom
     this.sidebarCatType = 'expense';  // 'expense' | 'income'
 
+    // Stored Weekly/Monthly Period Archives
+    this.periodArchives = [];
+    this.activeArchiveFilter = 'all'; // 'all' | 'weekly' | 'monthly'
+    this.viewingArchiveId = null;
+
     // Admin & Access Control (PIN system removed - direct open access)
     this.currentUser = { id: 'user_master', name: 'Owner', role: 'admin' };
     this.isLocked = false;
@@ -738,11 +743,15 @@ class OfficeFinanceApp {
     const mobileFabAdd = document.getElementById('mobileFabAdd');
     const btnSidebarQuickAdd = document.getElementById('btnSidebarQuickAddTx');
     const btnSidebarAddTxDirect = document.getElementById('btnSidebarAddTxDirect');
+    const btnDashArchive = document.getElementById('dashBtnArchivePeriod');
+    const btnRepArchive = document.getElementById('btnOpenArchiveModalReports');
 
     if (btnCreateTx) btnCreateTx.style.display = isViewer ? 'none' : 'inline-flex';
     if (mobileFabAdd) mobileFabAdd.style.display = isViewer ? 'none' : 'flex';
     if (btnSidebarQuickAdd) btnSidebarQuickAdd.style.display = isViewer ? 'none' : 'inline-flex';
     if (btnSidebarAddTxDirect) btnSidebarAddTxDirect.style.display = isViewer ? 'none' : 'inline-flex';
+    if (btnDashArchive) btnDashArchive.style.display = isViewer ? 'none' : 'inline-flex';
+    if (btnRepArchive) btnRepArchive.style.display = isViewer ? 'none' : 'inline-flex';
 
     // Settings access restrictions: User management & clear data only for Admin
     const userMgmtSec = document.getElementById('userAccessManagementSection');
@@ -1005,6 +1014,7 @@ class OfficeFinanceApp {
     this.contacts = await window.dbEngine.getAllContacts();
     this.divisions = await window.dbEngine.getDivisions();
     this.authorizedUsers = await window.dbEngine.getAuthorizedUsers();
+    this.periodArchives = await window.dbEngine.getPeriodArchives();
 
     // Multi-year automatic snapshot trigger
     window.dbEngine.saveLocalSnapshot();
@@ -1017,6 +1027,7 @@ class OfficeFinanceApp {
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
+    this.renderStoredArchivesList();
     this.populateCategoryDatalist();
     this.populatePartyDatalist();
     this.renderSettingsCategoryChips();
@@ -2087,6 +2098,399 @@ class OfficeFinanceApp {
     }
   }
 
+  // ================= 10B. WEEKLY / MONTHLY ARCHIVE & FRESH START =================
+  getTransactionsForArchiveFilter(periodType = 'weekly', division = 'office') {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    const weekStartStr = sevenDaysAgo.toISOString().slice(0, 10);
+    const monthPrefix = todayStr.slice(0, 7);
+
+    const txs = this.transactions.filter(tx => {
+      if (division && division !== 'all') {
+        const divMatch = division === 'office'
+          ? (tx.division === 'office' || !tx.division)
+          : (tx.division === division);
+        if (!divMatch) return false;
+      }
+      if (!tx.date) return periodType === 'all';
+      const txDate = tx.date.slice(0, 10);
+      if (periodType === 'daily') return txDate === todayStr;
+      if (periodType === 'weekly') return txDate >= weekStartStr && txDate <= todayStr;
+      if (periodType === 'monthly') return txDate.startsWith(monthPrefix);
+      return true;
+    });
+
+    let startDate = todayStr;
+    let endDate = todayStr;
+    if (periodType === 'weekly') {
+      startDate = weekStartStr;
+    } else if (periodType === 'monthly') {
+      startDate = `${monthPrefix}-01`;
+    } else if (periodType === 'all' && txs.length > 0) {
+      const dates = txs.map(t => (t.date || '').slice(0, 10)).filter(Boolean).sort();
+      if (dates.length > 0) {
+        startDate = dates[0];
+        endDate = dates[dates.length - 1];
+      }
+    }
+
+    return { txs, startDate, endDate };
+  }
+
+  suggestArchiveTitle(periodType = 'weekly', division = 'office') {
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    const now = new Date();
+    const divLabel = this.getDivisionName(division).replace(/^[^\w\u0D00-\u0D7F]+\s*/, '');
+
+    if (periodType === 'monthly') {
+      const monthName = now.toLocaleString(isMl ? 'ml-IN' : 'en-US', { month: 'long', year: 'numeric' });
+      return isMl ? `${monthName} റിപ്പോർട്ട് (${divLabel})` : `${monthName} Report (${divLabel})`;
+    }
+    if (periodType === 'weekly') {
+      const dStart = new Date(now);
+      dStart.setDate(now.getDate() - 7);
+      const range = `${dStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - ${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`;
+      return isMl ? `ആഴ്ച റിപ്പോർട്ട് (${range}) - ${divLabel}` : `Weekly Report (${range}) - ${divLabel}`;
+    }
+    if (periodType === 'daily') {
+      const d = now.toLocaleDateString('en-GB');
+      return isMl ? `ദൈനംദിന റിപ്പോർട്ട് (${d}) - ${divLabel}` : `Daily Report (${d}) - ${divLabel}`;
+    }
+    return isMl ? `സമ്പൂർണ്ണ റിപ്പോർട്ട് (${now.toLocaleDateString('en-GB')}) - ${divLabel}` : `Full Statement (${now.toLocaleDateString('en-GB')}) - ${divLabel}`;
+  }
+
+  populateArchiveDivisionSelect() {
+    const sel = document.getElementById('archivePeriodDivision');
+    if (!sel) return;
+    const prev = sel.value || this.currentDivision || 'office';
+    const opts = (this.divisions || []).map(d => {
+      const icon = this.getDivisionIcon(d.id);
+      const name = window.i18n.currentLang === 'ml' ? (d.nameMl || d.nameEn) : (d.nameEn || d.nameMl);
+      return `<option value="${this.escapeHtml(d.id)}">${icon} ${this.escapeHtml(name)}</option>`;
+    });
+    const allLabel = window.i18n.t('allDivisions') || '🌐 All Divisions';
+    opts.push(`<option value="all">${this.escapeHtml(allLabel)}</option>`);
+    sel.innerHTML = opts.join('');
+    sel.value = prev;
+    if (!sel.value) sel.value = 'office';
+  }
+
+  openArchivePeriodModal(defaultPeriod = null) {
+    if (this.currentUser && this.currentUser.role === 'viewer') {
+      this.showToast(window.i18n.t('viewerRestrictedAction'), 'error');
+      return;
+    }
+    this.populateArchiveDivisionSelect();
+    const pSel = document.getElementById('archivePeriodType');
+    const dSel = document.getElementById('archivePeriodDivision');
+    const titleInp = document.getElementById('archiveReportTitle');
+
+    const chosenPeriod = defaultPeriod || (this.activePeriod === 'monthly' ? 'monthly' : (this.activePeriod === 'daily' ? 'daily' : 'weekly'));
+    if (pSel) pSel.value = chosenPeriod;
+    if (dSel) dSel.value = this.currentDivision || 'office';
+    if (titleInp) titleInp.value = this.suggestArchiveTitle(chosenPeriod, dSel ? dSel.value : 'office');
+
+    this.updateArchivePreview();
+    document.getElementById('archivePeriodModal')?.classList.remove('hidden');
+    if (window.renderLucideIcons) window.renderLucideIcons();
+  }
+
+  closeArchivePeriodModal() {
+    document.getElementById('archivePeriodModal')?.classList.add('hidden');
+  }
+
+  updateArchivePreview() {
+    const periodType = document.getElementById('archivePeriodType')?.value || 'weekly';
+    const division = document.getElementById('archivePeriodDivision')?.value || 'office';
+    const { txs } = this.getTransactionsForArchiveFilter(periodType, division);
+
+    let inc = 0;
+    let exp = 0;
+    txs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') inc += amt;
+      else if (t.type === 'expense') exp += amt;
+    });
+    const net = inc - exp;
+
+    const cntEl = document.getElementById('archivePreviewCount');
+    const incEl = document.getElementById('archivePreviewIncome');
+    const expEl = document.getElementById('archivePreviewExpense');
+    const netEl = document.getElementById('archivePreviewNet');
+
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    if (cntEl) cntEl.textContent = isMl ? `${txs.length} എൻട്രികൾ` : `${txs.length} Entries`;
+    if (incEl) incEl.textContent = this.formatCurrency(inc);
+    if (expEl) expEl.textContent = this.formatCurrency(exp);
+    if (netEl) netEl.textContent = this.formatCurrency(net);
+  }
+
+  async handleConfirmArchivePeriod(e) {
+    e.preventDefault();
+    if (this.currentUser && this.currentUser.role === 'viewer') {
+      this.showToast(window.i18n.t('viewerRestrictedAction'), 'error');
+      return;
+    }
+
+    const periodType = document.getElementById('archivePeriodType')?.value || 'weekly';
+    const division = document.getElementById('archivePeriodDivision')?.value || 'office';
+    const title = document.getElementById('archiveReportTitle')?.value.trim() || this.suggestArchiveTitle(periodType, division);
+    const resetMode = document.querySelector('input[name="archiveResetMode"]:checked')?.value || 'fresh_zero';
+
+    const { txs, startDate, endDate } = this.getTransactionsForArchiveFilter(periodType, division);
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+
+    if (txs.length === 0) {
+      alert(isMl
+        ? 'ഈ കാലയളവിൽ സ്റ്റോർ ചെയ്യാൻ ഇടപാടുകൾ ഒന്നും കണ്ടെത്തിയില്ല!'
+        : 'No transactions found in the selected period & division to store!');
+      return;
+    }
+
+    if (resetMode !== 'snapshot_only') {
+      const confirmMsg = isMl
+        ? `"${title}" (${txs.length} എൻട്രികൾ) സുരക്ഷിതമായി റിപ്പോർട്ടിലേക്ക് സ്റ്റോർ ചെയ്ത്, ആക്ടീവ് ബോർഡ് ക്ലിയർ ചെയ്ത് പുതിയതായി തുടങ്ങട്ടെ?`
+        : `Store "${title}" (${txs.length} entries) to Archived Reports and reset the active period to start fresh?`;
+      if (!confirm(confirmMsg)) return;
+    }
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    txs.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') totalIncome += amt;
+      else if (t.type === 'expense') totalExpense += amt;
+    });
+    const netBalance = totalIncome - totalExpense;
+
+    const archiveObj = {
+      id: `arch_${Date.now()}`,
+      title,
+      periodType,
+      division,
+      divisionName: this.getDivisionName(division),
+      startDate,
+      endDate,
+      totalIncome,
+      totalExpense,
+      netBalance,
+      txCount: txs.length,
+      resetMode,
+      transactions: txs.map(t => ({ ...t }))
+    };
+
+    await window.dbEngine.savePeriodArchive(archiveObj);
+
+    if (resetMode === 'fresh_zero' || resetMode === 'carry_forward') {
+      const idsToDelete = txs.map(t => t.id).filter(Boolean);
+      await window.dbEngine.deleteMultipleTransactions(idsToDelete);
+
+      if (resetMode === 'carry_forward' && Math.abs(netBalance) > 0.009) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const carryDiv = division === 'all' ? (this.currentDivision !== 'all' ? this.currentDivision : 'office') : division;
+        await window.dbEngine.addTransaction({
+          type: netBalance >= 0 ? 'income' : 'expense',
+          amount: Math.abs(netBalance),
+          category: netBalance >= 0 ? 'opening_bal' : 'opening_def',
+          division: carryDiv,
+          party: isMl ? 'മുൻ കാലയളവ് ബാക്കി (Opening Balance)' : 'Opening Balance (Brought Forward)',
+          date: todayStr,
+          billNo: 'OPENING',
+          notes: `${title} → Carry Forward`
+        });
+      }
+    }
+
+    this.closeArchivePeriodModal();
+    await this.refreshData();
+
+    this.showToast(
+      isMl
+        ? (resetMode === 'snapshot_only' ? '✅ റിപ്പോർട്ട് വിജയകരമായി സ്റ്റോർ ചെയ്തു!' : '✅ റിപ്പോർട്ട് സ്റ്റോർ ചെയ്തു! പുതിയ ആഴ്ച/മാസം ആരംഭിച്ചു.')
+        : (resetMode === 'snapshot_only' ? '✅ Period report stored in archive!' : '✅ Report stored! Fresh period started cleanly.'),
+      'success'
+    );
+  }
+
+  renderStoredArchivesList() {
+    const container = document.getElementById('storedArchivesList');
+    if (!container) return;
+
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    const archives = (this.periodArchives || []).filter(a => {
+      if (this.activeArchiveFilter === 'all') return true;
+      return a.periodType === this.activeArchiveFilter;
+    });
+
+    if (archives.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 28px; text-align: center; background: var(--bg-subtle); border: 1px dashed var(--border-light); border-radius: var(--radius-md); color: var(--text-muted); font-size: 0.84rem;">
+          ${isMl
+            ? 'സ്റ്റോർ ചെയ്ത റിപ്പോർട്ടുകൾ ഒന്നും ഇതുവരെ ഇല്ല. ആഴ്ചയോ മാസമോ കഴിയുമ്പോൾ "+ ഇപ്പോൾ സ്റ്റോർ & പുതിയത് തുടങ്ങുക" അമർത്തി റിപ്പോർട്ട് സുരക്ഷിതമായി സൂക്ഷിക്കാം.'
+            : 'No archived weekly or monthly reports yet. Click "+ Store & Start New" at the end of a week or month to archive it here.'}
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = archives.map(arch => {
+      const pIcon = arch.periodType === 'monthly' ? '📊' : (arch.periodType === 'weekly' ? '🗓️' : (arch.periodType === 'daily' ? '📅' : '📁'));
+      const pLabel = arch.periodType === 'monthly'
+        ? (isMl ? 'മാസ റിപ്പോർട്ട് (Monthly)' : 'Monthly')
+        : arch.periodType === 'weekly'
+        ? (isMl ? 'ആഴ്ച റിപ്പോർട്ട് (Weekly)' : 'Weekly')
+        : arch.periodType === 'daily'
+        ? (isMl ? 'ദൈനംദിന (Daily)' : 'Daily')
+        : (isMl ? 'സമ്പൂർണ്ണം (Full)' : 'Full');
+      const netColor = Number(arch.netBalance) >= 0 ? 'var(--emerald-green)' : 'var(--coral-rose)';
+
+      return `
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; box-shadow: var(--shadow-sm);">
+          <div>
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+              <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-dark); line-height: 1.3;">
+                ${pIcon} ${this.escapeHtml(arch.title)}
+              </div>
+              <span style="font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--finnova-purple-light); color: var(--finnova-purple); white-space: nowrap;">
+                ${pLabel}
+              </span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+              <span>${this.escapeHtml(arch.divisionName || this.getDivisionName(arch.division))}</span>
+              <span>• ${this.formatDate(arch.startDate)} - ${this.formatDate(arch.endDate)}</span>
+              <span>• <strong>${arch.txCount || (arch.transactions ? arch.transactions.length : 0)}</strong> ${isMl ? 'എൻട്രികൾ' : 'entries'}</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--bg-surface); padding: 8px; border-radius: 10px; border: 1px solid var(--border-light); text-align: center;">
+            <div>
+              <div style="font-size: 0.65rem; color: var(--text-muted);">${isMl ? 'വരവ്' : 'Income'}</div>
+              <div style="font-size: 0.82rem; font-weight: 800; color: var(--emerald-green);">${this.formatCurrency(arch.totalIncome)}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.65rem; color: var(--text-muted);">${isMl ? 'ചിലവ്' : 'Expense'}</div>
+              <div style="font-size: 0.82rem; font-weight: 800; color: var(--coral-rose);">${this.formatCurrency(arch.totalExpense)}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.65rem; color: var(--text-muted);">${isMl ? 'ബാക്കി' : 'Net'}</div>
+              <div style="font-size: 0.82rem; font-weight: 800; color: ${netColor};">${this.formatCurrency(arch.netBalance)}</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button type="button" onclick="window.appEngine.openViewArchiveModal('${this.escapeHtml(arch.id)}')" class="action-btn-pill btn-pill-white" style="flex: 1; justify-content: center; padding: 6px 8px; font-size: 0.74rem;">
+              👁️ ${isMl ? 'കാണുക' : 'View'}
+            </button>
+            <button type="button" onclick="window.appEngine.downloadArchiveReport('${this.escapeHtml(arch.id)}', 'pdf')" class="action-btn-pill btn-pill-white" style="padding: 6px 10px; font-size: 0.74rem; color: var(--coral-rose);" title="PDF">
+              📄 PDF
+            </button>
+            <button type="button" onclick="window.appEngine.downloadArchiveReport('${this.escapeHtml(arch.id)}', 'csv')" class="action-btn-pill btn-pill-white" style="padding: 6px 10px; font-size: 0.74rem; color: var(--emerald-green);" title="Excel">
+              📊 CSV
+            </button>
+            <button type="button" onclick="window.appEngine.deletePeriodArchive('${this.escapeHtml(arch.id)}')" class="sq-pill-btn" style="width: 32px; height: 32px; color: var(--coral-rose);" title="Delete Archive">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.renderLucideIcons) {
+      window.renderLucideIcons();
+    }
+  }
+
+  openViewArchiveModal(archiveId) {
+    const arch = (this.periodArchives || []).find(a => a.id === archiveId);
+    if (!arch) return;
+    this.viewingArchiveId = arch.id;
+
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    document.getElementById('viewArchiveTitle').textContent = arch.title || 'Archived Report';
+    document.getElementById('viewArchiveMeta').textContent = `${arch.divisionName || this.getDivisionName(arch.division)} • ${this.formatDate(arch.startDate)} - ${this.formatDate(arch.endDate)} (${arch.txCount || 0} ${isMl ? 'എൻട്രികൾ' : 'entries'})`;
+    document.getElementById('viewArchiveIncome').textContent = this.formatCurrency(arch.totalIncome);
+    document.getElementById('viewArchiveExpense').textContent = this.formatCurrency(arch.totalExpense);
+    document.getElementById('viewArchiveNet').textContent = this.formatCurrency(arch.netBalance);
+
+    const listEl = document.getElementById('viewArchiveTxList');
+    const txs = arch.transactions || [];
+    if (listEl) {
+      if (txs.length === 0) {
+        listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">${window.i18n.t('noTxSelected')}</div>`;
+      } else {
+        listEl.innerHTML = txs.map(tx => {
+          const cat = this.categories.find(c => c.id === tx.category);
+          const catName = cat ? window.i18n.getCategoryName(cat) : (tx.category || '-');
+          const isIncome = tx.type === 'income';
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); gap: 8px;">
+              <div>
+                <div style="font-weight: 700; font-size: 0.86rem; color: var(--text-dark);">${this.escapeHtml(tx.party || catName)}</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">
+                  ${this.formatDate(tx.date)} • ${this.escapeHtml(catName)}${tx.billNo ? ` • #${this.escapeHtml(tx.billNo)}` : ''}
+                </div>
+              </div>
+              <div style="font-weight: 800; font-size: 0.9rem; color: ${isIncome ? 'var(--emerald-green)' : 'var(--coral-rose)'}; white-space: nowrap;">
+                ${isIncome ? '+' : '-'} ${this.formatCurrency(tx.amount)}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    document.getElementById('viewArchiveModal')?.classList.remove('hidden');
+    if (window.renderLucideIcons) window.renderLucideIcons();
+  }
+
+  closeViewArchiveModal() {
+    document.getElementById('viewArchiveModal')?.classList.add('hidden');
+    this.viewingArchiveId = null;
+  }
+
+  downloadArchiveReport(archiveId, format = 'pdf') {
+    const arch = (this.periodArchives || []).find(a => a.id === archiveId);
+    if (!arch || !window.reportsEngine) return;
+    const txs = arch.transactions || [];
+    if (format === 'csv') {
+      window.reportsEngine.exportToCSV(txs, this.categories, this.officeProfile, arch.title || 'Archived_Report');
+    } else {
+      window.reportsEngine.downloadStatementPDF(txs, this.categories, this.officeProfile, arch.title || 'Archived Report');
+    }
+  }
+
+  async restoreArchiveToLedger(archiveId) {
+    const arch = (this.periodArchives || []).find(a => a.id === archiveId);
+    if (!arch) return;
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    const msg = isMl
+      ? `"${arch.title}"-ലെ ${arch.transactions?.length || 0} എൻട്രികൾ ആക്ടീവ് അക്കൗണ്ടിലേക്ക് തിരികെ ചേർക്കണോ?`
+      : `Restore ${arch.transactions?.length || 0} entries from "${arch.title}" back into the active ledger?`;
+    if (!confirm(msg)) return;
+
+    await window.dbEngine.importBackup({
+      appName: 'OfficeFinance',
+      transactions: arch.transactions || []
+    });
+    this.closeViewArchiveModal();
+    await this.refreshData();
+    this.showToast(isMl ? '✅ എൻട്രികൾ ആക്ടീവ് അക്കൗണ്ടിലേക്ക് തിരികെ ചേർത്തു!' : '✅ Archived entries restored to ledger!', 'success');
+  }
+
+  async deletePeriodArchive(archiveId) {
+    if (this.currentUser && this.currentUser.role !== 'admin') {
+      this.showToast(window.i18n.t('adminOnlySettings'), 'error');
+      return;
+    }
+    const isMl = window.i18n && window.i18n.currentLang === 'ml';
+    if (!confirm(isMl ? 'ഈ സ്റ്റോർ ചെയ്ത റിപ്പോർട്ട് ഡിലീറ്റ് ചെയ്യണമെന്ന് ഉറപ്പാണോ?' : 'Are you sure you want to delete this stored report?')) return;
+    await window.dbEngine.deletePeriodArchive(archiveId);
+    await this.refreshData();
+    this.showToast(isMl ? 'റിപ്പോർട്ട് ഒഴിവാക്കി.' : 'Stored report deleted.', 'info');
+  }
+
   // ================= 11. SETTINGS CHIPS RENDERING =================
   renderSettingsCategoryChips() {
     const expContainer = document.getElementById('expenseCategoryChips');
@@ -3102,6 +3506,46 @@ Thank you!`;
     document.getElementById('btnConnectAppsScript')?.addEventListener('click', () => this.handleConnectAppsScript());
     document.getElementById('btnFirebaseGoogleSignIn')?.addEventListener('click', () => this.handleFirebaseSignIn());
     document.getElementById('btnCloudDisconnect')?.addEventListener('click', () => this.handleCloudDisconnect());
+
+    // 30. Weekly / Monthly Report Archive & Fresh Start
+    document.getElementById('dashBtnArchivePeriod')?.addEventListener('click', () => this.openArchivePeriodModal());
+    document.getElementById('btnOpenArchiveModalReports')?.addEventListener('click', () => this.openArchivePeriodModal());
+    document.getElementById('btnCloseArchivePeriodModal')?.addEventListener('click', () => this.closeArchivePeriodModal());
+    document.getElementById('btnCancelArchivePeriod')?.addEventListener('click', () => this.closeArchivePeriodModal());
+    document.getElementById('archivePeriodForm')?.addEventListener('submit', (e) => this.handleConfirmArchivePeriod(e));
+
+    document.getElementById('archivePeriodType')?.addEventListener('change', (e) => {
+      const divVal = document.getElementById('archivePeriodDivision')?.value || 'office';
+      const titleInp = document.getElementById('archiveReportTitle');
+      if (titleInp) titleInp.value = this.suggestArchiveTitle(e.target.value, divVal);
+      this.updateArchivePreview();
+    });
+    document.getElementById('archivePeriodDivision')?.addEventListener('change', (e) => {
+      const pVal = document.getElementById('archivePeriodType')?.value || 'weekly';
+      const titleInp = document.getElementById('archiveReportTitle');
+      if (titleInp) titleInp.value = this.suggestArchiveTitle(pVal, e.target.value);
+      this.updateArchivePreview();
+    });
+
+    document.querySelectorAll('.archive-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.archive-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.activeArchiveFilter = btn.dataset.archfilter || 'all';
+        this.renderStoredArchivesList();
+      });
+    });
+
+    document.getElementById('btnCloseViewArchiveModal')?.addEventListener('click', () => this.closeViewArchiveModal());
+    document.getElementById('btnArchiveModalPdf')?.addEventListener('click', () => {
+      if (this.viewingArchiveId) this.downloadArchiveReport(this.viewingArchiveId, 'pdf');
+    });
+    document.getElementById('btnArchiveModalCsv')?.addEventListener('click', () => {
+      if (this.viewingArchiveId) this.downloadArchiveReport(this.viewingArchiveId, 'csv');
+    });
+    document.getElementById('btnArchiveModalRestore')?.addEventListener('click', () => {
+      if (this.viewingArchiveId) this.restoreArchiveToLedger(this.viewingArchiveId);
+    });
   }
 
   // ================= 15. VIEW NAVIGATION =================
@@ -3126,6 +3570,7 @@ Thank you!`;
 
     if (viewName === 'reports') {
       this.renderReports();
+      this.renderStoredArchivesList();
     } else if (viewName === 'transactions') {
       this.renderTransactionsList();
     } else if (viewName === 'dashboard') {
@@ -3151,6 +3596,7 @@ Thank you!`;
     this.renderDashboard();
     this.renderTransactionsList();
     this.renderReports();
+    this.renderStoredArchivesList();
     this.populateCategoryDatalist();
     this.populatePartyDatalist();
     this.renderSettingsCategoryChips();

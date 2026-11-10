@@ -33,6 +33,7 @@ class CloudSyncEngine {
     this._fbUser = null;
     this._fbUnsubMeta = null;
     this._fbUnsubTx = null;
+    this._fbUnsubArch = null;
   }
 
   utf8ToBase64Url(str) {
@@ -560,6 +561,7 @@ function mergeVaults(a, b) {
     contacts: mergeArrayBySyncId(a.contacts, b.contacts, delMap),
     divisions: mergeArrayBySyncId(a.divisions, b.divisions, delMap),
     authorizedUsers: mergeArrayBySyncId(a.authorizedUsers, b.authorizedUsers, delMap),
+    periodArchives: mergeArrayBySyncId(a.periodArchives, b.periodArchives, delMap),
     deletedLog: deletedLog,
     settings: useBSettings ? (b.settings || a.settings || {}) : (a.settings || b.settings || {}),
     settingsUpdatedAt: useBSettings ? b.settingsUpdatedAt : a.settingsUpdatedAt
@@ -710,6 +712,7 @@ function updateGoogleSheetBackup(vault) {
   unsubscribeFirestore() {
     if (this._fbUnsubMeta) { this._fbUnsubMeta(); this._fbUnsubMeta = null; }
     if (this._fbUnsubTx) { this._fbUnsubTx(); this._fbUnsubTx = null; }
+    if (this._fbUnsubArch) { this._fbUnsubArch(); this._fbUnsubArch = null; }
   }
 
   subscribeFirestoreUser(uid) {
@@ -718,6 +721,7 @@ function updateGoogleSheetBackup(vault) {
 
     const metaRef = this._fbDb.collection('users').doc(uid).collection('vault').doc('meta');
     const txCol = this._fbDb.collection('users').doc(uid).collection('transactions');
+    const archCol = this._fbDb.collection('users').doc(uid).collection('archives');
 
     this._fbUnsubMeta = metaRef.onSnapshot(async (snap) => {
       if (!snap.exists || this.isSyncing) return;
@@ -748,6 +752,21 @@ function updateGoogleSheetBackup(vault) {
     }, (err) => {
       this.setState('error', this.formatFirebaseAuthError(err));
     });
+
+    this._fbUnsubArch = archCol.onSnapshot(async (qs) => {
+      if (this.isSyncing) return;
+      const archives = [];
+      qs.forEach(doc => archives.push(doc.data()));
+      const res = await window.dbEngine.mergeCloudVault({
+        appName: 'OfficeFinanceCloud',
+        periodArchives: archives
+      });
+      if (res.changed && this.onUpdateCallback) {
+        this.onUpdateCallback({ state: 'synced', error: '', changed: true });
+      }
+    }, (err) => {
+      this.setState('error', this.formatFirebaseAuthError(err));
+    });
   }
 
   async syncFirebaseNow(showToast = false) {
@@ -762,16 +781,20 @@ function updateGoogleSheetBackup(vault) {
       const uid = this._fbUser.uid;
       const metaRef = this._fbDb.collection('users').doc(uid).collection('vault').doc('meta');
       const txCol = this._fbDb.collection('users').doc(uid).collection('transactions');
+      const archCol = this._fbDb.collection('users').doc(uid).collection('archives');
 
-      const [metaSnap, txSnap] = await Promise.all([metaRef.get(), txCol.get()]);
+      const [metaSnap, txSnap, archSnap] = await Promise.all([metaRef.get(), txCol.get(), archCol.get()]);
       const remoteMeta = metaSnap.exists ? metaSnap.data() : {};
       const remoteTxs = [];
       txSnap.forEach(d => remoteTxs.push(d.data()));
+      const remoteArchives = [];
+      archSnap.forEach(d => remoteArchives.push(d.data()));
 
       const remoteVault = {
         ...remoteMeta,
         appName: 'OfficeFinanceCloud',
-        transactions: remoteTxs
+        transactions: remoteTxs,
+        periodArchives: remoteArchives.length > 0 ? remoteArchives : (remoteMeta.periodArchives || [])
       };
 
       const mergeRes = await window.dbEngine.mergeCloudVault(remoteVault);
@@ -808,11 +831,28 @@ function updateGoogleSheetBackup(vault) {
         }
       }
 
-      // Delete tombstoned remote transactions
+      const remoteArchMap = new Map(remoteArchives.map(a => [a.syncId || a.id, a]));
+      for (const arch of (localVault.periodArchives || [])) {
+        const sid = arch.syncId || arch.id;
+        const r = remoteArchMap.get(sid);
+        const lts = new Date(arch.updatedAt || arch.createdAt || 0).getTime();
+        const rts = r ? new Date(r.updatedAt || r.createdAt || 0).getTime() : 0;
+        if (!r || lts > rts) {
+          ops.push({ type: 'set', ref: archCol.doc(sid), data: arch });
+        }
+      }
+
+      // Delete tombstoned remote transactions & archives
       const delSet = new Set((localVault.deletedLog || []).map(d => d.syncId));
       for (const r of remoteTxs) {
         if (r.syncId && delSet.has(r.syncId)) {
           ops.push({ type: 'delete', ref: txCol.doc(r.syncId) });
+        }
+      }
+      for (const ra of remoteArchives) {
+        const sid = ra.syncId || ra.id;
+        if (sid && delSet.has(sid)) {
+          ops.push({ type: 'delete', ref: archCol.doc(sid) });
         }
       }
 
